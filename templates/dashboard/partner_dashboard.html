@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+
+{% block title %}Partner Dashboard - {{ partner_organization.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header partner-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons">business</span>
+                {{ partner_organization.name }} Dashboard
+            </h1>
+            <p class="page-subtitle">Partner-specific analytics and insights for {{ partner_organization.code }}</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:home' %}" class="btn btn-outline-primary me-2">
+                <span class="material-icons me-2">dashboard</span>
+                Main Dashboard
+            </a>
+            <a href="{% url 'dashboard:profile' %}" class="btn btn-primary">
+                <span class="material-icons me-2">account_circle</span>
+                Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Partner Metrics Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card partner-metric">
+            <div class="metric-icon">
+                <span class="material-icons">groups</span>
+            </div>
+            <div class="metric-label">Total Farmers</div>
+            <div class="metric-value">{{ total_partner_farmers|default:0|floatformat:0 }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card partner-metric">
+            <div class="metric-icon">
+                <span class="material-icons">location_on</span>
+            </div>
+            <div class="metric-label">States Covered</div>
+            <div class="metric-value">{{ partner_state_stats|length }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card partner-metric">
+            <div class="metric-icon">
+                <span class="material-icons">event</span>
+            </div>
+            <div class="metric-label">Event Types</div>
+            <div class="metric-value">{{ partner_event_types|length }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card partner-metric">
+            <div class="metric-icon">
+                <span class="material-icons">agriculture</span>
+            </div>
+            <div class="metric-label">Crops Covered</div>
+            <div class="metric-value">{{ partner_crop_stats|length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-5">
+    <!-- Gender Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">wc</span>
+                    Gender Distribution
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 250px;">
+                    <canvas id="partnerGenderChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Crop Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">eco</span>
+                    Top Crops
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 250px;">
+                    <canvas id="partnerCropChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Trend -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">trending_up</span>
+                    Monthly Trend
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 250px;">
+                    <canvas id="partnerTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Geographic and Event Distribution -->
+<div class="row g-4 mb-5">
+    <!-- Top Cities -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">location_city</span>
+                    Top Cities by Farmers
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="partnerCityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Event Types -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">event_note</span>
+                    Event Types Distribution
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="partnerEventChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">schedule</span>
+                    Recent Partner Events
+                </h5>
+            </div>
+            <div class="table-responsive">
+                {% if recent_partner_events %}
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Farmer</th>
+                                <th>Location</th>
+                                <th>Event Date</th>
+                                <th>Event Type</th>
+                                <th>Crop</th>
+                                <th>Venue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in recent_partner_events %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <div>
+                                            <strong>{{ event.full_name|default:event.external_id }}</strong>
+                                            {% if event.farmer_gender %}
+                                                <small class="text-muted d-block">{{ event.farmer_gender }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        {% if event.event_city %}
+                                            {{ event.event_city }}
+                                        {% endif %}
+                                        {% if event.admin_level1 %}
+                                            <small class="text-muted d-block">{{ event.admin_level1 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if event.event_date %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="material-icons text-success me-1" style="font-size: 16px;">event</span>
+                                            {{ event.event_date|date:"M d, Y" }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if event.event_type %}
+                                        <span class="badge bg-info">{{ event.event_type }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if event.crop %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="material-icons text-success me-1" style="font-size: 16px;">eco</span>
+                                            {{ event.crop }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ event.event_venue|default:"-"|truncatechars:30 }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <span class="material-icons text-muted" style="font-size: 64px;">event_busy</span>
+                        </div>
+                        <h5 class="text-muted mb-2">No Recent Events</h5>
+                        <p class="text-muted">No events found for your organization. Contact your administrator if this seems incorrect.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Partner color palette (different from main dashboard)
+    const partnerPalette = [
+        '#673AB7', // Deep Purple
+        '#9C27B0', // Purple
+        '#E91E63', // Pink
+        '#F44336', // Red
+        '#FF5722', // Deep Orange
+        '#FF9800', // Orange
+        '#FFC107', // Amber
+        '#FFEB3B', // Yellow
+        '#CDDC39', // Lime
+        '#8BC34A'  // Light Green
+    ];
+
+    // Partner Gender Distribution Chart
+    const partnerGenderData = {{ partner_gender_stats|safe }};
+    const partnerGenderLabels = partnerGenderData.map(item => item.farmer_gender || 'Unknown');
+    const partnerGenderCounts = partnerGenderData.map(item => item.count);
+    
+    if (partnerGenderLabels.length > 0) {
+        const partnerGenderCtx = document.getElementById('partnerGenderChart').getContext('2d');
+        new Chart(partnerGenderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: partnerGenderLabels,
+                datasets: [{
+                    data: partnerGenderCounts,
+                    backgroundColor: partnerPalette.slice(0, partnerGenderLabels.length),
+                    borderWidth: 0,
+                    hoverBorderWidth: 2,
+                    hoverBorderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { family: 'Roboto', size: 11 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    // Partner Crop Distribution Chart
+    const partnerCropData = {{ partner_crop_stats|safe }};
+    const partnerCropLabels = partnerCropData.map(item => item.crop || 'Unknown');
+    const partnerCropCounts = partnerCropData.map(item => item.count);
+    
+    if (partnerCropLabels.length > 0) {
+        const partnerCropCtx = document.getElementById('partnerCropChart').getContext('2d');
+        new Chart(partnerCropCtx, {
+            type: 'pie',
+            data: {
+                labels: partnerCropLabels,
+                datasets: [{
+                    data: partnerCropCounts,
+                    backgroundColor: partnerPalette.slice(0, partnerCropLabels.length),
+                    borderWidth: 0,
+                    hoverBorderWidth: 2,
+                    hoverBorderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 10,
+                            usePointStyle: true,
+                            font: { family: 'Roboto', size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Partner Monthly Trend Chart
+    const partnerTrendData = {{ monthly_trend|safe }};
+    const partnerTrendLabels = partnerTrendData.map(item => item.month.split(' ')[0]);
+    const partnerTrendCounts = partnerTrendData.map(item => item.count);
+    
+    const partnerTrendCtx = document.getElementById('partnerTrendChart').getContext('2d');
+    new Chart(partnerTrendCtx, {
+        type: 'line',
+        data: {
+            labels: partnerTrendLabels,
+            datasets: [{
+                label: 'Farmers',
+                data: partnerTrendCounts,
+                borderColor: '#673AB7',
+                backgroundColor: 'rgba(103, 58, 183, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#673AB7',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Partner City Distribution Chart
+    const partnerCityData = {{ partner_city_stats|safe }};
+    const partnerCityLabels = partnerCityData.map(item => item.event_city || 'Unknown');
+    const partnerCityCounts = partnerCityData.map(item => item.count);
+    
+    if (partnerCityLabels.length > 0) {
+        const partnerCityCtx = document.getElementById('partnerCityChart').getContext('2d');
+        new Chart(partnerCityCtx, {
+            type: 'bar',
+            data: {
+                labels: partnerCityLabels,
+                datasets: [{
+                    label: 'Farmers',
+                    data: partnerCityCounts,
+                    backgroundColor: '#9C27B0',
+                    borderColor: '#7B1FA2',
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            font: { family: 'Roboto' }, 
+                            color: '#757575',
+                            maxRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Partner Event Types Chart
+    const partnerEventData = {{ partner_event_types|safe }};
+    const partnerEventLabels = partnerEventData.map(item => item.event_type || 'Unknown');
+    const partnerEventCounts = partnerEventData.map(item => item.count);
+    
+    if (partnerEventLabels.length > 0) {
+        const partnerEventCtx = document.getElementById('partnerEventChart').getContext('2d');
+        new Chart(partnerEventCtx, {
+            type: 'horizontalBar',
+            data: {
+                labels: partnerEventLabels,
+                datasets: [{
+                    label: 'Events',
+                    data: partnerEventCounts,
+                    backgroundColor: '#E91E63',
+                    borderColor: '#C2185B',
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+</script>
+
+<style>
+.partner-header {
+    background: linear-gradient(135deg, #673AB7 0%, #9C27B0 100%);
+    color: white;
+    margin: -2rem -2rem 2rem -2rem;
+    padding: 2rem;
+    border-radius: 0 0 16px 16px;
+}
+
+.partner-header .page-title {
+    color: white;
+}
+
+.partner-header .page-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.partner-metric {
+    background: linear-gradient(135deg, #673AB7 0%, #9C27B0 100%);
+    color: white;
+    border: none;
+}
+
+.partner-metric .metric-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.partner-metric .metric-value {
+    color: white;
+}
+
+.partner-metric .metric-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+</style>
+{% endblock %}

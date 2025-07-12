@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Akilimo Nigeria Association Dashboard{% endblock %}</title>
+    
+    <!-- Material Design Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.css" rel="stylesheet">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-green: #2E7D32;
+            --light-green: #4CAF50;
+            --dark-green: #1B5E20;
+            --accent-green: #66BB6A;
+            --surface-green: #E8F5E8;
+            --success-green: #388E3C;
+            --text-on-green: #FFFFFF;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+        }
+
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #FAFAFA;
+            color: var(--text-primary);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-header {
+            padding: 32px 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .sidebar-header h3 {
+            color: var(--text-on-green);
+            font-weight: 500;
+            margin: 8px 0 4px 0;
+            font-size: 1.5rem;
+        }
+
+        .sidebar-header .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.875rem;
+            font-weight: 300;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .nav-menu {
+            padding: 16px 0;
+        }
+
+        .nav-item {
+            margin: 4px 16px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-on-green);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: var(--text-on-green);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .nav-link .material-icons {
+            margin-right: 16px;
+            font-size: 20px;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 16px 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            background: #FAFAFA;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .top-bar {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 16px 32px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .content-area {
+            padding: 32px;
+        }
+
+        /* Cards */
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid var(--light-green);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, var(--surface-green), transparent);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin: 8px 0;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-icon {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        /* Chart Cards */
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .chart-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #F5F5F5;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .chart-title .material-icons {
+            margin-right: 12px;
+            color: var(--primary-green);
+        }
+
+        .chart-body {
+            padding: 24px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid var(--primary-green);
+            color: var(--primary-green);
+            background: transparent;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--primary-green);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Form Controls */
+        .form-control, .form-select {
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: var(--surface-green);
+            color: var(--primary-green);
+            font-weight: 600;
+            border: none;
+            padding: 20px 16px;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(76, 175, 80, 0.04);
+        }
+
+        .table td {
+            padding: 16px;
+            border-color: #F5F5F5;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge {
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        .badge.bg-primary { background-color: var(--primary-green) !important; }
+        .badge.bg-success { background-color: var(--success-green) !important; }
+
+        /* Pagination */
+        .pagination .page-link {
+            border: none;
+            color: var(--primary-green);
+            padding: 12px 16px;
+            margin: 0 4px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination .page-link:hover {
+            background-color: var(--surface-green);
+            color: var(--primary-green);
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-green);
+            color: white;
+            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
+        }
+
+        /* Alerts */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .alert-success {
+            background-color: var(--surface-green);
+            color: var(--primary-green);
+        }
+
+        /* Page Headers */
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .page-title .material-icons {
+            margin-right: 16px;
+            color: var(--primary-green);
+            font-size: 2.5rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content-area {
+                padding: 16px;
+            }
+            
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-green);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-green);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <span class="material-icons" style="color: white; font-size: 28px;">eco</span>
+            </div>
+            <h3>ANA Dashboard</h3>
+            <div class="subtitle">Akilimo Nigeria Association</div>
+        </div>
+        
+        <div class="nav-menu">
+            {% if user.is_authenticated %}
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">
+                        <span class="material-icons">dashboard</span>
+                        Dashboard
+                    </a>
+                </div>
+                
+                {% if user.profile.can_view_partner_data %}
+                    <div class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'partner_dashboard' %}active{% endif %}" href="{% url 'dashboard:partner_dashboard' %}">
+                            <span class="material-icons">business</span>
+                            Partner Dashboard
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'participants' %}active{% endif %}" href="{% url 'dashboard:participants' %}">
+                        <span class="material-icons">people</span>
+                        Participants
+                    </a>
+                </div>
+                
+                <div class="nav-item">
+                    <a class="nav-link" href="#" onclick="syncData(event)">
+                        <span class="material-icons">sync</span>
+                        Sync Data
+                    </a>
+                </div>
+                
+                {% if user.is_staff %}
+                    <div class="nav-item">
+                        <a class="nav-link" href="/admin/" target="_blank">
+                            <span class="material-icons">settings</span>
+                            Admin Panel
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <!-- User Profile Section -->
+                <div class="nav-divider"></div>
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'dashboard:profile' %}">
+                        <span class="material-icons">account_circle</span>
+                        Profile
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard:logout' %}">
+                        <span class="material-icons">logout</span>
+                        Logout
+                    </a>
+                </div>
+            {% else %}
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'dashboard:login' %}">
+                        <span class="material-icons">login</span>
+                        Login
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'register' %}active{% endif %}" href="{% url 'dashboard:register' %}">
+                        <span class="material-icons">person_add</span>
+                        Register
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link d-md-none" onclick="toggleSidebar()">
+                        <span class="material-icons">menu</span>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <span class="material-icons text-success me-2">eco</span>
+                        <span class="fw-bold text-success">Cassava Production Dashboard</span>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    {% if user.is_authenticated %}
+                        <div class="user-info me-3">
+                            <span class="material-icons text-muted me-1" style="font-size: 16px;">account_circle</span>
+                            <span class="text-muted small">{{ user.get_full_name|default:user.username }}</span>
+                            {% if user.profile.partner_organization %}
+                                <small class="text-success ms-1">({{ user.profile.partner_organization.code }})</small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <div class="text-muted small">
+                        <span class="material-icons" style="font-size: 16px;">access_time</span>
+                        {{ "now"|date:"M d, Y - H:i" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <span class="material-icons me-2">
+                            {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}
+                        </span>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Material Design Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.js"></script>
+    
+    <script>
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Function to sync data from API
+        async function syncData(event) {
+            event.preventDefault();
+            const btn = event.target.closest('a');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="material-icons">sync</span><span class="loading-spinner ms-2"></span> Syncing...';
+            btn.style.pointerEvents = 'none';
+            
+            try {
+                const response = await fetch('{% url "dashboard:api_sync_data" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification(
+                        'success',
+                        `Data sync completed successfully!\nProcessed: ${data.records_processed}\nCreated: ${data.records_created}\nUpdated: ${data.records_updated}`
+                    );
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('error', `Error: ${data.error}`);
+                }
+            } catch (error) {
+                showNotification('error', 'Sync failed: ' + error.message);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Function to get CSRF cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Show notification
+        function showNotification(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <span class="material-icons me-2">${type === 'success' ? 'check_circle' : 'error'}</span>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const contentArea = document.querySelector('.content-area');
+            contentArea.insertBefore(alertDiv, contentArea.firstChild);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const isClickInsideSidebar = sidebar.contains(event.target);
+            const isMenuButton = event.target.closest('button[onclick="toggleSidebar()"]');
+            
+            if (!isClickInsideSidebar && !isMenuButton && window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

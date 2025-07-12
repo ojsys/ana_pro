@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Akilimo Nigeria Association{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <span class="material-icons">person_add</span>
+                    </div>
+                    <h2 class="auth-title">Join AKILIMO Nigeria</h2>
+                    <p class="auth-subtitle">Create your account to access partner dashboard</p>
+                </div>
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    <span class="material-icons me-2">badge</span>
+                                    First Name
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    <span class="material-icons me-2">badge</span>
+                                    Last Name
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <span class="material-icons me-2">person</span>
+                            Username
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.username.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <span class="material-icons me-2">email</span>
+                            Email Address
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                    <span class="material-icons me-2">phone</span>
+                                    Phone Number
+                                </label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.phone_number.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.position.id_for_label }}" class="form-label">
+                                    <span class="material-icons me-2">work</span>
+                                    Position/Title
+                                </label>
+                                {{ form.position }}
+                                {% if form.position.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.position.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="{{ form.partner_organization.id_for_label }}" class="form-label">
+                            <span class="material-icons me-2">business</span>
+                            Partner Organization
+                        </label>
+                        {{ form.partner_organization }}
+                        {% if form.partner_organization.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.partner_organization.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <span class="material-icons me-1" style="font-size: 14px;">info</span>
+                            This cannot be changed after registration. Contact admin if you need to modify it.
+                        </small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                    <span class="material-icons me-2">lock</span>
+                                    Password
+                                </label>
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.password1.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                    <span class="material-icons me-2">lock</span>
+                                    Confirm Password
+                                </label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.password2.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-auth w-100 mb-3">
+                        <span class="material-icons me-2">person_add</span>
+                        Create Account
+                    </button>
+                </form>
+
+                <div class="auth-links">
+                    <p class="text-center mb-0">
+                        Already have an account? 
+                        <a href="{% url 'dashboard:login' %}" class="auth-link">Sign in here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 0;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    padding: 2.5rem;
+    margin: 1rem;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo {
+    margin-bottom: 1rem;
+}
+
+.auth-logo .material-icons {
+    font-size: 4rem;
+    color: #4CAF50;
+}
+
+.auth-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: #718096;
+    margin-bottom: 0;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.form-label .material-icons {
+    font-size: 1.2rem;
+    color: #6b7280;
+}
+
+.form-control {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.btn-auth {
+    padding: 0.875rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-auth:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.auth-links {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.auth-link {
+    color: #4CAF50;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-link:hover {
+    color: #2E7D32;
+    text-decoration: underline;
+}
+
+.alert {
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.form-text {
+    display: flex;
+    align-items: center;
+    margin-top: 0.25rem;
+}
+</style>
+{% endblock %}

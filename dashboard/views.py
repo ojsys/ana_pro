@@ -1,0 +1,708 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.generic import TemplateView, FormView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth import login
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.contrib import messages
+from django.urls import reverse_lazy, reverse
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.core.paginator import Paginator
+from django.db.models import Count, Q, Avg, F, Case, When, IntegerField
+from datetime import datetime, timedelta
+import json
+import logging
+
+from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
+                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization)
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
+from .services import AkilimoDataService
+
+logger = logging.getLogger(__name__)
+
+class DashboardHomeView(TemplateView):
+    """Main dashboard view"""
+    template_name = 'dashboard/home.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Use the new AkilimoParticipant model with fallback to legacy
+        if AkilimoParticipant.objects.exists():
+            # Get basic metrics from new model
+            total_participants = AkilimoParticipant.objects.count()
+            
+            # Gender distribution
+            gender_stats = AkilimoParticipant.objects.values('farmer_gender').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            # Calculate male/female counts
+            male_count = AkilimoParticipant.objects.filter(farmer_gender__icontains='male').exclude(farmer_gender__icontains='female').count()
+            female_count = AkilimoParticipant.objects.filter(farmer_gender__icontains='female').count()
+            
+            # Geographic distribution (admin_level1 = state)
+            state_stats = AkilimoParticipant.objects.values('admin_level1').annotate(
+                count=Count('id')
+            ).order_by('-count')[:10]
+            
+            # City distribution
+            city_stats = AkilimoParticipant.objects.exclude(
+                event_city__isnull=True
+            ).exclude(event_city='').values('event_city').annotate(
+                count=Count('id')
+            ).order_by('-count')[:10]
+            
+            # Crop distribution
+            crop_stats = AkilimoParticipant.objects.exclude(
+                crop__isnull=True
+            ).exclude(crop='').values('crop').annotate(
+                count=Count('id')
+            ).order_by('-count')[:10]
+            
+            # Partner distribution
+            partner_stats = AkilimoParticipant.objects.exclude(
+                partner__isnull=True
+            ).exclude(partner='').values('partner').annotate(
+                count=Count('id')
+            ).order_by('-count')[:10]
+            
+            # Event types distribution
+            event_type_stats = AkilimoParticipant.objects.exclude(
+                event_type__isnull=True
+            ).exclude(event_type='').values('event_type').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            # Age category distribution
+            age_category_stats = AkilimoParticipant.objects.exclude(
+                age_category__isnull=True
+            ).exclude(age_category='').values('age_category').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            # Monthly participation trends (last 12 months)
+            monthly_trend = []
+            for i in range(12):
+                month_start = (datetime.now().date().replace(day=1) - timedelta(days=30*i))
+                month_end = month_start.replace(day=28) + timedelta(days=4)
+                month_end = month_end - timedelta(days=month_end.day)
+                
+                count = AkilimoParticipant.objects.filter(
+                    created_at__gte=month_start,
+                    created_at__lte=month_end
+                ).count()
+                
+                monthly_trend.append({
+                    'month': month_start.strftime('%B %Y'),
+                    'count': count
+                })
+            
+            monthly_trend.reverse()
+            
+            # Recent training sessions
+            recent_trainings = AkilimoParticipant.objects.filter(
+                event_date__isnull=False
+            ).order_by('-event_date')[:10]
+            
+            # Count farmers with phone numbers
+            farmers_with_phones = AkilimoParticipant.objects.exclude(
+                farmer_phone_no__isnull=True
+            ).exclude(farmer_phone_no='').count()
+            
+            # Count unique events
+            unique_events = AkilimoParticipant.objects.values(
+                'event_date', 'event_venue', 'event_type'
+            ).distinct().count()
+            
+            # Rename for template compatibility
+            gender_stats = [{'gender': item['farmer_gender'], 'count': item['count']} for item in gender_stats]
+            state_stats = [{'state': item['admin_level1'], 'count': item['count']} for item in state_stats]
+            
+            # No yield data in current model, so set to empty
+            yield_improvement = {'avg_previous': None, 'avg_expected': None}
+            
+        else:
+            # Fallback to legacy model
+            total_participants = ParticipantRecord.objects.count()
+            male_count = ParticipantRecord.objects.filter(gender__icontains='male').exclude(gender__icontains='female').count()
+            female_count = ParticipantRecord.objects.filter(gender__icontains='female').count()
+            farmers_with_phones = 0
+            unique_events = ParticipantRecord.objects.values('training_date', 'facilitator').distinct().count()
+            
+            # Gender distribution
+            gender_stats = ParticipantRecord.objects.values('gender').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            # State distribution
+            state_stats = ParticipantRecord.objects.values('state').annotate(
+                count=Count('id')
+            ).order_by('-count')[:10]
+            
+            # Recent training sessions
+            recent_trainings = ParticipantRecord.objects.filter(
+                training_date__isnull=False
+            ).order_by('-training_date')[:10]
+            
+            # Empty data for features not available in legacy model
+            city_stats = []
+            crop_stats = []
+            partner_stats = []
+            event_type_stats = []
+            age_category_stats = []
+            monthly_trend = []
+            
+            # Yield improvement metrics
+            yield_improvement = ParticipantRecord.objects.filter(
+                previous_yield__isnull=False,
+                expected_yield__isnull=False
+            ).aggregate(
+                avg_previous=Avg('previous_yield'),
+                avg_expected=Avg('expected_yield')
+            )
+        
+        context.update({
+            'total_participants': total_participants,
+            'male_count': male_count,
+            'female_count': female_count,
+            'farmers_with_phones': farmers_with_phones,
+            'unique_events': unique_events,
+            'gender_stats': list(gender_stats),
+            'state_stats': list(state_stats),
+            'city_stats': list(city_stats),
+            'crop_stats': list(crop_stats),
+            'partner_stats': list(partner_stats),
+            'event_type_stats': list(event_type_stats),
+            'age_category_stats': list(age_category_stats),
+            'monthly_trend': monthly_trend,
+            'recent_trainings': recent_trainings,
+            'yield_improvement': yield_improvement,
+        })
+        
+        return context
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_participants_summary(request):
+    """API endpoint for participants summary data"""
+    
+    # Time filter
+    days_filter = request.GET.get('days', 30)
+    try:
+        days_filter = int(days_filter)
+        start_date = datetime.now().date() - timedelta(days=days_filter)
+        participants_qs = ParticipantRecord.objects.filter(created_at__gte=start_date)
+    except (ValueError, TypeError):
+        participants_qs = ParticipantRecord.objects.all()
+    
+    # State filter
+    state_filter = request.GET.get('state')
+    if state_filter:
+        participants_qs = participants_qs.filter(state__icontains=state_filter)
+    
+    # Gender filter
+    gender_filter = request.GET.get('gender')
+    if gender_filter:
+        participants_qs = participants_qs.filter(gender__icontains=gender_filter)
+    
+    # Calculate metrics
+    total_count = participants_qs.count()
+    
+    gender_distribution = participants_qs.values('gender').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    state_distribution = participants_qs.values('state').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Monthly trend (last 12 months)
+    monthly_trend = []
+    for i in range(12):
+        month_start = (datetime.now().date().replace(day=1) - timedelta(days=30*i))
+        month_end = month_start.replace(day=28) + timedelta(days=4)
+        month_end = month_end - timedelta(days=month_end.day)
+        
+        count = participants_qs.filter(
+            created_at__gte=month_start,
+            created_at__lte=month_end
+        ).count()
+        
+        monthly_trend.append({
+            'month': month_start.strftime('%B %Y'),
+            'count': count
+        })
+    
+    monthly_trend.reverse()
+    
+    return Response({
+        'total_participants': total_count,
+        'gender_distribution': list(gender_distribution),
+        'state_distribution': list(state_distribution),
+        'monthly_trend': monthly_trend,
+        'filter_applied': {
+            'days': days_filter,
+            'state': state_filter,
+            'gender': gender_filter
+        }
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_yield_metrics(request):
+    """API endpoint for yield improvement metrics"""
+    
+    participants_with_yield = ParticipantRecord.objects.filter(
+        previous_yield__isnull=False,
+        expected_yield__isnull=False
+    )
+    
+    # Calculate yield improvements
+    yield_data = []
+    total_improvement = 0
+    improvement_count = 0
+    
+    for participant in participants_with_yield:
+        if participant.previous_yield and participant.expected_yield:
+            improvement = participant.expected_yield - participant.previous_yield
+            improvement_percentage = (improvement / participant.previous_yield) * 100 if participant.previous_yield > 0 else 0
+            
+            yield_data.append({
+                'participant_id': participant.external_id,
+                'location': participant.location,
+                'state': participant.state,
+                'previous_yield': participant.previous_yield,
+                'expected_yield': participant.expected_yield,
+                'improvement': improvement,
+                'improvement_percentage': round(improvement_percentage, 2)
+            })
+            
+            total_improvement += improvement_percentage
+            improvement_count += 1
+    
+    avg_improvement = total_improvement / improvement_count if improvement_count > 0 else 0
+    
+    # State-wise yield improvements
+    state_yield_metrics = participants_with_yield.values('state').annotate(
+        participant_count=Count('id'),
+        avg_previous_yield=Avg('previous_yield'),
+        avg_expected_yield=Avg('expected_yield')
+    ).order_by('-participant_count')
+    
+    return Response({
+        'total_participants_with_yield_data': improvement_count,
+        'average_yield_improvement_percentage': round(avg_improvement, 2),
+        'yield_improvements': yield_data[:50],  # Limit to 50 for performance
+        'state_yield_metrics': list(state_yield_metrics)
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_sync_data(request):
+    """API endpoint to sync data from EiA MELIA API"""
+    
+    try:
+        # Get API configuration
+        api_config = APIConfiguration.objects.filter(is_active=True).first()
+        if not api_config or not api_config.token:
+            return Response({
+                'error': 'API configuration not found or token missing'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create sync log entry
+        sync_log = DataSyncLog.objects.create(
+            sync_type='participants',
+            status='started',
+            initiated_by=request.user
+        )
+        
+        try:
+            # Initialize data service
+            data_service = AkilimoDataService(api_config.token)
+            
+            # Get all participants data
+            participants_data = data_service.get_all_akilimo_participants()
+            
+            created_count = 0
+            updated_count = 0
+            
+            for participant_data in participants_data:
+                external_id = participant_data.get('id', str(participant_data.get('participant_id', '')))
+                
+                if not external_id:
+                    continue
+                
+                # Extract relevant fields from API response
+                participant_record, created = ParticipantRecord.objects.update_or_create(
+                    external_id=external_id,
+                    defaults={
+                        'gender': participant_data.get('gender'),
+                        'age_group': participant_data.get('age_group'),
+                        'location': participant_data.get('location'),
+                        'state': participant_data.get('state'),
+                        'lga': participant_data.get('lga'),
+                        'event_type': participant_data.get('event_type'),
+                        'facilitator': participant_data.get('facilitator'),
+                        'farm_size': participant_data.get('farm_size'),
+                        'previous_yield': participant_data.get('previous_yield'),
+                        'expected_yield': participant_data.get('expected_yield'),
+                        'raw_data': participant_data
+                    }
+                )
+                
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+            
+            # Update sync log
+            sync_log.records_processed = len(participants_data)
+            sync_log.records_created = created_count
+            sync_log.records_updated = updated_count
+            sync_log.mark_completed('success')
+            
+            return Response({
+                'message': 'Data sync completed successfully',
+                'records_processed': len(participants_data),
+                'records_created': created_count,
+                'records_updated': updated_count
+            })
+            
+        except Exception as e:
+            logger.error(f"Data sync failed: {e}")
+            sync_log.mark_completed('failed', str(e))
+            
+            return Response({
+                'error': 'Data sync failed',
+                'details': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        logger.error(f"Sync API error: {e}")
+        return Response({
+            'error': 'Internal server error'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ParticipantsListView(TemplateView):
+    """View for participants list page"""
+    template_name = 'dashboard/participants.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get filter parameters
+        state_filter = self.request.GET.get('state', '')
+        gender_filter = self.request.GET.get('gender', '')
+        search_query = self.request.GET.get('search', '')
+        
+        # Use new model if available, fallback to legacy
+        if AkilimoParticipant.objects.exists():
+            # Filter participants using new model
+            participants = AkilimoParticipant.objects.all()
+            
+            if state_filter:
+                participants = participants.filter(admin_level1__icontains=state_filter)
+            
+            if gender_filter:
+                participants = participants.filter(farmer_gender__icontains=gender_filter)
+            
+            if search_query:
+                participants = participants.filter(
+                    Q(external_id__icontains=search_query) |
+                    Q(farmer_first_name__icontains=search_query) |
+                    Q(farmer_surname__icontains=search_query) |
+                    Q(event_city__icontains=search_query) |
+                    Q(admin_level1__icontains=search_query) |
+                    Q(partner__icontains=search_query)
+                )
+            
+            # Get unique values for filters
+            unique_states = AkilimoParticipant.objects.values_list('admin_level1', flat=True).distinct()
+            unique_genders = AkilimoParticipant.objects.values_list('farmer_gender', flat=True).distinct()
+        
+        else:
+            # Fallback to legacy model
+            participants = ParticipantRecord.objects.all()
+            
+            if state_filter:
+                participants = participants.filter(state__icontains=state_filter)
+            
+            if gender_filter:
+                participants = participants.filter(gender__icontains=gender_filter)
+        
+        if search_query:
+            participants = participants.filter(
+                Q(location__icontains=search_query) |
+                Q(external_id__icontains=search_query) |
+                Q(facilitator__icontains=search_query)
+            )
+        
+        # Pagination
+        paginator = Paginator(participants, 25)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Get unique values for filters
+        unique_states = ParticipantRecord.objects.values_list('state', flat=True).distinct()
+        unique_genders = ParticipantRecord.objects.values_list('gender', flat=True).distinct()
+        
+        context.update({
+            'participants': page_obj,
+            'unique_states': [s for s in unique_states if s],
+            'unique_genders': [g for g in unique_genders if g],
+            'current_filters': {
+                'state': state_filter,
+                'gender': gender_filter,
+                'search': search_query
+            }
+        })
+        
+        return context
+
+
+# Authentication Views
+
+class CustomLoginView(LoginView):
+    """Custom login view with enhanced styling"""
+    form_class = CustomAuthenticationForm
+    template_name = 'auth/login.html'
+    redirect_authenticated_user = True
+    
+    def get_success_url(self):
+        """Redirect to appropriate dashboard after login"""
+        user = self.request.user
+        if hasattr(user, 'profile') and user.profile.can_view_partner_data:
+            return reverse('dashboard:partner_dashboard')
+        return reverse('dashboard:home')
+    
+    def form_valid(self, form):
+        """Add success message on successful login"""
+        messages.success(self.request, f'Welcome back, {form.get_user().get_full_name() or form.get_user().username}!')
+        return super().form_valid(form)
+
+
+class CustomLogoutView(LogoutView):
+    """Custom logout view"""
+    next_page = reverse_lazy('dashboard:login')
+    
+    def dispatch(self, request, *args, **kwargs):
+        messages.info(request, 'You have been successfully logged out.')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class RegisterView(FormView):
+    """User registration view"""
+    form_class = CustomUserCreationForm
+    template_name = 'auth/register.html'
+    success_url = reverse_lazy('dashboard:profile_setup')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Redirect authenticated users"""
+        if request.user.is_authenticated:
+            return redirect('dashboard:home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        """Create user and log them in"""
+        user = form.save()
+        login(self.request, user)
+        messages.success(
+            self.request, 
+            f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created successfully.'
+        )
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['partner_organizations'] = PartnerOrganization.objects.filter(is_active=True)
+        return context
+
+
+@login_required
+def profile_setup(request):
+    """Profile setup page for new users"""
+    profile = request.user.profile
+    
+    if profile.profile_completed:
+        messages.info(request, 'Your profile is already completed.')
+        return redirect('dashboard:profile')
+    
+    messages.info(
+        request,
+        'Please complete your profile setup. You can update this information later from your profile page.'
+    )
+    return redirect('dashboard:profile')
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    """User profile view and edit"""
+    template_name = 'auth/profile.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['profile'] = self.request.user.profile
+        context['form'] = UserProfileForm(instance=self.request.user.profile, user=self.request.user)
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """Handle profile update"""
+        form = UserProfileForm(
+            request.POST,
+            instance=request.user.profile,
+            user=request.user
+        )
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully.')
+            return redirect('dashboard:profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+            context = self.get_context_data(**kwargs)
+            context['form'] = form
+            return self.render_to_response(context)
+
+
+class PartnerDashboardView(LoginRequiredMixin, TemplateView):
+    """Partner-specific dashboard view"""
+    template_name = 'dashboard/partner_dashboard.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user can access partner dashboard"""
+        if not hasattr(request.user, 'profile') or not request.user.profile.can_view_partner_data:
+            messages.error(request, 'You do not have access to partner-specific data. Please contact your administrator.')
+            return redirect('dashboard:home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_profile = self.request.user.profile
+        partner_org = user_profile.partner_organization
+        
+        # Get partner-specific farmers
+        partner_farmers = user_profile.accessible_farmers
+        
+        # Partner metrics
+        total_partner_farmers = partner_farmers.count()
+        
+        # Gender distribution for partner
+        partner_gender_stats = partner_farmers.values('farmer_gender').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Geographic distribution for partner
+        partner_state_stats = partner_farmers.values('admin_level1').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # City distribution for partner
+        partner_city_stats = partner_farmers.values('event_city').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+        
+        # Crop distribution for partner
+        partner_crop_stats = partner_farmers.exclude(
+            crop__isnull=True
+        ).exclude(crop='').values('crop').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+        
+        # Recent events for partner
+        recent_partner_events = partner_farmers.filter(
+            event_date__isnull=False
+        ).order_by('-event_date')[:10]
+        
+        # Event types for partner
+        partner_event_types = partner_farmers.exclude(
+            event_type__isnull=True
+        ).exclude(event_type='').values('event_type').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Monthly trends for partner (last 12 months)
+        monthly_trend = []
+        for i in range(12):
+            month_start = (datetime.now().date().replace(day=1) - timedelta(days=30*i))
+            month_end = month_start.replace(day=28) + timedelta(days=4)
+            month_end = month_end - timedelta(days=month_end.day)
+            
+            count = partner_farmers.filter(
+                created_at__gte=month_start,
+                created_at__lte=month_end
+            ).count()
+            
+            monthly_trend.append({
+                'month': month_start.strftime('%B %Y'),
+                'count': count
+            })
+        
+        monthly_trend.reverse()
+        
+        context.update({
+            'partner_organization': partner_org,
+            'total_partner_farmers': total_partner_farmers,
+            'partner_gender_stats': list(partner_gender_stats),
+            'partner_state_stats': list(partner_state_stats),
+            'partner_city_stats': list(partner_city_stats),
+            'partner_crop_stats': list(partner_crop_stats),
+            'recent_partner_events': recent_partner_events,
+            'partner_event_types': list(partner_event_types),
+            'monthly_trend': monthly_trend,
+        })
+        
+        return context
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_partner_metrics(request):
+    """API endpoint for partner-specific metrics"""
+    if not hasattr(request.user, 'profile') or not request.user.profile.can_view_partner_data:
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+    
+    user_profile = request.user.profile
+    partner_farmers = user_profile.accessible_farmers
+    
+    # Time filter
+    days_filter = request.GET.get('days', 30)
+    try:
+        days_filter = int(days_filter)
+        start_date = datetime.now().date() - timedelta(days=days_filter)
+        partner_farmers = partner_farmers.filter(created_at__gte=start_date)
+    except (ValueError, TypeError):
+        pass
+    
+    # Calculate metrics
+    total_count = partner_farmers.count()
+    
+    gender_distribution = partner_farmers.values('farmer_gender').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    location_distribution = partner_farmers.values('admin_level1').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    crop_distribution = partner_farmers.exclude(
+        crop__isnull=True
+    ).exclude(crop='').values('crop').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    return Response({
+        'partner_name': user_profile.partner_organization.name,
+        'total_farmers': total_count,
+        'gender_distribution': list(gender_distribution),
+        'location_distribution': list(location_distribution),
+        'crop_distribution': list(crop_distribution),
+        'filter_applied': {
+            'days': days_filter
+        }
+    })

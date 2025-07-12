@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Participants - Akilimo Nigeria Association{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">people</span>
+        Participants
+    </h1>
+    <p class="page-subtitle">View and manage training participants data</p>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">filter_list</span>
+                    Filters
+                </h5>
+            </div>
+            <div class="chart-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label fw-bold">Search</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <span class="material-icons" style="font-size: 18px;">search</span>
+                                </span>
+                                <input type="text" class="form-control border-start-0" id="search" name="search" 
+                                       value="{{ current_filters.search }}" 
+                                       placeholder="Search by ID, location, facilitator...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="state" class="form-label fw-bold">State</label>
+                            <select class="form-select" id="state" name="state">
+                                <option value="">All States</option>
+                                {% for state in unique_states %}
+                                    <option value="{{ state }}" {% if current_filters.state == state %}selected{% endif %}>
+                                        {{ state }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="gender" class="form-label fw-bold">Gender</label>
+                            <select class="form-select" id="gender" name="gender">
+                                <option value="">All Genders</option>
+                                {% for gender in unique_genders %}
+                                    <option value="{{ gender }}" {% if current_filters.gender == gender %}selected{% endif %}>
+                                        {{ gender }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <span class="material-icons me-1">search</span>Filter
+                            </button>
+                            <a href="{% url 'dashboard:participants' %}" class="btn btn-outline-secondary">
+                                <span class="material-icons me-1">clear</span>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participants Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Participants List</h5>
+                    <span class="badge bg-primary">{{ participants.paginator.count }} total participants</span>
+                </div>
+                <div class="card-body">
+                    {% if participants %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Gender</th>
+                                        <th>Location</th>
+                                        <th>State</th>
+                                        <th>LGA</th>
+                                        <th>Training Date</th>
+                                        <th>Farm Size (ha)</th>
+                                        <th>Previous Yield</th>
+                                        <th>Expected Yield</th>
+                                        <th>Event Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for participant in participants %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ participant.external_id }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if participant.gender %}
+                                                <span class="badge bg-{% if participant.gender == 'Male' %}primary{% elif participant.gender == 'Female' %}danger{% else %}secondary{% endif %}">
+                                                    {{ participant.gender }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ participant.location|default:"-" }}</td>
+                                        <td>{{ participant.state|default:"-" }}</td>
+                                        <td>{{ participant.lga|default:"-" }}</td>
+                                        <td>
+                                            {% if participant.training_date %}
+                                                {{ participant.training_date|date:"M d, Y" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if participant.farm_size %}
+                                                {{ participant.farm_size|floatformat:1 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if participant.previous_yield %}
+                                                {{ participant.previous_yield|floatformat:1 }} t/ha
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if participant.expected_yield %}
+                                                <span class="text-success">{{ participant.expected_yield|floatformat:1 }} t/ha</span>
+                                                {% if participant.previous_yield and participant.expected_yield > participant.previous_yield %}
+                                                    <small class="text-success d-block">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                        Improved
+                                                    </small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if participant.event_type %}
+                                                <small class="text-muted">{{ participant.event_type }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if participants.has_other_pages %}
+                            <nav aria-label="Participants pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if participants.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ participants.previous_page_number }}">
+                                                <i class="fas fa-chevron-left"></i> Previous
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in participants.paginator.page_range %}
+                                        {% if participants.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > participants.number|add:'-3' and num < participants.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if participants.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ participants.next_page_number }}">
+                                                Next <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-users-slash fa-3x mb-3"></i>
+                            <h5>No participants found</h5>
+                            <p>Try adjusting your search filters or sync data from the API.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit form when filters change
+    document.querySelectorAll('#state, #gender').forEach(select => {
+        select.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+    });
+</script>
+{% endblock %}
