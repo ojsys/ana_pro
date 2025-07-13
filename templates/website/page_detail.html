@@ -1,0 +1,205 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}{{ page.title }} - AKILIMO Nigeria Association{% endblock %}
+
+{% block meta_description %}{{ page.meta_description|default:page.content|truncatechars:155 }}{% endblock %}
+
+{% block meta_keywords %}{{ page.meta_keywords|default:"AKILIMO, agriculture, Nigeria, cassava, farming" }}{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <section class="hero-section" style="padding: 4rem 0;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h1 class="hero-title" data-aos="fade-up">{{ page.title }}</h1>
+                    {% if page.featured_image %}
+                    <div class="mt-4" data-aos="fade-up" data-aos-delay="200">
+                        <img src="{{ page.featured_image.url }}" alt="{{ page.title }}" class="img-fluid rounded shadow" style="max-height: 300px; object-fit: cover;">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page Content -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <!-- Breadcrumb -->
+                    <nav aria-label="breadcrumb" class="mb-4" data-aos="fade-up">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'website:home' %}" class="text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
+                        </ol>
+                    </nav>
+
+                    <!-- Page Content -->
+                    <div class="page-content" data-aos="fade-up" data-aos-delay="100">
+                        {{ page.content|linebreaks }}
+                    </div>
+
+                    <!-- Page Footer -->
+                    {% if page.created_by or page.created_at %}
+                    <div class="border-top mt-5 pt-4">
+                        <div class="row align-items-center">
+                            {% if page.created_by %}
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ page.created_by.get_full_name|default:page.created_by.username }}</h6>
+                                        <small class="text-muted">Content Author</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                                <small class="text-muted">
+                                    {% if page.created_at %}
+                                        Created: {{ page.created_at|date:"F d, Y" }}<br>
+                                    {% endif %}
+                                    {% if page.updated_at %}
+                                        Last updated: {{ page.updated_at|date:"F d, Y" }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Share Buttons -->
+                    <div class="border-top mt-4 pt-4">
+                        <h6 class="mb-3">Share this page:</h6>
+                        <div class="d-flex gap-2">
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-facebook me-1"></i>Facebook
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ page.title }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-twitter me-1"></i>Twitter
+                            </a>
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-linkedin me-1"></i>LinkedIn
+                            </a>
+                            <a href="https://wa.me/?text={{ page.title }} {{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="section-padding bg-primary text-white">
+        <div class="container text-center">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Ready to Get Started?</h2>
+                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                        Join thousands of farmers who are already benefiting from AKILIMO tools and services.
+                    </p>
+                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-download me-2"></i>Access AKILIMO Tools
+                        </a>
+                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-envelope me-2"></i>Contact Us
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+    }
+    
+    .page-content p {
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-content h1,
+    .page-content h2,
+    .page-content h3,
+    .page-content h4 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--primary-green);
+    }
+    
+    .page-content h1 {
+        font-size: 2.5rem;
+    }
+    
+    .page-content h2 {
+        font-size: 2rem;
+    }
+    
+    .page-content h3 {
+        font-size: 1.5rem;
+    }
+    
+    .page-content ul,
+    .page-content ol {
+        margin-bottom: 1.5rem;
+        padding-left: 2rem;
+    }
+    
+    .page-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-content blockquote {
+        border-left: 4px solid var(--primary-green);
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+        background: var(--surface-green);
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    
+    .page-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .page-content table {
+        width: 100%;
+        margin: 1.5rem 0;
+        border-collapse: collapse;
+    }
+    
+    .page-content table th,
+    .page-content table td {
+        padding: 0.75rem;
+        border: 1px solid #dee2e6;
+        text-align: left;
+    }
+    
+    .page-content table th {
+        background-color: var(--surface-green);
+        color: var(--primary-green);
+        font-weight: 600;
+    }
+    
+    .page-content table tbody tr:nth-child(even) {
+        background-color: rgba(76, 175, 80, 0.04);
+    }
+</style>
+{% endblock %}

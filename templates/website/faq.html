@@ -1,0 +1,168 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}FAQ - AKILIMO Nigeria Association{% endblock %}
+
+{% block meta_description %}Find answers to frequently asked questions about AKILIMO tools, training programs, partnerships, and agricultural services.{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <section class="hero-section" style="min-height: 60vh; padding: 8rem 0 6rem;" data-aos="fade-in">
+        <div class="container">
+            <div class="row align-items-center min-vh-40">
+                <div class="col-lg-8 mx-auto text-center">
+                    <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <span class="badge bg-light text-primary px-4 py-2 rounded-pill fs-6">
+                            <i class="bi bi-question-circle me-2"></i>Help & Support
+                        </span>
+                    </div>
+                    <h1 class="hero-title mb-4" data-aos="fade-up" data-aos-delay="200" style="font-size: 3.5rem; line-height: 1.2;">
+                        Frequently Asked Questions
+                    </h1>
+                    <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.3rem; line-height: 1.6; color: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto;">
+                        Find quick answers to common questions about AKILIMO tools, training programs, partnerships, and agricultural services.
+                    </p>
+                    
+                    <!-- FAQ Categories Preview -->
+                    <div class="row mt-5" data-aos="fade-up" data-aos-delay="400">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-info-circle fs-4 mb-2"></i>
+                                <small>General</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-gear fs-4 mb-2"></i>
+                                <small>Technical</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-people fs-4 mb-2"></i>
+                                <small>Training</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-handshake fs-4 mb-2"></i>
+                                <small>Partnerships</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Categories -->
+    {% if faq_categories %}
+    {% for category, faqs in faq_categories.items %}
+    <section class="section-padding {% cycle '' 'bg-light-green' %}">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">{{ category }}</h2>
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="accordion" id="faq{{ forloop.counter }}">
+                        {% for faq in faqs %}
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq{{ forloop.parentloop.counter }}_{{ forloop.counter }}">
+                                    {{ faq.question }}
+                                </button>
+                            </h2>
+                            <div id="faq{{ forloop.parentloop.counter }}_{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#faq{{ forloop.parentloop.counter }}">
+                                <div class="accordion-body">
+                                    {{ faq.answer|linebreaks }}
+                                    {% if faq.helpful_count > 0 %}
+                                    <div class="mt-3 pt-3 border-top">
+                                        <small class="text-muted">{{ faq.helpful_count }} people found this helpful</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endfor %}
+    {% else %}
+    <!-- Default FAQ Content if no dynamic FAQs -->
+    <section class="section-padding">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">General Questions</h2>
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="accordion" id="defaultFAQ">
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="100">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#defaultFaq1">
+                                    What is AKILIMO and how does it work?
+                                </button>
+                            </h2>
+                            <div id="defaultFaq1" class="accordion-collapse collapse show" data-bs-parent="#defaultFAQ">
+                                <div class="accordion-body">
+                                    AKILIMO is a digital platform that provides site-specific agricultural recommendations to help farmers optimize cassava production and increase profits. The platform uses data analytics to provide personalized advice on planting, fertilizer use, and farming practices.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="200">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#defaultFaq2">
+                                    How can I access AKILIMO tools?
+                                </button>
+                            </h2>
+                            <div id="defaultFaq2" class="accordion-collapse collapse" data-bs-parent="#defaultFAQ">
+                                <div class="accordion-body">
+                                    You can access AKILIMO tools by registering on our platform. Simply click "Get Started" or "Access AKILIMO Tools" to create your account and begin receiving site-specific recommendations for your farm.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="300">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#defaultFaq3">
+                                    Is there a cost to use AKILIMO?
+                                </button>
+                            </h2>
+                            <div id="defaultFaq3" class="accordion-collapse collapse" data-bs-parent="#defaultFAQ">
+                                <div class="accordion-body">
+                                    Basic AKILIMO tools are free for smallholder farmers. We also offer advanced features and premium services for partner organizations and commercial clients. Contact us for more information about pricing.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Contact Support -->
+    <section class="section-padding bg-primary text-white">
+        <div class="container text-center">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Still Have Questions?</h2>
+                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                        Can't find what you're looking for? Our support team is here to help you get started with AKILIMO.
+                    </p>
+                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                        <a href="{% url 'website:contact' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-envelope me-2"></i>Contact Support
+                        </a>
+                        <a href="{% url 'website:register_redirect' %}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-download me-2"></i>Get Started Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

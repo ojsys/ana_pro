@@ -45,13 +45,23 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Enter your job title/position'
         })
     )
-    partner_organization = forms.ModelChoiceField(
-        queryset=PartnerOrganization.objects.filter(is_active=True),
+    partner_organization = forms.ChoiceField(
         required=True,
-        empty_label="Select your organization",
         widget=forms.Select(attrs={
-            'class': 'form-control',
+            'class': 'form-select',
+            'id': 'id_partner_organization'
         })
+    )
+    other_organization = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your organization name',
+            'id': 'id_other_organization',
+            'style': 'display: none;'  # Initially hidden
+        }),
+        help_text="Please specify your organization if it's not listed above"
     )
     
     class Meta:
@@ -76,6 +86,41 @@ class CustomUserCreationForm(UserCreationForm):
         self.fields['password2'].widget.attrs.update({
             'placeholder': 'Confirm your password'
         })
+        
+        # Set up partner organization choices from AkilimoParticipant data
+        from dashboard.models import AkilimoParticipant
+        
+        partner_choices = [('', 'Select your organization')]
+        
+        # Get unique partner names from AkilimoParticipant
+        partners = AkilimoParticipant.objects.values_list('partner', flat=True).distinct().exclude(partner__isnull=True).exclude(partner='')
+        unique_partners = sorted(set([p for p in partners if p and p.strip()]))
+        
+        for partner in unique_partners:
+            partner_choices.append((partner, partner))
+        
+        partner_choices.append(('other', 'Other (please specify)'))
+        
+        self.fields['partner_organization'].choices = partner_choices
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        partner_organization = cleaned_data.get('partner_organization')
+        other_organization = cleaned_data.get('other_organization')
+        
+        # Check if "Other" was selected but no organization name provided
+        if partner_organization == 'other' and not other_organization:
+            raise forms.ValidationError(
+                "Please specify your organization name when selecting 'Other'."
+            )
+        
+        # Check if a partner was selected but other organization was also filled
+        if partner_organization and partner_organization != 'other' and other_organization:
+            raise forms.ValidationError(
+                "Please either select an organization from the list OR specify 'Other', not both."
+            )
+        
+        return cleaned_data
     
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -89,7 +134,18 @@ class CustomUserCreationForm(UserCreationForm):
             profile = user.profile
             profile.phone_number = self.cleaned_data['phone_number']
             profile.position = self.cleaned_data['position']
-            profile.partner_organization = self.cleaned_data['partner_organization']
+            
+            # Handle partner organization assignment
+            partner_name = self.cleaned_data.get('partner_organization')
+            other_org = self.cleaned_data.get('other_organization')
+            
+            if partner_name == 'other' and other_org:
+                # Use the custom organization name provided
+                profile.partner_name = other_org
+            elif partner_name and partner_name != 'other':
+                # Use the selected partner name from AkilimoParticipant data
+                profile.partner_name = partner_name
+            
             profile.save()
         
         return user

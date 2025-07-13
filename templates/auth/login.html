@@ -1,177 +1,64 @@
-{% extends 'base.html' %}
+{% extends 'auth/auth_base.html' %}
 
-{% block title %}Login - Akilimo Nigeria Association{% endblock %}
+{% block title %}Login - AKILIMO Nigeria Association{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="auth-card">
-                <div class="auth-header">
-                    <div class="auth-logo">
-                        <span class="material-icons">account_circle</span>
-                    </div>
-                    <h2 class="auth-title">Welcome Back</h2>
-                    <p class="auth-subtitle">Sign in to your AKILIMO account</p>
-                </div>
-
-                <form method="post" class="auth-form">
-                    {% csrf_token %}
-                    
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-
-                    <div class="form-group mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">
-                            <span class="material-icons me-2">person</span>
-                            Username
-                        </label>
-                        {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.username.errors.0 }}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label for="{{ form.password.id_for_label }}" class="form-label">
-                            <span class="material-icons me-2">lock</span>
-                            Password
-                        </label>
-                        {{ form.password }}
-                        {% if form.password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.password.errors.0 }}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-auth w-100 mb-3">
-                        <span class="material-icons me-2">login</span>
-                        Sign In
-                    </button>
-                </form>
-
-                <div class="auth-links">
-                    <p class="text-center mb-0">
-                        Don't have an account? 
-                        <a href="{% url 'dashboard:register' %}" class="auth-link">Sign up here</a>
-                    </p>
-                </div>
-            </div>
+<div class="auth-card">
+    <div class="auth-header">
+        <div class="auth-logo">
+            <i class="bi bi-person-circle"></i>
         </div>
+        <h2 class="auth-title">Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to your AKILIMO Nigeria Association dashboard to access your partner data and analytics</p>
+    </div>
+
+    <form method="post" class="auth-form">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-group mb-3">
+            <label for="{{ form.username.id_for_label }}" class="form-label">
+                <i class="bi bi-person"></i>
+                Username
+            </label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div class="invalid-feedback">
+                    {{ form.username.errors.0 }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group mb-4">
+            <label for="{{ form.password.id_for_label }}" class="form-label">
+                <i class="bi bi-lock"></i>
+                Password
+            </label>
+            {{ form.password }}
+            {% if form.password.errors %}
+                <div class="invalid-feedback">
+                    {{ form.password.errors.0 }}
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-auth w-100 mb-3">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Sign In to Dashboard
+        </button>
+    </form>
+
+    <div class="auth-links">
+        <p class="mb-0">
+            Don't have an account? 
+            <a href="{% url 'dashboard:register' %}" class="auth-link">Create account here</a>
+        </p>
     </div>
 </div>
-
-<style>
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem 0;
-}
-
-.auth-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    padding: 2.5rem;
-    margin: 1rem;
-}
-
-.auth-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.auth-logo {
-    margin-bottom: 1rem;
-}
-
-.auth-logo .material-icons {
-    font-size: 4rem;
-    color: #4CAF50;
-}
-
-.auth-title {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #1a202c;
-    margin-bottom: 0.5rem;
-}
-
-.auth-subtitle {
-    color: #718096;
-    margin-bottom: 0;
-}
-
-.form-label {
-    font-weight: 500;
-    color: #374151;
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.form-label .material-icons {
-    font-size: 1.2rem;
-    color: #6b7280;
-}
-
-.form-control {
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-}
-
-.form-control:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.btn-auth {
-    padding: 0.875rem 1.5rem;
-    font-weight: 500;
-    border-radius: 8px;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.btn-auth:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
-}
-
-.auth-links {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
-}
-
-.auth-link {
-    color: #4CAF50;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.auth-link:hover {
-    color: #2E7D32;
-    text-decoration: underline;
-}
-
-.alert {
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-}
-</style>
 {% endblock %}

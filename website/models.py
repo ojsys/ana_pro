@@ -147,8 +147,22 @@ class HomePageSection(models.Model):
 
 class TeamMember(models.Model):
     """Team and leadership profiles"""
+    CATEGORY_CHOICES = [
+        ('bot', 'Board of Trustees'),
+        ('exco', 'Executive Committee'),
+        ('staff', 'Staff'),
+        ('advisory', 'Advisory Board'),
+        ('regional', 'Regional Coordinators'),
+    ]
+    
     name = models.CharField(max_length=100)
     position = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=20, 
+        choices=CATEGORY_CHOICES, 
+        default='staff',
+        help_text="Team category for grouping"
+    )
     bio = models.TextField(help_text="Biography and background")
     photo = models.ImageField(upload_to='team/', blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -167,12 +181,12 @@ class TeamMember(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['order', 'name']
+        ordering = ['category', 'order', 'name']
         verbose_name = "Team Member"
         verbose_name_plural = "Team Members"
     
     def __str__(self):
-        return f"{self.name} - {self.position}"
+        return f"{self.name} - {self.position} ({self.get_category_display()})"
 
 
 class PartnerShowcase(models.Model):
@@ -352,6 +366,39 @@ class ContactInfo(models.Model):
     
     def __str__(self):
         return f"{self.office_name} - {self.city}"
+
+
+class Statistic(models.Model):
+    """Site statistics for homepage display"""
+    label = models.CharField(max_length=100, help_text="Statistic label (e.g., 'Active Farmers')")
+    value = models.CharField(max_length=20, help_text="Statistic value (e.g., '500+', '25')")
+    icon = models.CharField(
+        max_length=50, 
+        blank=True,
+        help_text="Bootstrap icon class (e.g., 'bi-people', 'bi-geo-alt')"
+    )
+    description = models.CharField(
+        max_length=200, 
+        blank=True,
+        help_text="Optional description or additional context"
+    )
+    
+    # Display
+    order = models.IntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+    show_on_homepage = models.BooleanField(default=True, help_text="Display on homepage?")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'label']
+        verbose_name = "Statistic"
+        verbose_name_plural = "Statistics"
+    
+    def __str__(self):
+        return f"{self.value} {self.label}"
 
 
 class SiteSettings(models.Model):

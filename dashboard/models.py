@@ -70,6 +70,7 @@ class UserProfile(models.Model):
     
     # Partner association
     partner_organization = models.ForeignKey(PartnerOrganization, on_delete=models.CASCADE, null=True, blank=True)
+    partner_name = models.CharField(max_length=200, blank=True, help_text="Partner organization name from registration")
     
     # Personal information
     phone_number = models.CharField(max_length=20, blank=True)

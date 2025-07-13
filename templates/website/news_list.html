@@ -1,0 +1,264 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}News & Updates - AKILIMO Nigeria Association{% endblock %}
+
+{% block meta_description %}Stay updated with the latest news, events, success stories, and announcements from AKILIMO Nigeria Association.{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <section class="hero-section" style="min-height: 60vh; padding: 8rem 0 6rem;" data-aos="fade-in">
+        <div class="container">
+            <div class="row align-items-center min-vh-40">
+                <div class="col-lg-8 mx-auto text-center">
+                    <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <span class="badge bg-light text-primary px-4 py-2 rounded-pill fs-6">
+                            <i class="bi bi-newspaper me-2"></i>Latest Updates
+                        </span>
+                    </div>
+                    <h1 class="hero-title mb-4" data-aos="fade-up" data-aos-delay="200" style="font-size: 3.5rem; line-height: 1.2;">
+                        News & Updates
+                    </h1>
+                    <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.3rem; line-height: 1.6; color: rgba(255,255,255,0.9); max-width: 700px; margin: 0 auto;">
+                        Stay informed with the latest developments in agricultural innovation, farmer empowerment, and AKILIMO program updates across Nigeria.
+                    </p>
+                    
+                    <!-- News Categories Preview -->
+                    <div class="row mt-5" data-aos="fade-up" data-aos-delay="400">
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-megaphone fs-5 mb-1"></i>
+                                <small>News</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-calendar-event fs-5 mb-1"></i>
+                                <small>Events</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-trophy fs-5 mb-1"></i>
+                                <small>Success Stories</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-bullhorn fs-5 mb-1"></i>
+                                <small>Announcements</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-search fs-5 mb-1"></i>
+                                <small>Research</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-book fs-5 mb-1"></i>
+                                <small>Training</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search and Filter -->
+    <section class="section-padding bg-light-green">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <form method="GET" action="{% url 'website:news_list' %}">
+                                <div class="row align-items-end">
+                                    <div class="col-md-5 mb-3 mb-md-0">
+                                        <label for="search" class="form-label">Search Articles</label>
+                                        <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search for news, events, or topics...">
+                                    </div>
+                                    <div class="col-md-4 mb-3 mb-md-0">
+                                        <label for="category" class="form-label">Category</label>
+                                        <select class="form-select" id="category" name="category">
+                                            <option value="">All Categories</option>
+                                            {% for value, label in categories %}
+                                                <option value="{{ value }}" {% if current_category == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-search me-2"></i>Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- News Articles -->
+    <section class="section-padding">
+        <div class="container">
+            {% if articles %}
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="row">
+                            {% for article in articles %}
+                            <div class="col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    {% if article.featured_image %}
+                                        <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}" style="height: 200px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="card-img-top bg-light-green d-flex align-items-center justify-content-center" style="height: 200px;">
+                                            <i class="bi bi-newspaper display-4 text-primary"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary">{{ article.get_category_display }}</span>
+                                            <small class="text-muted ms-2">{{ article.published_date|date:"M d, Y" }}</small>
+                                        </div>
+                                        <h5 class="card-title">{{ article.title }}</h5>
+                                        <p class="card-text flex-grow-1">{{ article.excerpt }}</p>
+                                        <div class="mt-auto">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-person me-1"></i>{{ article.author.get_full_name|default:article.author.username }}
+                                                </small>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-eye me-1"></i>{{ article.views_count }} views
+                                                </small>
+                                            </div>
+                                            <a href="{{ article.get_absolute_url }}" class="btn btn-outline-primary mt-2 w-100">
+                                                Read More
+                                                <i class="bi bi-arrow-right ms-2"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav aria-label="News pagination">
+                                <ul class="pagination">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
+                                                <i class="bi bi-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="col-lg-4">
+                        <!-- Featured Articles -->
+                        {% if featured_articles %}
+                        <div class="card border-0 shadow-sm mb-4" data-aos="fade-up" data-aos-delay="400">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-star me-2"></i>Featured Articles</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                {% for article in featured_articles %}
+                                <div class="p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <h6 class="mb-1">
+                                        <a href="{{ article.get_absolute_url }}" class="text-decoration-none">{{ article.title|truncatechars:60 }}</a>
+                                    </h6>
+                                    <small class="text-muted">{{ article.published_date|date:"M d, Y" }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Categories -->
+                        <div class="card border-0 shadow-sm mb-4" data-aos="fade-up" data-aos-delay="500">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-grid me-2"></i>Categories</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <a href="{% url 'website:news_list' %}" class="d-block p-3 text-decoration-none {% if not current_category %}bg-light-green{% endif %}">
+                                    All Categories
+                                </a>
+                                {% for value, label in categories %}
+                                <a href="{% url 'website:news_category' category=value %}" class="d-block p-3 text-decoration-none border-top {% if current_category == value %}bg-light-green{% endif %}">
+                                    {{ label }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Newsletter Signup -->
+                        <div class="card border-0 shadow-sm" data-aos="fade-up" data-aos-delay="600">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-envelope me-2"></i>Stay Updated</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="small mb-3">Subscribe to our newsletter to receive the latest news and updates about AKILIMO programs.</p>
+                                <form>
+                                    <div class="mb-3">
+                                        <input type="email" class="form-control" placeholder="Your email address">
+                                    </div>
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="bi bi-bell me-2"></i>Subscribe
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- No Articles Found -->
+                <div class="text-center py-5">
+                    <i class="bi bi-newspaper display-1 text-muted mb-4"></i>
+                    <h3 class="text-muted mb-3">No Articles Found</h3>
+                    <p class="text-muted mb-4">
+                        {% if search_query or current_category %}
+                            No articles match your search criteria. Try adjusting your search terms or category filter.
+                        {% else %}
+                            There are no published articles at the moment. Check back soon for updates!
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'website:news_list' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>View All Articles
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

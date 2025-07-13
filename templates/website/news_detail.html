@@ -1,0 +1,212 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}{{ article.title }} - AKILIMO Nigeria Association{% endblock %}
+
+{% block meta_description %}{{ article.meta_description|default:article.excerpt|truncatechars:155 }}{% endblock %}
+
+{% block meta_keywords %}{{ article.meta_keywords|default:"AKILIMO, agriculture, Nigeria, cassava, farming" }}{% endblock %}
+
+{% block content %}
+    <!-- Article Header -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <!-- Breadcrumb -->
+                    <nav aria-label="breadcrumb" class="mb-4" data-aos="fade-up">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'website:home' %}" class="text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'website:news_list' %}" class="text-decoration-none">News</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'website:news_category' category=article.category %}" class="text-decoration-none">{{ article.get_category_display }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ article.title|truncatechars:50 }}</li>
+                        </ol>
+                    </nav>
+
+                    <!-- Article Meta -->
+                    <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <span class="badge bg-primary mb-2">{{ article.get_category_display }}</span>
+                        {% if article.is_featured %}
+                            <span class="badge bg-warning text-dark mb-2 ms-1">Featured</span>
+                        {% endif %}
+                        <div class="text-muted small">
+                            <i class="bi bi-calendar me-1"></i>{{ article.published_date|date:"F d, Y" }}
+                            <span class="mx-2">•</span>
+                            <i class="bi bi-person me-1"></i>{{ article.author.get_full_name|default:article.author.username }}
+                            <span class="mx-2">•</span>
+                            <i class="bi bi-eye me-1"></i>{{ article.views_count }} views
+                        </div>
+                    </div>
+
+                    <!-- Article Title -->
+                    <h1 class="display-5 fw-bold mb-4" data-aos="fade-up" data-aos-delay="200">{{ article.title }}</h1>
+
+                    <!-- Article Excerpt -->
+                    {% if article.excerpt %}
+                    <p class="lead text-muted mb-4" data-aos="fade-up" data-aos-delay="300">{{ article.excerpt }}</p>
+                    {% endif %}
+
+                    <!-- Featured Image -->
+                    {% if article.featured_image %}
+                    <div class="mb-4" data-aos="fade-up" data-aos-delay="400">
+                        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" class="img-fluid rounded shadow">
+                    </div>
+                    {% endif %}
+
+                    <!-- Article Content -->
+                    <div class="article-content" data-aos="fade-up" data-aos-delay="500">
+                        {{ article.content|linebreaks }}
+                    </div>
+
+                    <!-- Article Footer -->
+                    <div class="border-top mt-5 pt-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ article.author.get_full_name|default:article.author.username }}</h6>
+                                        <small class="text-muted">Author</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                                <small class="text-muted">
+                                    Published: {{ article.published_date|date:"F d, Y" }}<br>
+                                    Last updated: {{ article.updated_at|date:"F d, Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Share Buttons -->
+                    <div class="border-top mt-4 pt-4">
+                        <h6 class="mb-3">Share this article:</h6>
+                        <div class="d-flex gap-2">
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-facebook me-1"></i>Facebook
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ article.title }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-twitter me-1"></i>Twitter
+                            </a>
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-linkedin me-1"></i>LinkedIn
+                            </a>
+                            <a href="https://wa.me/?text={{ article.title }} {{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Articles -->
+    {% if related_articles %}
+    <section class="section-padding bg-light-green">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Related Articles</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                More articles in {{ article.get_category_display }}
+            </p>
+            
+            <div class="row">
+                {% for related in related_articles %}
+                <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                    <div class="card h-100 border-0 shadow-sm">
+                        {% if related.featured_image %}
+                            <img src="{{ related.featured_image.url }}" class="card-img-top" alt="{{ related.title }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="bi bi-newspaper display-4 text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <span class="badge bg-primary">{{ related.get_category_display }}</span>
+                                <small class="text-muted ms-2">{{ related.published_date|date:"M d, Y" }}</small>
+                            </div>
+                            <h5 class="card-title">{{ related.title }}</h5>
+                            <p class="card-text flex-grow-1">{{ related.excerpt|truncatechars:100 }}</p>
+                            <a href="{{ related.get_absolute_url }}" class="btn btn-outline-primary mt-auto">
+                                Read More
+                                <i class="bi bi-arrow-right ms-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="text-center mt-4" data-aos="fade-up">
+                <a href="{% url 'website:news_category' category=article.category %}" class="btn btn-primary">
+                    View All {{ article.get_category_display }} Articles
+                    <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Call to Action -->
+    <section class="section-padding bg-primary text-white">
+        <div class="container text-center">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Stay Connected</h2>
+                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                        Don't miss out on the latest updates from AKILIMO Nigeria Association. Join our community of farmers and agricultural innovators.
+                    </p>
+                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>Join AKILIMO
+                        </a>
+                        <a href="{% url 'website:news_list' %}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-newspaper me-2"></i>More Articles
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .article-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+    }
+    
+    .article-content p {
+        margin-bottom: 1.5rem;
+    }
+    
+    .article-content h2,
+    .article-content h3,
+    .article-content h4 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--primary-green);
+    }
+    
+    .article-content ul,
+    .article-content ol {
+        margin-bottom: 1.5rem;
+        padding-left: 2rem;
+    }
+    
+    .article-content blockquote {
+        border-left: 4px solid var(--primary-green);
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+        background: var(--surface-green);
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}

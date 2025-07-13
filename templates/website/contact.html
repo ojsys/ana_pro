@@ -1,0 +1,362 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - AKILIMO Nigeria Association{% endblock %}
+
+{% block meta_description %}Get in touch with AKILIMO Nigeria Association. Find our contact information, office locations, and ways to connect with our team.{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <section class="hero-section" style="min-height: 60vh; padding: 8rem 0 6rem;" data-aos="fade-in">
+        <div class="container">
+            <div class="row align-items-center min-vh-40">
+                <div class="col-lg-8 mx-auto text-center">
+                    <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <span class="badge bg-light text-primary px-4 py-2 rounded-pill fs-6">
+                            <i class="bi bi-envelope me-2"></i>Get In Touch
+                        </span>
+                    </div>
+                    <h1 class="hero-title mb-4" data-aos="fade-up" data-aos-delay="200" style="font-size: 3.5rem; line-height: 1.2;">
+                        Contact Us
+                    </h1>
+                    <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.3rem; line-height: 1.6; color: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto;">
+                        Get in touch with us to learn more about AKILIMO tools, partnership opportunities, and how we can help transform your agricultural practices.
+                    </p>
+                    
+                    <!-- Quick Contact Options -->
+                    <div class="row mt-5" data-aos="fade-up" data-aos-delay="400">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-telephone fs-2 mb-2"></i>
+                                <h6>Call Us</h6>
+                                <small class="opacity-75">Quick Support</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-envelope fs-2 mb-2"></i>
+                                <h6>Email Us</h6>
+                                <small class="opacity-75">Detailed Inquiries</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center text-white">
+                                <i class="bi bi-geo-alt fs-2 mb-2"></i>
+                                <h6>Visit Us</h6>
+                                <small class="opacity-75">Office Locations</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Information -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mb-4" data-aos="fade-up">
+                    <div class="card border-0 shadow-lg h-100">
+                        <div class="card-body p-5">
+                            <h3 class="card-title text-primary mb-4">Send Us a Message</h3>
+                            <form id="contactForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="firstName" class="form-label">First Name *</label>
+                                        <input type="text" class="form-control" id="firstName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="lastName" class="form-label">Last Name *</label>
+                                        <input type="text" class="form-control" id="lastName" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email Address *</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="phone" class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="organization" class="form-label">Organization</label>
+                                    <input type="text" class="form-control" id="organization">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">Subject *</label>
+                                    <select class="form-select" id="subject" required>
+                                        <option value="">Select a subject</option>
+                                        <option value="general">General Inquiry</option>
+                                        <option value="partnership">Partnership Opportunity</option>
+                                        <option value="training">Training Request</option>
+                                        <option value="technical">Technical Support</option>
+                                        <option value="media">Media Inquiry</option>
+                                        <option value="research">Research Collaboration</option>
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="message" class="form-label">Message *</label>
+                                    <textarea class="form-control" id="message" rows="5" required placeholder="Tell us how we can help you..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-send me-2"></i>Send Message
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card border-0 shadow-lg h-100">
+                        <div class="card-body p-4">
+                            <h5 class="card-title text-primary mb-4">Contact Information</h5>
+                            
+                            {% if primary_contact %}
+                            <div class="mb-4">
+                                <h6 class="text-secondary mb-2">{{ primary_contact.office_name }}</h6>
+                                <p class="mb-2">
+                                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                                    {{ primary_contact.address }}<br>
+                                    {{ primary_contact.city }}, {{ primary_contact.state }}
+                                    {% if primary_contact.postal_code %}, {{ primary_contact.postal_code }}{% endif %}
+                                </p>
+                                {% if primary_contact.phone %}
+                                <p class="mb-2">
+                                    <i class="bi bi-telephone text-primary me-2"></i>
+                                    <a href="tel:{{ primary_contact.phone }}" class="text-decoration-none">{{ primary_contact.phone }}</a>
+                                </p>
+                                {% endif %}
+                                {% if primary_contact.email %}
+                                <p class="mb-2">
+                                    <i class="bi bi-envelope text-primary me-2"></i>
+                                    <a href="mailto:{{ primary_contact.email }}" class="text-decoration-none">{{ primary_contact.email }}</a>
+                                </p>
+                                {% endif %}
+                                {% if primary_contact.hours %}
+                                <p class="mb-0">
+                                    <i class="bi bi-clock text-primary me-2"></i>
+                                    {{ primary_contact.hours }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Additional Contact Methods -->
+                            <div class="border-top pt-4">
+                                <h6 class="text-secondary mb-3">Get Started Today</h6>
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'website:register_redirect' %}" class="btn btn-primary">
+                                        <i class="bi bi-download me-2"></i>Access AKILIMO Tools
+                                    </a>
+                                    <a href="{% url 'website:programs' %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-info-circle me-2"></i>Learn About Programs
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Social Media -->
+                            {% if site_settings.facebook_url or site_settings.twitter_url or site_settings.linkedin_url %}
+                            <div class="border-top pt-4 mt-4">
+                                <h6 class="text-secondary mb-3">Follow Us</h6>
+                                <div class="d-flex gap-2">
+                                    {% if site_settings.facebook_url %}
+                                    <a href="{{ site_settings.facebook_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-facebook"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if site_settings.twitter_url %}
+                                    <a href="{{ site_settings.twitter_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-twitter"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if site_settings.linkedin_url %}
+                                    <a href="{{ site_settings.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-linkedin"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if site_settings.youtube_url %}
+                                    <a href="{{ site_settings.youtube_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-youtube"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Office Locations -->
+    {% if contact_offices %}
+    <section class="section-padding bg-light-green">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Our Locations</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Find AKILIMO offices and coordinators across Nigeria
+            </p>
+            
+            <div class="row">
+                {% for office in contact_offices %}
+                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="card-title text-primary">{{ office.office_name }}</h5>
+                            {% if office.is_primary %}
+                                <span class="badge bg-primary mb-2">Primary Office</span>
+                            {% endif %}
+                            <p class="card-text">
+                                <i class="bi bi-geo-alt text-muted me-2"></i>
+                                {{ office.address }}<br>
+                                {{ office.city }}, {{ office.state }}
+                                {% if office.postal_code %}, {{ office.postal_code }}{% endif %}
+                            </p>
+                            {% if office.phone %}
+                            <p class="card-text">
+                                <i class="bi bi-telephone text-muted me-2"></i>
+                                <a href="tel:{{ office.phone }}" class="text-decoration-none">{{ office.phone }}</a>
+                            </p>
+                            {% endif %}
+                            {% if office.email %}
+                            <p class="card-text">
+                                <i class="bi bi-envelope text-muted me-2"></i>
+                                <a href="mailto:{{ office.email }}" class="text-decoration-none">{{ office.email }}</a>
+                            </p>
+                            {% endif %}
+                            {% if office.hours %}
+                            <p class="card-text small text-muted">
+                                <i class="bi bi-clock me-2"></i>{{ office.hours }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- FAQ Section -->
+    <section class="section-padding">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Frequently Asked Questions</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Quick answers to common questions about AKILIMO
+            </p>
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="accordion" id="contactFAQ">
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="100">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How can I access AKILIMO tools?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                                <div class="accordion-body">
+                                    You can access AKILIMO tools by registering on our platform. Click "Get Started" or "Access AKILIMO Tools" to create your account and begin receiving site-specific agricultural recommendations.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="200">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    What training programs do you offer?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                                <div class="accordion-body">
+                                    We offer comprehensive training programs for farmers, extension officers, and value chain actors. Our programs cover AKILIMO tool usage, sustainable farming practices, digital literacy, and market linkages.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="300">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    How can my organization become a partner?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                                <div class="accordion-body">
+                                    We welcome partnerships with organizations committed to agricultural transformation. Contact us through this form or email us directly to discuss partnership opportunities and collaboration models.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item border-0 shadow-sm mb-3" data-aos="fade-up" data-aos-delay="400">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    Is there a cost to use AKILIMO tools?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                                <div class="accordion-body">
+                                    Basic AKILIMO tools are free for farmers. We also offer advanced features and services for partner organizations and commercial clients. Contact us for detailed pricing information.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4" data-aos="fade-up" data-aos-delay="500">
+                <a href="{% url 'website:faq' %}" class="btn btn-outline-primary">
+                    View All FAQs
+                    <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Contact form submission
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            organization: document.getElementById('organization').value,
+            subject: document.getElementById('subject').value,
+            message: document.getElementById('message').value
+        };
+        
+        // Show success message (in a real app, you'd send this to a server)
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+        alertDiv.innerHTML = `
+            <i class="bi bi-check-circle me-2"></i>
+            Thank you for your message! We'll get back to you within 24 hours.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert alert after form
+        const form = document.getElementById('contactForm');
+        form.parentNode.insertBefore(alertDiv, form.nextSibling);
+        
+        // Reset form
+        form.reset();
+        
+        // Auto-remove alert after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    });
+</script>
+{% endblock %}

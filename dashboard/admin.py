@@ -186,7 +186,7 @@ class UserProfileInline(admin.StackedInline):
     
     fieldsets = (
         ('Partner Information', {
-            'fields': ('partner_organization', 'position', 'department')
+            'fields': ('partner_organization', 'partner_name', 'position', 'department')
         }),
         ('Contact Information', {
             'fields': ('phone_number',)
@@ -223,7 +223,7 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'partner_organization', 'position', 'is_partner_verified', 'profile_completed', 'created_at']
+    list_display = ['user', 'partner_name', 'partner_organization', 'position', 'is_partner_verified', 'profile_completed', 'created_at']
     list_filter = ['partner_organization', 'is_partner_verified', 'profile_completed', 'email_notifications', 'created_at']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'phone_number', 'position']
     readonly_fields = ['profile_completion_date', 'created_at', 'updated_at']
@@ -233,7 +233,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('user',)
         }),
         ('Partner Information', {
-            'fields': ('partner_organization', 'position', 'department')
+            'fields': ('partner_organization', 'partner_name', 'position', 'department')
         }),
         ('Contact Information', {
             'fields': ('phone_number',)

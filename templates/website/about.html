@@ -1,0 +1,484 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}About Us - AKILIMO Nigeria Association{% endblock %}
+
+{% block meta_description %}Learn about AKILIMO Nigeria Association's mission, vision, organizational structure, and Board of Trustees working to empower smallholder farmers through digital innovation.{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <section class="hero-section" style="min-height: 70vh; padding: 8rem 0 6rem;" data-aos="fade-in">
+        <div class="container">
+            <div class="row align-items-center min-vh-50">
+                <div class="col-lg-8 mx-auto text-center">
+                    <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <span class="badge bg-light text-primary px-4 py-2 rounded-pill fs-6">
+                            <i class="bi bi-people me-2"></i>About Our Organization
+                        </span>
+                    </div>
+                    <h1 class="hero-title mb-4" data-aos="fade-up" data-aos-delay="200" style="font-size: 3.5rem; line-height: 1.2;">
+                        About AKILIMO Nigeria Association
+                    </h1>
+                    <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.4rem; line-height: 1.6; color: rgba(255,255,255,0.9); max-width: 800px; margin: 0 auto;">
+                        Empowering smallholder farmers through digital innovation and sustainable agricultural practices across Nigeria
+                    </p>
+                    
+                    <!-- Key Highlights -->
+                    <div class="row mt-5" data-aos="fade-up" data-aos-delay="400">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center justify-content-center text-white">
+                                <i class="bi bi-award me-2 fs-4"></i>
+                                <span class="fs-5">Excellence in Innovation</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center justify-content-center text-white">
+                                <i class="bi bi-globe me-2 fs-4"></i>
+                                <span class="fs-5">Global Partnerships</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center justify-content-center text-white">
+                                <i class="bi bi-heart me-2 fs-4"></i>
+                                <span class="fs-5">Farmer-Focused</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Background Pattern -->
+        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10">
+            <div style="background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"2\" fill=\"white\" opacity=\"0.3\"/></svg>'); background-size: 50px 50px; background-repeat: repeat; width: 100%; height: 100%;"></div>
+        </div>
+    </section>
+
+    <!-- Mission & Vision Section -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card h-100 border-0 shadow-lg">
+                        <div class="card-body text-center p-5">
+                            <div class="mb-4">
+                                <i class="bi bi-target display-3 text-primary"></i>
+                            </div>
+                            <h3 class="card-title text-primary mb-4">Our Mission</h3>
+                            <p class="card-text lead">Our mission is to empower smallholder farmers by providing training, site-specific recommendations and market linkages that optimize productivity and profits.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card h-100 border-0 shadow-lg">
+                        <div class="card-body text-center p-5">
+                            <div class="mb-4">
+                                <i class="bi bi-eye display-3 text-primary"></i>
+                            </div>
+                            <h3 class="card-title text-primary mb-4">Our Vision</h3>
+                            <p class="card-text lead">Our vision is to create a digitally empowered and resilient agricultural sector, where farmers and value chain actors are enabled to achieve optimal productivity, improved livelihoods, and sustainable development through the adoption of AKILIMO tools.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Aims & Objectives Section -->
+    <section class="section-padding bg-light-green">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Aims & Objectives</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Our comprehensive approach to transforming agricultural systems
+            </p>
+            
+            <div class="row">
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold">1</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 class="card-title text-primary">Use, Uptake, and Integration</h5>
+                                    <p class="card-text">Promote the widespread uptake and integration of AKILIMO tools into national agricultural systems and digital extension services across member countries.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold">2</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 class="card-title text-primary">Capacity Building</h5>
+                                    <p class="card-text">Facilitate training for farmers and value chain actors to foster the exchange of best practices in production, processing, aggregation, and marketing.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold">3</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 class="card-title text-primary">Sustainable Agricultural Practices</h5>
+                                    <p class="card-text">Encourage sustainable and inclusive investments to ensure the long-term use and relevance of AKILIMO tools.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold">4</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 class="card-title text-primary">Data-Driven Learning</h5>
+                                    <p class="card-text">Develop a robust communication strategy and Monitoring, Evaluation, and Learning (ME&L) system for improved data collection, fostering actionable insights among stakeholders.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-12 mb-4" data-aos="fade-up" data-aos-delay="500">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold">5</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 class="card-title text-primary">Policy Advocacy</h5>
+                                    <p class="card-text">Advocate for the integration of AKILIMO into national agricultural policies, ensuring sustained support through policy initiatives and strategic partnerships.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Organizational Structure Section -->
+    <section class="section-padding">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Organizational Structure</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                A comprehensive structure designed for effective implementation and scaling of AKILIMO tools
+            </p>
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card border-0 shadow-lg" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-5">
+                                <h4 class="text-primary mb-3">AKILIMO Support Teams</h4>
+                                <p class="text-muted">Three core teams supporting the functionality of AKILIMO</p>
+                            </div>
+                            
+                            <div class="row text-center">
+                                <div class="col-lg-4 mb-4">
+                                    <div class="p-4 bg-light-green rounded-3">
+                                        <i class="bi bi-file-text display-4 text-primary mb-3"></i>
+                                        <h5 class="text-primary">CONTENT Team</h5>
+                                        <ul class="list-unstyled text-start mt-3">
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content development and review</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Translation into local languages</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Website content inclusion</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content optimization</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4 mb-4">
+                                    <div class="p-4 bg-light-green rounded-3">
+                                        <i class="bi bi-gear display-4 text-primary mb-3"></i>
+                                        <h5 class="text-primary">TECH Team</h5>
+                                        <ul class="list-unstyled text-start mt-3">
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Technical solutions development</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Data analysis and monitoring</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>System maintenance</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Bug tracking and resolution</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4 mb-4">
+                                    <div class="p-4 bg-light-green rounded-3">
+                                        <i class="bi bi-briefcase display-4 text-primary mb-3"></i>
+                                        <h5 class="text-primary">BUSINESS Team</h5>
+                                        <ul class="list-unstyled text-start mt-3">
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Business development and grants</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Marketing and promotion</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Partner relationship management</li>
+                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Revenue generation</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Board of Trustees Section -->
+    <section class="section-padding bg-light-green">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Board of Trustees</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Distinguished leaders guiding AKILIMO Nigeria Association's strategic direction
+            </p>
+            
+            <div class="row">
+                {% if bot_members %}
+                    {% for member in bot_members %}
+                        <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3">
+                                        {% if member.photo %}
+                                            <img src="{{ member.photo.url }}" alt="{{ member.name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                                <i class="bi bi-person display-6"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <h5 class="card-title">{{ member.name }}</h5>
+                                    <p class="text-muted mb-2">{{ member.position }}</p>
+                                    {% if member.bio %}
+                                        <small class="text-secondary">{{ member.bio|truncatewords:20 }}</small>
+                                    {% endif %}
+                                    
+                                    {% if member.email or member.linkedin_url %}
+                                        <div class="mt-3">
+                                            {% if member.email %}
+                                                <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-sm me-1">
+                                                    <i class="bi bi-envelope"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if member.linkedin_url %}
+                                                <a href="{{ member.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-linkedin"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Default BOT members if no CMS members -->
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Dr. Adeyemi Olojede</h5>
+                                <p class="text-muted mb-2">National Root Crops Research Institute (NRCRI)</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Dr. Muhammed Murtala Omotosho</h5>
+                                <p class="text-muted mb-2">NOTORE</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Prof. Emmanuel Ikani</h5>
+                                <p class="text-muted mb-2">Executive Director, NAERLS</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Prof. Sani Miko Ahmed</h5>
+                                <p class="text-muted mb-2">Sasakawa Africa Association</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="500">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Dr. Thompson Ogunsanmi</h5>
+                                <p class="text-muted mb-2">International Institute of Tropical Agriculture (IITA)</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Mrs. Oluyemisi Iranloye</h5>
+                                <p class="text-muted mb-2">Psaltry International</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="700">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-person display-6"></i>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Chief Rashidi Ladoja</h5>
+                                <p class="text-muted mb-2">Former Governor of Oyo State</p>
+                                <small class="text-secondary">Board Member</small>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Executive Committee Section -->
+    {% if exco_members %}
+    <section class="section-padding">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Executive Committee</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Key executive leaders responsible for operational excellence and strategic implementation
+            </p>
+            
+            <div class="row">
+                {% for member in exco_members %}
+                    <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    {% if member.photo %}
+                                        <img src="{{ member.photo.url }}" alt="{{ member.name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-success text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                            <i class="bi bi-person display-6"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <h5 class="card-title">{{ member.name }}</h5>
+                                <p class="text-muted mb-2">{{ member.position }}</p>
+                                {% if member.bio %}
+                                    <small class="text-secondary">{{ member.bio|truncatewords:20 }}</small>
+                                {% endif %}
+                                
+                                {% if member.email or member.linkedin_url %}
+                                    <div class="mt-3">
+                                        {% if member.email %}
+                                            <a href="mailto:{{ member.email }}" class="btn btn-outline-success btn-sm me-1">
+                                                <i class="bi bi-envelope"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if member.linkedin_url %}
+                                            <a href="{{ member.linkedin_url }}" target="_blank" class="btn btn-outline-success btn-sm">
+                                                <i class="bi bi-linkedin"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Call to Action -->
+    <section class="section-padding bg-primary text-white">
+        <div class="container text-center">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join Our Mission</h2>
+                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                        Be part of the digital transformation of Nigerian agriculture. Access AKILIMO tools and join thousands of farmers improving their productivity.
+                    </p>
+                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>Get Started
+                        </a>
+                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-envelope me-2"></i>Contact Us
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
