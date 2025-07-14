@@ -1,0 +1,101 @@
+{% load i18n %}
+
+<fieldset class="module aligned{% if fieldset.classes %} {{ fieldset.classes }}{% endif %}">
+    {% if fieldset.name %}
+        <h2>{{ fieldset.name }}</h2>
+    {% endif %}
+    
+    {% if fieldset.description %}
+        <div class="description">{{ fieldset.description|safe }}</div>
+    {% endif %}
+    
+    {% for line in fieldset %}
+        <div class="form-row{% if line.fields|length == 1 and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+            {% if line.fields|length == 1 %}
+                {% for field in line %}
+                    <div class="field-box{% if not field.is_readonly and field.errors %} has-errors{% endif %}">
+                        {% if line.fields|length != 1 and not field.is_readonly %}{{ field.errors }}{% endif %}
+                        
+                        {% if field.is_checkbox %}
+                            <div class="form-check">
+                                {{ field.field }}
+                                <label for="{{ field.field.id_for_label }}" class="form-check-label{% if field.field.required %} required{% endif %}">
+                                    {{ field.field.label }}
+                                    {% if field.field.help_text %}
+                                        <div class="help-text">{{ field.field.help_text|safe }}</div>
+                                    {% endif %}
+                                </label>
+                            </div>
+                        {% else %}
+                            {% if field.field.label %}
+                                <label for="{{ field.field.id_for_label }}" class="form-label{% if field.field.required %} required{% endif %}">
+                                    {{ field.field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                                </label>
+                            {% endif %}
+                            
+                            <div class="field-widget">
+                                {% if field.is_readonly %}
+                                    <div class="readonly">{{ field.contents }}</div>
+                                {% else %}
+                                    {{ field.field }}
+                                {% endif %}
+                            </div>
+                            
+                            {% if field.field.help_text %}
+                                <div class="help-text">{{ field.field.help_text|safe }}</div>
+                            {% endif %}
+                            
+                            {% if field.field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ field.field.errors|first }}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <!-- Multi-field row -->
+                <div class="row">
+                    {% for field in line %}
+                        <div class="col-md-6">
+                            <div class="field-box{% if not field.is_readonly and field.errors %} has-errors{% endif %}">
+                                {% if field.is_checkbox %}
+                                    <div class="form-check">
+                                        {{ field.field }}
+                                        <label for="{{ field.field.id_for_label }}" class="form-check-label{% if field.field.required %} required{% endif %}">
+                                            {{ field.field.label }}
+                                        </label>
+                                    </div>
+                                {% else %}
+                                    {% if field.field.label %}
+                                        <label for="{{ field.field.id_for_label }}" class="form-label{% if field.field.required %} required{% endif %}">
+                                            {{ field.field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                    {% endif %}
+                                    
+                                    <div class="field-widget">
+                                        {% if field.is_readonly %}
+                                            <div class="readonly">{{ field.contents }}</div>
+                                        {% else %}
+                                            {{ field.field }}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if field.field.help_text %}
+                                        <div class="help-text">{{ field.field.help_text|safe }}</div>
+                                    {% endif %}
+                                    
+                                    {% if field.field.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ field.field.errors|first }}
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</fieldset>

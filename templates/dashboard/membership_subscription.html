@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Membership Subscription - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header mb-5">
+    <h1 class="page-title">
+        <span class="material-icons">card_membership</span>
+        ANA Membership Subscription
+    </h1>
+    <p class="page-subtitle">Join the AKILIMO Nigeria Association and unlock exclusive benefits</p>
+</div>
+
+{% if user_has_active_membership %}
+<!-- Current Membership Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2rem;">verified</span>
+                <div>
+                    <h5 class="alert-heading mb-1">Active Membership</h5>
+                    <p class="mb-0">You currently have an active {{ membership.get_membership_type_display }} membership valid until {{ membership.end_date|date:"M d, Y" }}.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Membership Plans -->
+<div class="row g-4 mt-5 mb-5 justify-content-center">
+    <!-- Individual Membership -->
+    <div class="col-md-4">
+        <div class="pricing-card {% if membership.membership_type == 'individual' %}active{% endif %}">
+            <div class="pricing-header">
+                <div class="pricing-icon">
+                    <span class="material-icons">person</span>
+                </div>
+                <h3>Individual Membership</h3>
+                <p class="text-muted">Perfect for individual farmers and professionals</p>
+            </div>
+            <div class="pricing-price">
+                <span class="currency">₦</span>
+                <span class="amount">{{ pricing.individual|floatformat:0|intcomma }}</span>
+                <span class="period">/year</span>
+            </div>
+            <ul class="pricing-features">
+                <li><span class="material-icons">check</span>Full dashboard access</li>
+                <li><span class="material-icons">check</span>Analytics and insights</li>
+                <li><span class="material-icons">check</span>Digital certificate</li>
+                <li><span class="material-icons">check</span>ID card download</li>
+                <li><span class="material-icons">check</span>Training materials</li>
+                <li><span class="material-icons">check</span>Email support</li>
+                <li><span class="material-icons">check</span>Monthly newsletters</li>
+                <li><span class="material-icons">check</span>Access to events</li>
+            </ul>
+            <div class="membership-countdown mb-3">
+                {% if user_has_active_membership and membership.membership_type == 'individual' %}
+                    <div class="countdown-info">
+                        <small class="text-muted">Membership expires in:</small>
+                        <div class="countdown-days">{{ membership.days_remaining }} days</div>
+                    </div>
+                {% endif %}
+            </div>
+            <button class="btn btn-primary btn-subscribe" 
+                    data-membership="individual" 
+                    data-amount="{{ pricing.individual }}">
+                Join as Individual - ₦{{ pricing.individual|floatformat:0|intcomma }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Organization Membership -->
+    <div class="col-md-4">
+        <div class="pricing-card premium {% if membership.membership_type == 'organization' %}active{% endif %}">
+            <div class="pricing-badge">For Organizations</div>
+            <div class="pricing-header">
+                <div class="pricing-icon">
+                    <span class="material-icons">business</span>
+                </div>
+                <h3>Organization Membership</h3>
+                <p class="text-muted">For partner organizations and cooperatives</p>
+            </div>
+            <div class="pricing-price">
+                <span class="currency">₦</span>
+                <span class="amount">{{ pricing.organization|floatformat:0|intcomma }}</span>
+                <span class="period">/year</span>
+            </div>
+            <ul class="pricing-features">
+                <li><span class="material-icons">check</span>Everything in Individual</li>
+                <li><span class="material-icons">check</span>Priority support</li>
+                <li><span class="material-icons">check</span>Advanced analytics</li>
+                <li><span class="material-icons">check</span>Multiple user access</li>
+                <li><span class="material-icons">check</span>Custom training programs</li>
+                <li><span class="material-icons">check</span>Dedicated account manager</li>
+                <li><span class="material-icons">check</span>API access</li>
+                <li><span class="material-icons">check</span>Bulk member registration</li>
+            </ul>
+            <div class="membership-countdown mb-3">
+                {% if user_has_active_membership and membership.membership_type == 'organization' %}
+                    <div class="countdown-info">
+                        <small class="text-muted">Membership expires in:</small>
+                        <div class="countdown-days">{{ membership.days_remaining }} days</div>
+                    </div>
+                {% endif %}
+            </div>
+            <button class="btn btn-primary btn-subscribe" 
+                    data-membership="organization" 
+                    data-amount="{{ pricing.organization }}">
+                Join as Organization - ₦{{ pricing.organization|floatformat:0|intcomma }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Benefits Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="benefits-section">
+            <h2 class="text-center mb-5">Why Join ANA?</h2>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <span class="material-icons">school</span>
+                        </div>
+                        <h5>Expert Training</h5>
+                        <p>Access to world-class agricultural training and resources</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <span class="material-icons">groups</span>
+                        </div>
+                        <h5>Community Network</h5>
+                        <p>Connect with fellow farmers and agricultural professionals</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <span class="material-icons">analytics</span>
+                        </div>
+                        <h5>Data-Driven Insights</h5>
+                        <p>Advanced analytics to improve your farming decisions</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <span class="material-icons">support_agent</span>
+                        </div>
+                        <h5>Expert Support</h5>
+                        <p>Get help from agricultural experts when you need it</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Processing Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Processing Payment</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Please wait while we process your payment...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.pricing-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+.pricing-card.premium {
+    border: 2px solid var(--light-green);
+    transform: scale(1.05);
+}
+
+.pricing-card.premium:hover {
+    transform: scale(1.05) translateY(-8px);
+}
+
+.pricing-card.active {
+    border: 2px solid var(--primary-green);
+    background: linear-gradient(135deg, #E8F5E8 0%, white 100%);
+}
+
+.pricing-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--light-green), var(--primary-green));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.pricing-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.pricing-icon .material-icons {
+    font-size: 32px;
+    color: white;
+}
+
+.pricing-header h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.pricing-price {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.pricing-price .currency {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    vertical-align: top;
+}
+
+.pricing-price .amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+.pricing-price .period {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+    flex-grow: 1;
+}
+
+.pricing-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.pricing-features .material-icons {
+    font-size: 18px;
+    margin-right: 0.75rem;
+    width: 18px;
+}
+
+.pricing-features .material-icons.check {
+    color: var(--success-green);
+}
+
+.pricing-features .material-icons.close {
+    color: var(--text-secondary);
+}
+
+.btn-subscribe {
+    width: 100%;
+    padding: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    margin-top: auto;
+    cursor: pointer;
+    position: relative;
+    z-index: 10;
+}
+
+.btn-subscribe:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.benefits-section {
+    background: linear-gradient(135deg, #F0F8F0 0%, white 100%);
+    padding: 4rem 2rem;
+    border-radius: 16px;
+}
+
+.benefit-card {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.benefit-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.benefit-icon .material-icons {
+    font-size: 32px;
+    color: white;
+}
+
+.benefit-card h5 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.benefit-card p {
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+.membership-countdown {
+    text-align: center;
+}
+
+.countdown-info {
+    background: linear-gradient(135deg, #E8F5E8, #F0F8F0);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--accent-green);
+}
+
+.countdown-days {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-green);
+    margin-top: 0.25rem;
+}
+
+.countdown-expired {
+    background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+    border-color: #F44336;
+}
+
+.countdown-expired .countdown-days {
+    color: #D32F2F;
+}
+
+.countdown-warning {
+    background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+    border-color: #FF9800;
+}
+
+.countdown-warning .countdown-days {
+    color: #F57C00;
+}
+
+@media (max-width: 768px) {
+    .pricing-card.premium {
+        transform: none;
+    }
+    
+    .pricing-card.premium:hover {
+        transform: translateY(-8px);
+    }
+    
+    .countdown-days {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add some debug info first
+console.log('Script starting...');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, looking for buttons...');
+    
+    const subscribeButtons = document.querySelectorAll('.btn-subscribe');
+    console.log('Found', subscribeButtons.length, 'subscribe buttons');
+    
+    if (subscribeButtons.length === 0) {
+        console.error('No buttons found! Check HTML structure.');
+        return;
+    }
+    
+    // Skip modal for now to simplify testing
+    // const paymentModalElement = document.getElementById('paymentModal');
+    // let paymentModal = null;
+    // if (paymentModalElement) {
+    //     paymentModal = new bootstrap.Modal(paymentModalElement);
+    // }
+    
+    subscribeButtons.forEach((button, index) => {
+        console.log('Button', index, ':', {
+            membership: button.getAttribute('data-membership'),
+            amount: button.getAttribute('data-amount'),
+            disabled: button.disabled,
+            text: button.textContent.trim()
+        });
+        
+        // Add hover effect for testing
+        button.addEventListener('mouseenter', function() {
+            console.log('Mouse entered button:', this.getAttribute('data-membership'));
+            this.style.opacity = '0.8';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.opacity = '1';
+        });
+        
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Button clicked:', this.getAttribute('data-membership'));
+            
+            const membershipType = this.getAttribute('data-membership');
+            const amount = this.getAttribute('data-amount');
+            
+            console.log('Processing payment for:', membershipType, 'Amount:', amount);
+            
+            // Simple alert test first
+            alert(`Button clicked! Type: ${membershipType}, Amount: ₦${amount}`);
+            
+            // Skip modal for now
+            // if (paymentModal) {
+            //     paymentModal.show();
+            // } else {
+            //     console.log('Payment modal not available, continuing without modal');
+            // }
+            
+            // API call to initiate payment
+            console.log('Initiating payment for:', membershipType);
+            
+            fetch('{% url "dashboard:initiate_payment" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    membership_type: membershipType
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Payment response:', data);
+                
+                if (data.success) {
+                    console.log('Redirecting to Paystack:', data.authorization_url);
+                    // Redirect to Paystack payment page
+                    window.location.href = data.authorization_url;
+                } else {
+                    console.error('Payment failed:', data.error);
+                    alert('Payment initiation failed: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Payment initiation failed. Please check your connection and try again.');
+            });
+        });
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

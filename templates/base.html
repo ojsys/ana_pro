@@ -11,8 +11,10 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js UMD build with fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" 
+            onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js';">
+    </script>
     
     <style>
         :root {
@@ -355,17 +357,76 @@
             box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
         }
 
-        /* Alerts */
-        .alert {
+        /* Enhanced Messages/Alerts */
+        .message-alert {
             border: none;
             border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid;
         }
 
         .alert-success {
-            background-color: var(--surface-green);
+            background: linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 100%);
             color: var(--primary-green);
+            border-left-color: var(--success-green);
+        }
+
+        .alert-error, .alert-danger {
+            background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+            color: #C62828;
+            border-left-color: #F44336;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+            color: #E65100;
+            border-left-color: #FF9800;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            color: #1565C0;
+            border-left-color: #2196F3;
+        }
+
+        .message-icon {
+            font-size: 24px;
+            margin-top: 2px;
+        }
+
+        .alert-success .message-icon {
+            color: var(--success-green);
+        }
+
+        .alert-error .message-icon, .alert-danger .message-icon {
+            color: #F44336;
+        }
+
+        .alert-warning .message-icon {
+            color: #FF9800;
+        }
+
+        .alert-info .message-icon {
+            color: #2196F3;
+        }
+
+        .message-title {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .btn-close {
+            padding: 0.25rem;
+            margin-top: -2px;
         }
 
         /* Page Headers */
@@ -473,28 +534,37 @@
                     </a>
                 </div>
                 
-                {% if user.profile.can_view_partner_data %}
+                {% if user.profile.partner_name %}
                     <div class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'partner_dashboard' %}active{% endif %}" href="{% url 'dashboard:partner_dashboard' %}">
                             <span class="material-icons">business</span>
                             Partner Dashboard
                         </a>
                     </div>
+                    
+                    <div class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'partner_data' %}active{% endif %}" href="{% url 'dashboard:partner_data' %}">
+                            <span class="material-icons">analytics</span>
+                            Our Data
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'partner_farmers' %}active{% endif %}" href="{% url 'dashboard:partner_farmers' %}">
+                            <span class="material-icons">groups</span>
+                            Our Farmers
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'partner_extension_agents' %}active{% endif %}" href="{% url 'dashboard:partner_extension_agents' %}">
+                            <span class="material-icons">support_agent</span>
+                            Our EAs
+                        </a>
+                    </div>
                 {% endif %}
                 
-                <div class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'participants' %}active{% endif %}" href="{% url 'dashboard:participants' %}">
-                        <span class="material-icons">people</span>
-                        Participants
-                    </a>
-                </div>
                 
-                <div class="nav-item">
-                    <a class="nav-link" href="#" onclick="syncData(event)">
-                        <span class="material-icons">sync</span>
-                        Sync Data
-                    </a>
-                </div>
                 
                 {% if user.is_staff %}
                     <div class="nav-item">
@@ -511,6 +581,12 @@
                     <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'dashboard:profile' %}">
                         <span class="material-icons">account_circle</span>
                         Profile
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'membership_subscription' %}active{% endif %}" href="{% url 'dashboard:membership_subscription' %}">
+                        <span class="material-icons">card_membership</span>
+                        Membership
                     </a>
                 </div>
                 <div class="nav-item">
@@ -546,7 +622,7 @@
                     </button>
                     <div class="d-flex align-items-center">
                         <span class="material-icons text-success me-2">eco</span>
-                        <span class="fw-bold text-success">Cassava Production Dashboard</span>
+                        <span class="fw-bold text-success">Dashboard</span>
                     </div>
                 </div>
                 
@@ -555,8 +631,8 @@
                         <div class="user-info me-3">
                             <span class="material-icons text-muted me-1" style="font-size: 16px;">account_circle</span>
                             <span class="text-muted small">{{ user.get_full_name|default:user.username }}</span>
-                            {% if user.profile.partner_organization %}
-                                <small class="text-success ms-1">({{ user.profile.partner_organization.code }})</small>
+                            {% if user.profile.partner_name %}
+                                <small class="text-success ms-1">({{ user.profile.partner_name }})</small>
                             {% endif %}
                         </div>
                     {% endif %}
@@ -571,12 +647,39 @@
         <div class="content-area">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        <span class="material-icons me-2">
-                            {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}
-                        </span>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show message-alert" role="alert">
+                        <div class="d-flex align-items-start">
+                            <span class="material-icons me-3 message-icon">
+                                {% if message.tags == 'success' %}
+                                    check_circle
+                                {% elif message.tags == 'error' %}
+                                    error
+                                {% elif message.tags == 'warning' %}
+                                    warning
+                                {% elif message.tags == 'info' %}
+                                    info
+                                {% else %}
+                                    notifications
+                                {% endif %}
+                            </span>
+                            <div class="flex-grow-1">
+                                <strong class="message-title">
+                                    {% if message.tags == 'success' %}
+                                        Success!
+                                    {% elif message.tags == 'error' %}
+                                        Payment Error
+                                    {% elif message.tags == 'warning' %}
+                                        Warning
+                                    {% elif message.tags == 'info' %}
+                                        Information
+                                    {% else %}
+                                        Notification
+                                    {% endif %}
+                                </strong>
+                                <div class="message-content">{{ message }}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Partner Dashboard - {{ partner_organization.name }}{% endblock %}
 
@@ -33,7 +34,7 @@
                 <span class="material-icons">groups</span>
             </div>
             <div class="metric-label">Total Farmers</div>
-            <div class="metric-value">{{ total_partner_farmers|default:0|floatformat:0 }}</div>
+            <div class="metric-value">{{ total_partner_farmers|default:0|intcomma }}</div>
         </div>
     </div>
     
@@ -445,7 +446,7 @@
     if (partnerEventLabels.length > 0) {
         const partnerEventCtx = document.getElementById('partnerEventChart').getContext('2d');
         new Chart(partnerEventCtx, {
-            type: 'horizontalBar',
+            type: 'bar',
             data: {
                 labels: partnerEventLabels,
                 datasets: [{

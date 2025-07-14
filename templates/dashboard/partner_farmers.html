@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Our Farmers - {{ partner_name }} - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">groups</span>
+        Our Farmers
+    </h1>
+    <p class="page-subtitle">{{ partner_name }} - Farmer demographics and insights</p>
+</div>
+
+<!-- Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">filter_list</span>
+                    Filter Farmers
+                </h5>
+            </div>
+            <div class="chart-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">State</label>
+                        <select class="form-select" name="state">
+                            <option value="">All States</option>
+                            {% for state in unique_states %}
+                                <option value="{{ state }}" {% if current_filters.state == state %}selected{% endif %}>
+                                    {{ state }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" name="gender">
+                            <option value="">All Genders</option>
+                            {% for gender in unique_genders %}
+                                <option value="{{ gender }}" {% if current_filters.gender == gender %}selected{% endif %}>
+                                    {{ gender }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Age Category</label>
+                        <select class="form-select" name="age_category">
+                            <option value="">All Ages</option>
+                            {% for age in unique_ages %}
+                                <option value="{{ age }}" {% if current_filters.age_category == age %}selected{% endif %}>
+                                    {{ age }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="material-icons me-2">search</span>
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">people</span>
+            </div>
+            <div class="metric-label">Total Farmers</div>
+            <div class="metric-value">{{ total_farmers|default:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">phone</span>
+            </div>
+            <div class="metric-label">With Phone Numbers</div>
+            <div class="metric-value">{{ farmers_with_phones|default:0|intcomma }}</div>
+            <div class="metric-detail">{{ phone_percentage|floatformat:1 }}% of total</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">smartphone</span>
+            </div>
+            <div class="metric-label">Own Their Phones</div>
+            <div class="metric-value">{{ farmers_own_phones|default:0|intcomma }}</div>
+            <div class="metric-detail">{{ own_phone_percentage|floatformat:1 }}% of total</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">location_on</span>
+            </div>
+            <div class="metric-label">Cities Reached</div>
+            <div class="metric-value">{{ city_distribution.count|default:0|intcomma }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Demographics Charts -->
+<div class="row g-4 mb-5">
+    <!-- Gender Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">wc</span>
+                    Gender Distribution
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="genderChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Age Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">cake</span>
+                    Age Distribution
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="ageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- State Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">map</span>
+                    Geographic Distribution
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="stateChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- City Distribution Chart -->
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">location_city</span>
+                    Top Cities by Farmer Count
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 400px;">
+                    <canvas id="cityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Farmers List -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">list</span>
+                    Farmers List
+                    <span class="badge bg-success ms-2">{{ total_farmers }} total</span>
+                </h5>
+            </div>
+            <div class="table-responsive">
+                {% if farmers %}
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Farmer</th>
+                                <th>Gender</th>
+                                <th>Age Category</th>
+                                <th>Location</th>
+                                <th>Phone</th>
+                                <th>Last Event</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for farmer in farmers %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <div>
+                                            <strong>{{ farmer.full_name|default:"Unknown" }}</strong>
+                                            <br><small class="text-muted">ID: {{ farmer.external_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if farmer.farmer_gender %}
+                                        <span class="badge {% if farmer.farmer_gender == 'Male' %}bg-primary{% elif farmer.farmer_gender == 'Female' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ farmer.farmer_gender }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if farmer.age_category %}
+                                        <span class="badge bg-success">{{ farmer.age_category }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div>
+                                        {% if farmer.event_city %}
+                                            <span class="material-icons text-primary me-1" style="font-size: 16px;">location_on</span>
+                                            {{ farmer.event_city }}, {{ farmer.admin_level1|default:"Unknown State" }}
+                                        {% else %}
+                                            <span class="text-muted">Location not specified</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if farmer.farmer_phone_no %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="material-icons text-success me-1" style="font-size: 16px;">phone</span>
+                                            {{ farmer.farmer_phone_no }}
+                                        </div>
+                                        {% if farmer.farmer_own_phone %}
+                                            <small class="text-success">Owns phone</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if farmer.event_date %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="material-icons text-success me-1" style="font-size: 16px;">event</span>
+                                            {{ farmer.event_date|date:"M d, Y" }}
+                                        </div>
+                                        {% if farmer.event_type %}
+                                            <small class="text-muted">{{ farmer.event_type }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <!-- Pagination -->
+                    {% if farmers.has_other_pages %}
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav aria-label="Farmers pagination">
+                                <ul class="pagination">
+                                    {% if farmers.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ farmers.previous_page_number }}{% if current_filters.state %}&state={{ current_filters.state }}{% endif %}{% if current_filters.gender %}&gender={{ current_filters.gender }}{% endif %}{% if current_filters.age_category %}&age_category={{ current_filters.age_category }}{% endif %}">
+                                                <span class="material-icons">chevron_left</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for num in farmers.paginator.page_range %}
+                                        {% if farmers.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > farmers.number|add:'-3' and num < farmers.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if current_filters.state %}&state={{ current_filters.state }}{% endif %}{% if current_filters.gender %}&gender={{ current_filters.gender }}{% endif %}{% if current_filters.age_category %}&age_category={{ current_filters.age_category }}{% endif %}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if farmers.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ farmers.next_page_number }}{% if current_filters.state %}&state={{ current_filters.state }}{% endif %}{% if current_filters.gender %}&gender={{ current_filters.gender }}{% endif %}{% if current_filters.age_category %}&age_category={{ current_filters.age_category }}{% endif %}">
+                                                <span class="material-icons">chevron_right</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <span class="material-icons text-muted" style="font-size: 64px;">person_off</span>
+                        </div>
+                        <h5 class="text-muted mb-2">No Farmers Found</h5>
+                        <p class="text-muted">No farmers match the current filter criteria.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const greenPalette = [
+        '#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7',
+        '#388E3C', '#43A047', '#689F38', '#827717', '#558B2F'
+    ];
+
+    // Gender Distribution Chart
+    const genderData = {{ gender_distribution|safe }};
+    if (genderData.length > 0) {
+        const genderLabels = genderData.map(item => item.farmer_gender || 'Unknown');
+        const genderCounts = genderData.map(item => item.count);
+        
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: genderLabels,
+                datasets: [{
+                    data: genderCounts,
+                    backgroundColor: ['#4CAF50', '#2196F3', '#FF9800'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+
+    // Age Distribution Chart
+    const ageData = {{ age_distribution|safe }};
+    if (ageData.length > 0) {
+        const ageLabels = ageData.map(item => item.age_category);
+        const ageCounts = ageData.map(item => item.count);
+        
+        const ageCtx = document.getElementById('ageChart').getContext('2d');
+        new Chart(ageCtx, {
+            type: 'pie',
+            data: {
+                labels: ageLabels,
+                datasets: [{
+                    data: ageCounts,
+                    backgroundColor: greenPalette.slice(0, ageLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 10, usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+
+    // State Distribution Chart
+    const stateData = {{ state_distribution|safe }};
+    if (stateData.length > 0) {
+        const stateLabels = stateData.map(item => item.admin_level1);
+        const stateCounts = stateData.map(item => item.count);
+        
+        const stateCtx = document.getElementById('stateChart').getContext('2d');
+        new Chart(stateCtx, {
+            type: 'doughnut',
+            data: {
+                labels: stateLabels,
+                datasets: [{
+                    data: stateCounts,
+                    backgroundColor: greenPalette.slice(0, stateLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 10, usePointStyle: true, font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // City Distribution Chart
+    const cityData = {{ city_distribution|safe }};
+    if (cityData.length > 0) {
+        const cityLabels = cityData.map(item => item.event_city);
+        const cityCounts = cityData.map(item => item.count);
+        
+        const cityCtx = document.getElementById('cityChart').getContext('2d');
+        new Chart(cityCtx, {
+            type: 'bar',
+            data: {
+                labels: cityLabels,
+                datasets: [{
+                    label: 'Farmers',
+                    data: cityCounts,
+                    backgroundColor: '#4CAF50',
+                    borderColor: '#2E7D32',
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false }, ticks: { maxRotation: 45 } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+</script>
+{% endblock %}

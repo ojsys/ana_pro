@@ -1,0 +1,917 @@
+{% extends "admin/base.html" %}
+{% load i18n admin_urls static admin_list humanize %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block content_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'admin:app_list' app_label=cl.opts.app_label %}">{{ app_label|capfirst|escape }}</a></li>
+    <li class="breadcrumb-item active">{{ cl.opts.verbose_name_plural|capfirst }}</li>
+{% endblock %}
+
+{% block extrahead %}
+<style>
+/* Beautiful Django Admin Table Styling */
+.admin-content {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+/* Main content card */
+.admin-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(46, 125, 50, 0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--surface-green), #ffffff);
+    border-bottom: 2px solid var(--primary-green);
+    padding: 1.5rem 2rem;
+}
+
+.card-title {
+    color: var(--primary-green);
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.card-title i {
+    margin-right: 0.75rem;
+    font-size: 1.8rem;
+}
+
+.card-body {
+    padding: 0;
+}
+
+/* Search form styling */
+.search-form {
+    padding: 1.5rem 2rem;
+    background: rgba(46, 125, 50, 0.02);
+    border-bottom: 1px solid rgba(46, 125, 50, 0.1);
+}
+
+.input-group-text {
+    background: white;
+    border: 2px solid #e9ecef;
+    color: #6c757d;
+}
+
+.form-control {
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.15);
+}
+
+/* Action form styling */
+.actions-top {
+    padding: 1rem 2rem;
+    background: rgba(46, 125, 50, 0.02);
+    border-bottom: 1px solid rgba(46, 125, 50, 0.1);
+}
+
+.form-select {
+    border: 2px solid #e9ecef;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.15);
+}
+
+/* Results info */
+.results-info {
+    padding: 1rem 2rem;
+    background: linear-gradient(90deg, rgba(46, 125, 50, 0.05), rgba(76, 175, 80, 0.05));
+    border-bottom: 1px solid rgba(46, 125, 50, 0.1);
+    font-weight: 500;
+}
+
+/* Beautiful table container */
+.table-responsive {
+    padding: 0;
+    background: white;
+}
+
+/* Table styling */
+#result_list {
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+/* Header styling */
+#result_list thead th {
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1.2rem 1rem;
+    border: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    text-align: left;
+    vertical-align: middle;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#result_list thead th:first-child {
+    border-top-left-radius: 0;
+}
+
+#result_list thead th:last-child {
+    border-top-right-radius: 0;
+}
+
+/* Header links */
+#result_list thead th a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+}
+
+#result_list thead th a:hover {
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+#result_list thead th .bi {
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+/* Body styling */
+#result_list tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-right: 1px solid rgba(0, 0, 0, 0.03);
+    vertical-align: middle;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+#result_list tbody td:last-child {
+    border-right: none;
+}
+
+/* Row hover effects */
+#result_list tbody tr {
+    transition: all 0.3s ease;
+}
+
+#result_list tbody tr:hover {
+    background: linear-gradient(90deg, rgba(46, 125, 50, 0.03), rgba(76, 175, 80, 0.03));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+#result_list tbody tr:hover td {
+    background: transparent;
+}
+
+/* Row striping */
+#result_list tbody tr:nth-child(even) {
+    background: rgba(248, 249, 250, 0.5);
+}
+
+#result_list tbody tr:nth-child(even):hover {
+    background: linear-gradient(90deg, rgba(46, 125, 50, 0.03), rgba(76, 175, 80, 0.03));
+}
+
+/* Links in table */
+#result_list tbody td a {
+    color: var(--primary-green);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#result_list tbody td a:hover {
+    color: var(--dark-green);
+    text-decoration: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Action column */
+#result_list .action-select-column,
+#result_list .action-select {
+    width: 60px;
+    text-align: center;
+    padding: 0.8rem 0.5rem;
+}
+
+/* Checkboxes */
+.form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    border: 2px solid #dee2e6;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-green);
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.15);
+}
+
+.form-check-input:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.15);
+}
+
+/* Pagination styling */
+.pagination {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(46, 125, 50, 0.1);
+    margin: 0;
+}
+
+.page-link {
+    color: var(--primary-green);
+    border: 1px solid rgba(46, 125, 50, 0.2);
+    padding: 0.75rem 1rem;
+    margin: 0 0.25rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background-color: var(--surface-green);
+    color: var(--dark-green);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-green);
+    border-color: var(--primary-green);
+    color: white;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+/* Empty state styling */
+.text-center.py-5 {
+    padding: 4rem 2rem !important;
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.02), rgba(76, 175, 80, 0.02));
+}
+
+.text-center.py-5 .bi-inbox {
+    color: rgba(46, 125, 50, 0.3);
+    margin-bottom: 1.5rem;
+}
+
+/* Button styling */
+.btn {
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    border-color: var(--primary-green);
+    color: white;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--dark-green), var(--primary-green));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+}
+
+.btn-outline-primary {
+    color: var(--primary-green);
+    border-color: var(--primary-green);
+    background: white;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-green);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    background: white;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.bg-primary {
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green)) !important;
+    color: white;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .admin-content {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1.25rem;
+    }
+    
+    #result_list {
+        font-size: 0.8rem;
+    }
+    
+    #result_list thead th,
+    #result_list tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .search-form,
+    .actions-top,
+    .results-info {
+        padding: 1rem;
+    }
+}
+
+/* Enhanced Filter Sidebar Styling */
+#changelist-filter {
+    width: 100%;
+}
+
+#changelist-filter h2 {
+    display: none; /* Hide default Django filter header */
+}
+
+.filter-group,
+#changelist-filter > details {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 0;
+}
+
+.filter-group:last-child,
+#changelist-filter > details:last-child {
+    border-bottom: none;
+}
+
+/* Django default filter styling */
+#changelist-filter details {
+    border: none;
+    margin: 0;
+}
+
+#changelist-filter details summary {
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.05), rgba(76, 175, 80, 0.05));
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-green);
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+#changelist-filter details summary:hover {
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.08), rgba(76, 175, 80, 0.08));
+}
+
+#changelist-filter details summary::before {
+    content: '\f107';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s ease;
+}
+
+#changelist-filter details[open] summary::before {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+#changelist-filter details ul {
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem 0;
+}
+
+#changelist-filter details li {
+    margin: 0;
+}
+
+#changelist-filter details li a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    font-size: 0.875rem;
+}
+
+#changelist-filter details li a::before {
+    content: '\f10c';
+    font-family: 'bootstrap-icons';
+    color: #6c757d;
+    font-size: 0.9rem;
+    min-width: 18px;
+}
+
+#changelist-filter details li.selected a::before {
+    content: '\f26d';
+    color: var(--primary-green);
+}
+
+#changelist-filter details li a:hover {
+    background: linear-gradient(90deg, rgba(46, 125, 50, 0.08), rgba(76, 175, 80, 0.08));
+    color: var(--primary-green);
+    border-left-color: var(--primary-green);
+    transform: translateX(2px);
+}
+
+#changelist-filter details li.selected a {
+    background: linear-gradient(90deg, var(--primary-green), var(--light-green));
+    color: white;
+    border-left-color: var(--dark-green);
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
+}
+
+#changelist-filter details li.selected a:hover {
+    background: linear-gradient(90deg, var(--dark-green), var(--primary-green));
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+/* Custom filter styling (for our filter.html template) */
+.filter-title-wrapper {
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.05), rgba(76, 175, 80, 0.05));
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.filter-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-green);
+    display: flex;
+    align-items: center;
+}
+
+.filter-title i {
+    color: var(--primary-green);
+    font-size: 0.8rem;
+}
+
+.filter-options {
+    padding: 0.75rem 0;
+}
+
+.filter-choice {
+    margin: 0;
+}
+
+.filter-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    position: relative;
+    font-size: 0.875rem;
+}
+
+.filter-link:hover {
+    background: linear-gradient(90deg, rgba(46, 125, 50, 0.08), rgba(76, 175, 80, 0.08));
+    color: var(--primary-green);
+    text-decoration: none;
+    border-left-color: var(--primary-green);
+    transform: translateX(2px);
+}
+
+.filter-link.active {
+    background: linear-gradient(90deg, var(--primary-green), var(--light-green));
+    color: white;
+    border-left-color: var(--dark-green);
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
+}
+
+.filter-link.active:hover {
+    background: linear-gradient(90deg, var(--dark-green), var(--primary-green));
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.filter-icon {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    min-width: 18px;
+}
+
+.filter-link:not(.active) .filter-icon {
+    color: #6c757d;
+}
+
+.filter-link.active .filter-icon {
+    color: white;
+}
+
+.filter-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-badge {
+    opacity: 0.8;
+    font-size: 0.8rem;
+}
+
+.filter-link.disabled {
+    color: #6c757d;
+    cursor: not-allowed;
+    background: #f8f9fa;
+    opacity: 0.6;
+}
+
+.filter-link.disabled:hover {
+    background: #f8f9fa;
+    transform: none;
+    border-left-color: transparent;
+}
+
+/* Filter card header enhancement */
+.admin-card .card-header h6.card-title {
+    color: var(--primary-green);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.admin-card .card-header .bi-funnel {
+    color: var(--primary-green);
+    font-size: 1.1rem;
+}
+
+/* Add subtle animation to filter changes */
+.filter-link {
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.filter-link.active::before {
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+}
+
+/* Responsive filter sidebar */
+@media (max-width: 768px) {
+    .filter-link {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .filter-title-wrapper {
+        padding: 0.75rem 1rem;
+    }
+    
+    .filter-title {
+        font-size: 0.85rem;
+    }
+    
+    .filter-icon {
+        font-size: 0.8rem;
+        min-width: 16px;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.admin-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Loading states */
+.table-responsive::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary-green), transparent);
+    transform: translateX(-100%);
+    animation: loading 2s infinite;
+    z-index: 200;
+    opacity: 0;
+}
+
+@keyframes loading {
+    0% { transform: translateX(-100%); opacity: 1; }
+    50% { opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple filter enhancement for Django's default structure
+    console.log('🔍 Initializing Django admin filters...');
+    
+    // Handle both custom and Django default filter links
+    const allFilterLinks = document.querySelectorAll('#changelist-filter a, .filter-link');
+    console.log(`Found ${allFilterLinks.length} filter links`);
+    
+    allFilterLinks.forEach(link => {
+        // Add visual feedback on click
+        link.addEventListener('click', function() {
+            console.log(`Filter clicked: ${this.textContent.trim()}`);
+            
+            // Add subtle loading effect
+            this.style.opacity = '0.8';
+            setTimeout(() => {
+                this.style.opacity = '';
+            }, 500);
+        });
+        
+        // Keyboard accessibility
+        if (!link.hasAttribute('tabindex')) {
+            link.setAttribute('tabindex', '0');
+        }
+    });
+    
+    // Count active filters
+    const activeFilters = document.querySelectorAll('#changelist-filter li.selected, .filter-link.active');
+    if (activeFilters.length > 0) {
+        console.log(`Active filters: ${activeFilters.length}`);
+    }
+    
+    console.log('✅ Filter system ready');
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main Content Area -->
+    <div class="col-lg-9">
+        <div class="admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list"></i>
+                    {{ cl.opts.verbose_name_plural|capfirst }}
+                    {% if cl.result_count %}
+                        <span class="badge bg-primary ms-2">{{ cl.result_count|intcomma }}</span>
+                    {% endif %}
+                </h5>
+                {% if has_add_permission %}
+                    <a href="{% url cl.opts|admin_urlname:'add' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Add {{ cl.opts.verbose_name }}
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="card-body">
+                {% if cl.search_fields %}
+                <div class="search-form">
+                    <form method="get" class="d-flex gap-2">
+                        <div class="flex-grow-1">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" name="q" class="form-control border-start-0" 
+                                       placeholder="Search {{ cl.opts.verbose_name_plural|lower }}..." 
+                                       value="{{ cl.query }}">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary">
+                            Search
+                        </button>
+                        {% if cl.query %}
+                            <a href="{% url cl.opts|admin_urlname:'changelist' %}" class="btn btn-outline-secondary">
+                                Clear
+                            </a>
+                        {% endif %}
+                        {% for key, value in cl.preserved_filters.items %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if action_form and actions_on_top and cl.show_admin_actions %}
+                    <div class="actions-top">
+                        <form method="post" class="d-flex gap-2 align-items-center">
+                            {% csrf_token %}
+                            <select name="action" class="form-select" style="width: auto;">
+                                <option value="">---------</option>
+                                {% for choice in action_form.action.field.choices %}
+                                    <option value="{{ choice.0 }}">{{ choice.1|capfirst }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary" name="index" value="{{ action_form.action.field.choices.0.0 }}">
+                                Go
+                            </button>
+                            {{ action_form.select_across }}
+                        </form>
+                    </div>
+                {% endif %}
+
+                {% if cl.result_count %}
+                    <div class="results-info">
+                        <span class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            {% if cl.full_result_count %}
+                                {% blocktrans count counter=cl.result_count %}{{ counter|intcomma }} result{% plural %}{{ counter|intcomma }} results{% endblocktrans %}
+                                {% if cl.full_result_count != cl.result_count %}
+                                    ({% blocktrans with full_result_count=cl.full_result_count %}{{ full_result_count|intcomma }} total{% endblocktrans %})
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endif %}
+
+                {% if cl.formset %}
+                    <form method="post">
+                        {% csrf_token %}
+                {% endif %}
+
+                {% if cl.result_count > 0 %}
+                    <div class="table-responsive">
+                        {% result_list cl %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No {{ cl.opts.verbose_name_plural|lower }} found</h5>
+                        <p class="text-muted">
+                            {% if cl.query %}
+                                No results match your search criteria.
+                            {% else %}
+                                Get started by adding your first {{ cl.opts.verbose_name|lower }}.
+                            {% endif %}
+                        </p>
+                        {% if has_add_permission %}
+                            <a href="{% url cl.opts|admin_urlname:'add' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add {{ cl.opts.verbose_name }}
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if cl.formset %}
+                    </form>
+                {% endif %}
+
+                {% if cl.paginator.num_pages > 1 %}
+                    <nav aria-label="Pagination" class="pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if cl.result_list.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if cl.getvars %}{{ cl.getvars|urlencode }}&{% endif %}p={{ cl.result_list.previous_page_number }}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for page_num in cl.paginator.page_range %}
+                                {% if page_num == cl.result_list.number %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if cl.getvars %}{{ cl.getvars|urlencode }}&{% endif %}p={{ page_num }}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if cl.result_list.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if cl.getvars %}{{ cl.getvars|urlencode }}&{% endif %}p={{ cl.result_list.next_page_number }}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Sidebar -->
+    <div class="col-lg-3">
+        {% if cl.has_filters %}
+            <div class="admin-card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-funnel me-2"></i>
+                        Filters
+                        <small class="ms-2 text-muted">({{ cl.filter_specs|length }})</small>
+                    </h6>
+                    {% if cl.has_active_filters %}
+                        <a href="{{ cl.clear_all_filters_qs }}" class="btn btn-sm btn-outline-secondary ms-auto">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Clear All
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <nav id="changelist-filter" aria-labelledby="changelist-filter-header">
+                        {% for spec in cl.filter_specs %}
+                            {% admin_list_filter cl spec %}
+                        {% endfor %}
+                    </nav>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

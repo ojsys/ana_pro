@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Akilimo Nigeria Association</title>
+    
+    <!-- Material Design Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.css" rel="stylesheet">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js UMD build with fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" 
+            onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js';">
+    </script>
+    
+    <style>
+        :root {
+            --primary-green: #2E7D32;
+            --light-green: #4CAF50;
+            --dark-green: #1B5E20;
+            --accent-green: #66BB6A;
+            --surface-green: #E8F5E8;
+            --success-green: #388E3C;
+            --text-on-green: #FFFFFF;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+        }
+
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #FAFAFA;
+            color: var(--text-primary);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-header {
+            padding: 32px 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .sidebar-header h3 {
+            color: var(--text-on-green);
+            font-weight: 500;
+            margin: 8px 0 4px 0;
+            font-size: 1.5rem;
+        }
+
+        .sidebar-header .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.875rem;
+            font-weight: 300;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .nav-menu {
+            padding: 16px 0;
+        }
+
+        .nav-item {
+            margin: 4px 16px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-on-green);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: var(--text-on-green);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .nav-link .material-icons {
+            margin-right: 16px;
+            font-size: 20px;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 16px 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            background: #FAFAFA;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .top-bar {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 16px 32px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .content-area {
+            padding: 32px;
+        }
+
+        /* Cards */
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid var(--light-green);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, var(--surface-green), transparent);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin: 8px 0;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-icon {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        /* Chart Cards */
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .chart-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #F5F5F5;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .chart-title .material-icons {
+            margin-right: 12px;
+            color: var(--primary-green);
+        }
+
+        .chart-body {
+            padding: 24px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid var(--primary-green);
+            color: var(--primary-green);
+            background: transparent;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--primary-green);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Form Controls */
+        .form-control, .form-select {
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: var(--surface-green);
+            color: var(--primary-green);
+            font-weight: 600;
+            border: none;
+            padding: 20px 16px;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(76, 175, 80, 0.04);
+        }
+
+        .table td {
+            padding: 16px;
+            border-color: #F5F5F5;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge {
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        .badge.bg-primary { background-color: var(--primary-green) !important; }
+        .badge.bg-success { background-color: var(--success-green) !important; }
+
+        /* Pagination */
+        .pagination .page-link {
+            border: none;
+            color: var(--primary-green);
+            padding: 12px 16px;
+            margin: 0 4px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination .page-link:hover {
+            background-color: var(--surface-green);
+            color: var(--primary-green);
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-green);
+            color: white;
+            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
+        }
+
+        /* Alerts */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .alert-success {
+            background-color: var(--surface-green);
+            color: var(--primary-green);
+        }
+
+        /* Page Headers */
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .page-title .material-icons {
+            margin-right: 16px;
+            color: var(--primary-green);
+            font-size: 2.5rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content-area {
+                padding: 16px;
+            }
+            
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-green);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-green);
+        }
+    </style>
+    
+    
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <span class="material-icons" style="color: white; font-size: 28px;">eco</span>
+            </div>
+            <h3>ANA Dashboard</h3>
+            <div class="subtitle">Akilimo Nigeria Association</div>
+        </div>
+        
+        <div class="nav-menu">
+            
+                <div class="nav-item">
+                    <a class="nav-link " href="/dashboard/login/">
+                        <span class="material-icons">login</span>
+                        Login
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link " href="/dashboard/register/">
+                        <span class="material-icons">person_add</span>
+                        Register
+                    </a>
+                </div>
+            
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link d-md-none" onclick="toggleSidebar()">
+                        <span class="material-icons">menu</span>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <span class="material-icons text-success me-2">eco</span>
+                        <span class="fw-bold text-success">Cassava Production Dashboard</span>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    
+                    <div class="text-muted small">
+                        <span class="material-icons" style="font-size: 16px;">access_time</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            
+            
+            
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">dashboard</span>
+        Dashboard Overview
+    </h1>
+    <p class="page-subtitle">Cassava production training and recommendation tracking for Nigeria</p>
+</div>
+
+<!-- Enhanced Key Metrics Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">people</span>
+            </div>
+            <div class="metric-label">Total Farmers</div>
+            <div class="metric-value">518823</div>
+            <div class="metric-detail">
+                <span class="material-icons me-1">male</span>313247
+                <span class="material-icons me-1 ms-2">female</span>200400
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">location_on</span>
+            </div>
+            <div class="metric-label">Geographic Reach</div>
+            <div class="metric-value">371</div>
+            <div class="metric-detail">States covered</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">phone</span>
+            </div>
+            <div class="metric-label">Connected Farmers</div>
+            <div class="metric-value">292798</div>
+            <div class="metric-detail">With phone numbers</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">event</span>
+            </div>
+            <div class="metric-label">Training Events</div>
+            <div class="metric-value">9323</div>
+            <div class="metric-detail">Unique sessions</div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Metrics Row -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card secondary">
+            <div class="metric-icon">
+                <span class="material-icons">location_city</span>
+            </div>
+            <div class="metric-label">Cities Reached</div>
+            <div class="metric-value">413</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card secondary">
+            <div class="metric-icon">
+                <span class="material-icons">eco</span>
+            </div>
+            <div class="metric-label">Crop Types</div>
+            <div class="metric-value">38</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card secondary">
+            <div class="metric-icon">
+                <span class="material-icons">business</span>
+            </div>
+            <div class="metric-label">Partner Organizations</div>
+            <div class="metric-value">489</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card secondary">
+            <div class="metric-icon">
+                <span class="material-icons">support_agent</span>
+            </div>
+            <div class="metric-label">Extension Agents</div>
+            <div class="metric-value">1037</div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Charts Section -->
+<div class="row g-4 mb-5">
+    <!-- Gender Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">wc</span>
+                    Gender Distribution
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="genderChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Crops -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">eco</span>
+                    Top Crops
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="cropChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Trend -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">trending_up</span>
+                    Monthly Participation
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Geographic and Partner Charts -->
+<div class="row g-4 mb-5">
+    <!-- Top States -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">map</span>
+                    Top States
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 350px;">
+                    <canvas id="statesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Cities -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">location_city</span>
+                    Top Cities
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 350px;">
+                    <canvas id="cityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Partners -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">business</span>
+                    Top Partners
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 350px;">
+                    <canvas id="partnerChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">schedule</span>
+                    Recent Training Sessions
+                </h5>
+            </div>
+            <div class="table-responsive">
+                
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Participant ID</th>
+                                <th>Location</th>
+                                <th>State</th>
+                                <th>Training Date</th>
+                                <th>Facilitator</th>
+                                <th>Event Type</th>
+                                <th>Farm Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219949</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219948</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219947</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219946</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219945</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219944</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219943</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219942</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219938</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">person</span>
+                                        </div>
+                                        <strong>1219937</strong>
+                                    </div>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    
+                                        <span class="badge bg-success">training</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <span class="text-muted">-</span>
+                                    
+                                </td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </main>
+
+    <!-- Material Design Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.js"></script>
+    
+    <script>
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Function to sync data from API
+        async function syncData(event) {
+            event.preventDefault();
+            const btn = event.target.closest('a');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="material-icons">sync</span><span class="loading-spinner ms-2"></span> Syncing...';
+            btn.style.pointerEvents = 'none';
+            
+            try {
+                const response = await fetch('/dashboard/api/sync/data/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification(
+                        'success',
+                        `Data sync completed successfully!\nProcessed: ${data.records_processed}\nCreated: ${data.records_created}\nUpdated: ${data.records_updated}`
+                    );
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('error', `Error: ${data.error}`);
+                }
+            } catch (error) {
+                showNotification('error', 'Sync failed: ' + error.message);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Function to get CSRF cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Show notification
+        function showNotification(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <span class="material-icons me-2">${type === 'success' ? 'check_circle' : 'error'}</span>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const contentArea = document.querySelector('.content-area');
+            contentArea.insertBefore(alertDiv, contentArea.firstChild);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const isClickInsideSidebar = sidebar.contains(event.target);
+            const isMenuButton = event.target.closest('button[onclick="toggleSidebar()"]');
+            
+            if (!isClickInsideSidebar && !isMenuButton && window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+    
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DASHBOARD DEBUG START ===');
+    
+    // Enhanced color palettes
+    const greenPalette = [
+        '#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7',
+        '#388E3C', '#43A047', '#689F38', '#827717', '#558B2F'
+    ];
+    
+    const diversePalette = [
+        '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336',
+        '#00BCD4', '#FFEB3B', '#795548', '#607D8B', '#E91E63'
+    ];
+    
+    // Test Chart.js availability
+    console.log('1. Chart.js type check:', typeof Chart);
+    if (typeof Chart === 'undefined') {
+        console.error('❌ Chart.js is not loaded! Cannot create charts.');
+        return;
+    }
+    console.log('✅ Chart.js loaded successfully');
+    console.log('2. Chart.js version:', Chart.version);
+    
+    // Test canvas elements
+    const canvasElements = ['genderChart', 'cropChart', 'trendChart', 'statesChart', 'cityChart', 'partnerChart'];
+    canvasElements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`3. Canvas ${id}:`, element ? '✅ Found' : '❌ Missing');
+    });
+    
+    // Test raw data from Django
+    console.log('4. Raw data from Django:');
+    console.log('   Gender stats raw:', '[{\u0022gender\u0022: \u0022Male\u0022, \u0022count\u0022: 313247}, {\u0022gender\u0022: \u0022Female\u0022, \u0022count\u0022: 200400}, {\u0022gender\u0022: \u0022Not Specified\u0022, \u0022count\u0022: 5176}]');
+    console.log('   City stats raw:', '[{\u0022event_city\u0022: \u0022Ho\u0022, \u0022count\u0022: 12655}, {\u0022event_city\u0022: \u0022Buzegwe\u0022, \u0022count\u0022: 6406}, {\u0022event_city\u0022: \u0022Kagunguli\u0022, \u0022count\u0022: 5959}, {\u0022event_city\u0022: \u0022Buguza\u0022, \u0022count\u0022: 5788}, {\u0022event_city\u0022: \u0022Nakisilila\u0022, \u0022count\u0022: 3732}, {\u0022event_city\u0022: \u0022Kabo\u0022, \u0022count\u0022: 3719}, {\u0022event_city\u0022: \u0022Mkpani\u0022, \u0022count\u0022: 3706}, {\u0022event_city\u0022: \u0022Sizu\u0022, \u0022count\u0022: 3509}, {\u0022event_city\u0022: \u0022Nampisi\u0022, \u0022count\u0022: 3318}, {\u0022event_city\u0022: \u0022Lugongo\u0022, \u0022count\u0022: 3061}]');
+    console.log('   Partner stats raw:', '[{\u0022partner\u0022: \u0022Ministry of food and Agriculture (MoFA)\u0022, \u0022count\u0022: 114936}, {\u0022partner\u0022: \u0022MEDA\u0022, \u0022count\u0022: 54269}, {\u0022partner\u0022: \u0022KOLPING\u0022, \u0022count\u0022: 47939}, {\u0022partner\u0022: \u0022ESOKO\u0022, \u0022count\u0022: 45521}, {\u0022partner\u0022: \u0022TYEGD\u0022, \u0022count\u0022: 29643}, {\u0022partner\u0022: \u0022Peace_Corps\u0022, \u0022count\u0022: 19531}, {\u0022partner\u0022: \u0022Federal University of Agriculture Markurdi (FUAM)\u0022, \u0022count\u0022: 18913}, {\u0022partner\u0022: \u0022Notore\u0022, \u0022count\u0022: 12921}, {\u0022partner\u0022: \u0022Getit_Agribusiness_Consulting\u0022, \u0022count\u0022: 12400}, {\u0022partner\u0022: \u0022FCI\u0022, \u0022count\u0022: 11990}]');
+
+    // Gender Distribution Chart
+    console.log('5. ===== GENDER CHART DEBUG =====');
+    try {
+        const genderData = JSON.parse('[{\u0022gender\u0022: \u0022Male\u0022, \u0022count\u0022: 313247}, {\u0022gender\u0022: \u0022Female\u0022, \u0022count\u0022: 200400}, {\u0022gender\u0022: \u0022Not Specified\u0022, \u0022count\u0022: 5176}]');
+        console.log('   Parsed gender data:', genderData);
+        console.log('   Gender data length:', genderData.length);
+        console.log('   Gender data type:', typeof genderData);
+        
+        if (genderData.length > 0) {
+            const genderLabels = genderData.map(item => item.gender || 'Unknown');
+            const genderCounts = genderData.map(item => item.count);
+            console.log('   Gender labels:', genderLabels);
+            console.log('   Gender counts:', genderCounts);
+            
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            console.log('   Gender canvas context:', genderCtx);
+            
+            console.log('   Creating gender chart...');
+            const genderChart = new Chart(genderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: genderLabels,
+                datasets: [{
+                    data: genderCounts,
+                    backgroundColor: greenPalette.slice(0, genderLabels.length),
+                    borderWidth: 0,
+                    hoverBorderWidth: 2,
+                    hoverBorderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { family: 'Roboto', size: 11 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+            });
+            console.log('   ✅ Gender chart created successfully:', genderChart);
+        } else {
+            console.log('   ❌ No gender data available for chart');
+        }
+    } catch (error) {
+        console.error('   ❌ Gender chart error:', error);
+        console.error('   Error stack:', error.stack);
+    }
+
+    // Crop Distribution Chart
+    try {
+        const cropData = JSON.parse('[{\u0022crop\u0022: \u0022cassava\u0022, \u0022count\u0022: 518823}]');
+        if (cropData.length > 0) {
+            const cropLabels = cropData.map(item => item.crop || 'Unknown');
+            const cropCounts = cropData.map(item => item.count);
+            
+            const cropCtx = document.getElementById('cropChart').getContext('2d');
+            const cropChart = new Chart(cropCtx, {
+            type: 'pie',
+            data: {
+                labels: cropLabels,
+                datasets: [{
+                    data: cropCounts,
+                    backgroundColor: diversePalette.slice(0, cropLabels.length),
+                    borderWidth: 0,
+                    hoverBorderWidth: 2,
+                    hoverBorderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 10,
+                            usePointStyle: true,
+                            font: { family: 'Roboto', size: 10 }
+                        }
+                    }
+                }
+            }
+            });
+    } catch (error) {
+        console.error('Crop chart error:', error);
+    }
+
+    // Monthly Trend Chart
+    try {
+        const trendData = JSON.parse('[{\u0022month\u0022: \u0022August 2024\u0022, \u0022count\u0022: 7526}, {\u0022month\u0022: \u0022September 2024\u0022, \u0022count\u0022: 3942}, {\u0022month\u0022: \u0022October 2024\u0022, \u0022count\u0022: 11045}, {\u0022month\u0022: \u0022November 2024\u0022, \u0022count\u0022: 2474}, {\u0022month\u0022: \u0022December 2024\u0022, \u0022count\u0022: 4416}, {\u0022month\u0022: \u0022January 2025\u0022, \u0022count\u0022: 4140}, {\u0022month\u0022: \u0022February 2025\u0022, \u0022count\u0022: 4174}, {\u0022month\u0022: \u0022March 2025\u0022, \u0022count\u0022: 14722}, {\u0022month\u0022: \u0022April 2025\u0022, \u0022count\u0022: 28725}, {\u0022month\u0022: \u0022May 2025\u0022, \u0022count\u0022: 61700}, {\u0022month\u0022: \u0022June 2025\u0022, \u0022count\u0022: 3277}, {\u0022month\u0022: \u0022July 2025\u0022, \u0022count\u0022: 0}]');
+        if (trendData.length > 0) {
+            const trendLabels = trendData.map(item => item.month.split(' ')[0]);
+            const trendCounts = trendData.map(item => item.count);
+            
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Farmers',
+                    data: trendCounts,
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#4CAF50',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+            });
+    } catch (error) {
+        console.error('Trend chart error:', error);
+    }
+
+    // States Distribution Chart
+    try {
+        const statesData = JSON.parse('[{\u0022state\u0022: \u0022TZ.MW\u0022, \u0022count\u0022: 49286}, {\u0022state\u0022: \u0022TZ.MA\u0022, \u0022count\u0022: 37988}, {\u0022state\u0022: \u0022Abia\u0022, \u0022count\u0022: 36628}, {\u0022state\u0022: \u0022Northern_Region\u0022, \u0022count\u0022: 33060}, {\u0022state\u0022: \u0022Volta\u0022, \u0022count\u0022: 27610}, {\u0022state\u0022: \u0022Benue\u0022, \u0022count\u0022: 23274}, {\u0022state\u0022: \u0022Ashanti\u0022, \u0022count\u0022: 21810}, {\u0022state\u0022: \u0022TZ.PW\u0022, \u0022count\u0022: 19833}, {\u0022state\u0022: \u0022NG.OY\u0022, \u0022count\u0022: 19229}, {\u0022state\u0022: \u0022NG.BE\u0022, \u0022count\u0022: 19203}]');
+        if (statesData.length > 0) {
+            const stateLabels = statesData.map(item => item.state || 'Unknown');
+            const stateCounts = statesData.map(item => item.count);
+            
+            const statesCtx = document.getElementById('statesChart').getContext('2d');
+            const statesChart = new Chart(statesCtx, {
+            type: 'bar',
+            data: {
+                labels: stateLabels,
+                datasets: [{
+                    label: 'Farmers',
+                    data: stateCounts,
+                    backgroundColor: '#2196F3',
+                    borderColor: '#1976D2',
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            font: { family: 'Roboto' }, 
+                            color: '#757575',
+                            maxRotation: 45
+                        }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+            });
+    } catch (error) {
+        console.error('States chart error:', error);
+    }
+
+    // Cities Distribution Chart
+    const cityData = JSON.parse('[{\u0022event_city\u0022: \u0022Ho\u0022, \u0022count\u0022: 12655}, {\u0022event_city\u0022: \u0022Buzegwe\u0022, \u0022count\u0022: 6406}, {\u0022event_city\u0022: \u0022Kagunguli\u0022, \u0022count\u0022: 5959}, {\u0022event_city\u0022: \u0022Buguza\u0022, \u0022count\u0022: 5788}, {\u0022event_city\u0022: \u0022Nakisilila\u0022, \u0022count\u0022: 3732}, {\u0022event_city\u0022: \u0022Kabo\u0022, \u0022count\u0022: 3719}, {\u0022event_city\u0022: \u0022Mkpani\u0022, \u0022count\u0022: 3706}, {\u0022event_city\u0022: \u0022Sizu\u0022, \u0022count\u0022: 3509}, {\u0022event_city\u0022: \u0022Nampisi\u0022, \u0022count\u0022: 3318}, {\u0022event_city\u0022: \u0022Lugongo\u0022, \u0022count\u0022: 3061}]');
+    if (cityData.length > 0) {
+        const cityLabels = cityData.map(item => item.event_city || 'Unknown');
+        const cityCounts = cityData.map(item => item.count);
+        
+        const cityCtx = document.getElementById('cityChart').getContext('2d');
+        try {
+            new Chart(cityCtx, {
+                type: 'bar',
+                data: {
+                    labels: cityLabels,
+                    datasets: [{
+                        label: 'Farmers',
+                        data: cityCounts,
+                        backgroundColor: '#FF9800',
+                        borderColor: '#F57C00',
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        } catch (error) {
+            console.error('City chart error:', error);
+        }
+    }
+
+    // Partners Distribution Chart
+    const partnerData = JSON.parse('[{\u0022partner\u0022: \u0022Ministry of food and Agriculture (MoFA)\u0022, \u0022count\u0022: 114936}, {\u0022partner\u0022: \u0022MEDA\u0022, \u0022count\u0022: 54269}, {\u0022partner\u0022: \u0022KOLPING\u0022, \u0022count\u0022: 47939}, {\u0022partner\u0022: \u0022ESOKO\u0022, \u0022count\u0022: 45521}, {\u0022partner\u0022: \u0022TYEGD\u0022, \u0022count\u0022: 29643}, {\u0022partner\u0022: \u0022Peace_Corps\u0022, \u0022count\u0022: 19531}, {\u0022partner\u0022: \u0022Federal University of Agriculture Markurdi (FUAM)\u0022, \u0022count\u0022: 18913}, {\u0022partner\u0022: \u0022Notore\u0022, \u0022count\u0022: 12921}, {\u0022partner\u0022: \u0022Getit_Agribusiness_Consulting\u0022, \u0022count\u0022: 12400}, {\u0022partner\u0022: \u0022FCI\u0022, \u0022count\u0022: 11990}]');
+    if (partnerData.length > 0) {
+        const partnerLabels = partnerData.map(item => (item.partner || 'Unknown').substring(0, 20) + '...');
+        const partnerCounts = partnerData.map(item => item.count);
+        
+        const partnerCtx = document.getElementById('partnerChart').getContext('2d');
+        try {
+            new Chart(partnerCtx, {
+                type: 'bar',
+                data: {
+                    labels: partnerLabels,
+                    datasets: [{
+                        label: 'Farmers',
+                        data: partnerCounts,
+                        backgroundColor: '#9C27B0',
+                        borderColor: '#7B1FA2',
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                font: { family: 'Roboto' }, 
+                                color: '#757575',
+                                maxRotation: 45
+                            }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        } catch (error) {
+            console.error('Partner chart error:', error);
+        }
+    }
+
+    // Add loading animation to metric cards
+    const metricCards = document.querySelectorAll('.metric-card');
+    metricCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 50);
+    });
+
+}); // End DOMContentLoaded
+</script>
+
+<style>
+.metric-detail {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.metric-card.secondary {
+    border-left-color: #2196F3;
+}
+
+.metric-card.secondary .metric-icon {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+</style>
+
+</body>
+</html>

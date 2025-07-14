@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'rest_framework',
     'corsheaders',
     'website',
@@ -66,6 +67,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'website.views.website_context',
+                'dashboard.admin_context.admin_context_processor',
             ],
         },
     },
@@ -111,6 +113,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'dashboard.backends.EmailBackend',  # Custom email authentication
+    'django.contrib.auth.backends.ModelBackend',  # Default username authentication (fallback)
 ]
 
 
@@ -220,3 +228,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # EiA MELIA API Configuration
 EIA_MELIA_API_BASE_URL = config('EIA_MELIA_API_BASE_URL', default='https://my.eia.cgiar.org/api/v1/melia')
 EIA_MELIA_API_TOKEN = config('EIA_MELIA_API_TOKEN', default='')  # Set via environment variable
+
+# Paystack Configuration
+PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
+PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
+SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')

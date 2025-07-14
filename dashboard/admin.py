@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
-    DataSyncLog, PartnerOrganization, UserProfile
+    DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment
 )
 
 @admin.register(APIConfiguration)
@@ -236,7 +236,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('partner_organization', 'partner_name', 'position', 'department')
         }),
         ('Contact Information', {
-            'fields': ('phone_number',)
+            'fields': ('phone_number', 'profile_photo')
         }),
         ('Status', {
             'fields': ('is_partner_verified', 'profile_completed', 'profile_completion_date')
@@ -253,3 +253,62 @@ class UserProfileAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'partner_organization')
+
+
+@admin.register(Membership)
+class MembershipAdmin(admin.ModelAdmin):
+    list_display = ['certificate_number', 'member', 'membership_type', 'status', 'start_date', 'end_date', 'is_active']
+    list_filter = ['membership_type', 'status', 'start_date', 'end_date', 'created_at']
+    search_fields = ['certificate_number', 'member__username', 'member__first_name', 'member__last_name', 'member__email']
+    readonly_fields = ['membership_id', 'certificate_number', 'qr_code', 'created_at', 'updated_at']
+    date_hierarchy = 'start_date'
+    
+    fieldsets = (
+        ('Member Information', {
+            'fields': ('member', 'membership_type', 'status')
+        }),
+        ('Subscription Period', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Certificate & ID Card', {
+            'fields': ('certificate_generated', 'id_card_generated', 'certificate_number')
+        }),
+        ('Verification', {
+            'fields': ('qr_code',)
+        }),
+        ('Metadata', {
+            'fields': ('membership_id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('member')
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ['payment_id', 'membership', 'amount', 'currency', 'payment_method', 'status', 'paid_at', 'created_at']
+    list_filter = ['payment_method', 'status', 'currency', 'paid_at', 'created_at']
+    search_fields = ['payment_id', 'paystack_reference', 'membership__member__username', 'membership__member__email']
+    readonly_fields = ['payment_id', 'created_at', 'updated_at', 'paid_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Payment Information', {
+            'fields': ('membership', 'amount', 'currency', 'payment_method', 'status')
+        }),
+        ('Payment Gateway', {
+            'fields': ('paystack_reference', 'paystack_access_code', 'gateway_response')
+        }),
+        ('Transaction Details', {
+            'fields': ('description', 'paid_at')
+        }),
+        ('Metadata', {
+            'fields': ('payment_id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('membership__member')

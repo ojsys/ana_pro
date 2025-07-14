@@ -1,0 +1,966 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
+<head>
+<title>{% block title %}{% endblock %} | AKILIMO Nigeria Association Admin</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --primary-green: #2E7D32;
+        --light-green: #4CAF50;
+        --dark-green: #1B5E20;
+        --accent-green: #66BB6A;
+        --surface-green: #E8F5E8;
+        --success-green: #388E3C;
+        --text-on-green: #FFFFFF;
+        --text-primary: #212121;
+        --text-secondary: #757575;
+        --text-light: #9E9E9E;
+        --bg-light: #FAFAFA;
+        --bg-white: #FFFFFF;
+        --border-light: #E0E0E0;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+        --sidebar-width: 280px;
+    }
+
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg-light);
+        color: var(--text-primary);
+        overflow-x: hidden;
+    }
+
+    /* Modern Sidebar */
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: var(--sidebar-width);
+        height: 100vh;
+        background: linear-gradient(180deg, var(--primary-green) 0%, var(--dark-green) 100%);
+        color: var(--text-on-green);
+        z-index: 1000;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .admin-sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .admin-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+
+    .sidebar-header {
+        padding: 2rem 1.5rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--text-on-green);
+        text-decoration: none;
+    }
+
+    .sidebar-logo i {
+        font-size: 2rem;
+        margin-right: 0.75rem;
+    }
+
+    .sidebar-tagline {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin: 0;
+    }
+
+    .sidebar-nav {
+        padding: 1rem 0;
+    }
+
+    .nav-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .nav-section-title {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.7;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .nav-section-title:hover {
+        opacity: 1;
+    }
+
+    .nav-section-toggle {
+        font-size: 0.875rem;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-section.collapsed .nav-section-toggle {
+        transform: rotate(-90deg);
+    }
+
+    .nav-section.collapsed .nav-section-content {
+        display: none;
+    }
+
+    .section-add-btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        margin-left: 0.5rem;
+    }
+
+    .section-add-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .nav-item {
+        margin-bottom: 0.25rem;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.875rem 1.5rem;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-on-green);
+        border-left-color: var(--accent-green);
+    }
+
+    .nav-link.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--text-on-green);
+        border-left-color: var(--text-on-green);
+        font-weight: 500;
+    }
+
+    .nav-link i {
+        width: 20px;
+        margin-right: 0.75rem;
+        text-align: center;
+    }
+
+    /* Main Content Area */
+    .admin-main {
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+        background-color: var(--bg-light);
+    }
+
+    /* Top Header */
+    .admin-header {
+        background: var(--bg-white);
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border-light);
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--text-primary);
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-menu {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--surface-green);
+        border-radius: 2rem;
+        color: var(--primary-green);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .user-menu:hover {
+        background: var(--primary-green);
+        color: var(--text-on-green);
+    }
+
+    /* Content Area */
+    .admin-content {
+        padding: 2rem;
+    }
+
+    /* Modern Cards */
+    .admin-card {
+        background: var(--bg-white);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, var(--surface-green), rgba(76, 175, 80, 0.1));
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 1.25rem;
+        color: var(--primary-green);
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    /* Modern Buttons */
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        color: var(--text-on-green);
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: var(--text-on-green);
+    }
+
+    .btn-outline-primary {
+        border: 2px solid var(--primary-green);
+        color: var(--primary-green);
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        background: transparent;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--primary-green);
+        color: var(--text-on-green);
+        transform: translateY(-2px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .admin-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .admin-sidebar.show {
+            transform: translateX(0);
+        }
+
+        .admin-main {
+            margin-left: 0;
+        }
+
+        .header-content {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .admin-content {
+            padding: 1rem;
+        }
+    }
+
+    /* Breadcrumbs */
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+        color: var(--text-secondary);
+    }
+
+    .breadcrumb-item a {
+        color: var(--primary-green);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item.active {
+        color: var(--text-secondary);
+    }
+
+    /* Messages */
+    .alert {
+        border: none;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-success {
+        background: var(--surface-green);
+        color: var(--success-green);
+        border-left: 4px solid var(--success-green);
+    }
+
+    .alert-info {
+        background: #E3F2FD;
+        color: #1976D2;
+        border-left: 4px solid #1976D2;
+    }
+
+    .alert-warning {
+        background: #FFF8E1;
+        color: #F57C00;
+        border-left: 4px solid #F57C00;
+    }
+
+    .alert-danger {
+        background: #FFEBEE;
+        color: #D32F2F;
+        border-left: 4px solid #D32F2F;
+    }
+
+    /* Filter Sidebar Styles */
+    .filter-group {
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 1rem;
+    }
+
+    .filter-group:last-child {
+        border-bottom: none;
+    }
+
+    .filter-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .filter-choice {
+        padding: 0.25rem 0;
+    }
+
+    .filter-link {
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        display: block;
+    }
+
+    .filter-link:hover {
+        background: var(--surface-green);
+        color: var(--primary-green);
+        text-decoration: none;
+    }
+
+    .filter-link.active {
+        background: var(--primary-green);
+        color: var(--text-on-green);
+        font-weight: 500;
+    }
+
+    /* Table Improvements */
+    .table th {
+        background: var(--surface-green);
+        color: var(--text-primary);
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary-green);
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(46, 125, 50, 0.05);
+    }
+
+    /* Results info styling */
+    .results-info {
+        background: var(--surface-green);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    /* Form field styling improvements */
+    .field-box {
+        margin-bottom: 1.5rem;
+    }
+
+    .field-box label {
+        display: block;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .field-box input,
+    .field-box select,
+    .field-box textarea {
+        width: 100%;
+        border: 2px solid var(--border-light);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+    }
+
+    .field-box input:focus,
+    .field-box select:focus,
+    .field-box textarea:focus {
+        border-color: var(--primary-green);
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        outline: none;
+    }
+
+    .field-box.has-errors input,
+    .field-box.has-errors select,
+    .field-box.has-errors textarea {
+        border-color: #DC3545;
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+
+    .invalid-feedback {
+        color: #DC3545;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+
+    .readonly {
+        background: var(--bg-light);
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-light);
+        border-radius: 8px;
+        color: var(--text-secondary);
+    }
+
+    /* Module headers */
+    .module h2 {
+        background: var(--surface-green);
+        color: var(--primary-green);
+        font-size: 1.125rem;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+        margin: 0 -2rem 1.5rem -2rem;
+        border-radius: 8px 8px 0 0;
+    }
+</style>
+
+{% block extrahead %}{% endblock %}
+</head>
+<body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}">
+
+<!-- Sidebar -->
+<nav class="admin-sidebar">
+    <div class="sidebar-header">
+        <a href="{% url 'admin:index' %}" class="sidebar-logo">
+            <i class="bi bi-tree"></i>
+            <span>AKILIMO Admin</span>
+        </a>
+        <p class="sidebar-tagline">Management Portal</p>
+    </div>
+
+    <div class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <span>Main</span>
+            </div>
+            <div class="nav-section-content">
+                <div class="nav-item">
+                    <a href="{% url 'admin:index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                        <i class="bi bi-house"></i>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'dashboard:home' %}" class="nav-link">
+                        <i class="bi bi-arrow-left"></i>
+                        Back to Site
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" onclick="toggleSection(this)">
+                <span>Users & Auth</span>
+                <span class="nav-section-toggle">
+                    <i class="bi bi-chevron-down"></i>
+                    <a href="{% url 'admin:auth_user_add' %}" class="section-add-btn" onclick="event.stopPropagation()">+ Add</a>
+                </span>
+            </div>
+            <div class="nav-section-content">
+                <div class="nav-item">
+                    <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        Users
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'admin:auth_group_changelist' %}" class="nav-link">
+                        <i class="bi bi-shield"></i>
+                        Groups
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" onclick="toggleSection(this)">
+                <span>Membership & Users</span>
+                <span class="nav-section-toggle">
+                    <i class="bi bi-chevron-down"></i>
+                    <a href="{% url 'admin:dashboard_membership_add' %}" class="section-add-btn" onclick="event.stopPropagation()">+ Add</a>
+                </span>
+            </div>
+            <div class="nav-section-content">
+                {% url 'admin:dashboard_userprofile_changelist' as userprofile_url %}
+                {% if userprofile_url %}
+                <div class="nav-item">
+                    <a href="{{ userprofile_url }}" class="nav-link">
+                        <i class="bi bi-person-badge"></i>
+                        User Profiles
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_membership_changelist' as membership_url %}
+                {% if membership_url %}
+                <div class="nav-item">
+                    <a href="{{ membership_url }}" class="nav-link">
+                        <i class="bi bi-card-heading"></i>
+                        Memberships
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_payment_changelist' as payment_url %}
+                {% if payment_url %}
+                <div class="nav-item">
+                    <a href="{{ payment_url }}" class="nav-link">
+                        <i class="bi bi-credit-card"></i>
+                        Payments
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" onclick="toggleSection(this)">
+                <span>Partners & Data</span>
+                <span class="nav-section-toggle">
+                    <i class="bi bi-chevron-down"></i>
+                    <a href="{% url 'admin:dashboard_partnerorganization_add' %}" class="section-add-btn" onclick="event.stopPropagation()">+ Add</a>
+                </span>
+            </div>
+            <div class="nav-section-content">
+                {% url 'admin:dashboard_partnerorganization_changelist' as partner_url %}
+                {% if partner_url %}
+                <div class="nav-item">
+                    <a href="{{ partner_url }}" class="nav-link">
+                        <i class="bi bi-building"></i>
+                        Partner Organizations
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_akilimoparticipant_changelist' as participant_url %}
+                {% if participant_url %}
+                <div class="nav-item">
+                    <a href="{{ participant_url }}" class="nav-link">
+                        <i class="bi bi-people-fill"></i>
+                        AKILIMO Participants
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_participantrecord_changelist' as record_url %}
+                {% if record_url %}
+                <div class="nav-item">
+                    <a href="{{ record_url }}" class="nav-link">
+                        <i class="bi bi-file-earmark-person"></i>
+                        Participant Records
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_datasynclog_changelist' as sync_url %}
+                {% if sync_url %}
+                <div class="nav-item">
+                    <a href="{{ sync_url }}" class="nav-link">
+                        <i class="bi bi-arrow-repeat"></i>
+                        Data Sync Logs
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" onclick="toggleSection(this)">
+                <span>Website Content</span>
+                <span class="nav-section-toggle">
+                    <i class="bi bi-chevron-down"></i>
+                    <a href="{% url 'admin:website_page_add' %}" class="section-add-btn" onclick="event.stopPropagation()">+ Add</a>
+                </span>
+            </div>
+            <div class="nav-section-content">
+                {% url 'admin:website_page_changelist' as page_url %}
+                {% if page_url %}
+                <div class="nav-item">
+                    <a href="{{ page_url }}" class="nav-link">
+                        <i class="bi bi-file-text"></i>
+                        Pages
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_newsarticle_changelist' as news_url %}
+                {% if news_url %}
+                <div class="nav-item">
+                    <a href="{{ news_url }}" class="nav-link">
+                        <i class="bi bi-newspaper"></i>
+                        News Articles
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_homepagesection_changelist' as section_url %}
+                {% if section_url %}
+                <div class="nav-item">
+                    <a href="{{ section_url }}" class="nav-link">
+                        <i class="bi bi-layout-text-window"></i>
+                        Homepage Sections
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_statistic_changelist' as stats_url %}
+                {% if stats_url %}
+                <div class="nav-item">
+                    <a href="{{ stats_url }}" class="nav-link">
+                        <i class="bi bi-graph-up"></i>
+                        Statistics
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" onclick="toggleSection(this)">
+                <span>About & Team</span>
+                <span class="nav-section-toggle">
+                    <i class="bi bi-chevron-down"></i>
+                    <a href="{% url 'admin:website_teammember_add' %}" class="section-add-btn" onclick="event.stopPropagation()">+ Add</a>
+                </span>
+            </div>
+            <div class="nav-section-content">
+                {% url 'admin:website_teammember_changelist' as team_url %}
+                {% if team_url %}
+                <div class="nav-item">
+                    <a href="{{ team_url }}" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        Team Members
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_partnershowcase_changelist' as showcase_url %}
+                {% if showcase_url %}
+                <div class="nav-item">
+                    <a href="{{ showcase_url }}" class="nav-link">
+                        <i class="bi bi-award"></i>
+                        Partner Showcase
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_testimonial_changelist' as testimonial_url %}
+                {% if testimonial_url %}
+                <div class="nav-item">
+                    <a href="{{ testimonial_url }}" class="nav-link">
+                        <i class="bi bi-chat-quote"></i>
+                        Testimonials
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_faq_changelist' as faq_url %}
+                {% if faq_url %}
+                <div class="nav-item">
+                    <a href="{{ faq_url }}" class="nav-link">
+                        <i class="bi bi-question-circle"></i>
+                        FAQs
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" onclick="toggleSection(this)">
+                <span>System & Settings</span>
+                <span class="nav-section-toggle">
+                    <i class="bi bi-chevron-down"></i>
+                    <a href="{% url 'admin:website_sitesettings_add' %}" class="section-add-btn" onclick="event.stopPropagation()">+ Add</a>
+                </span>
+            </div>
+            <div class="nav-section-content">
+                {% url 'admin:website_contactinfo_changelist' as contact_url %}
+                {% if contact_url %}
+                <div class="nav-item">
+                    <a href="{{ contact_url }}" class="nav-link">
+                        <i class="bi bi-telephone"></i>
+                        Contact Information
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:website_sitesettings_changelist' as settings_url %}
+                {% if settings_url %}
+                <div class="nav-item">
+                    <a href="{{ settings_url }}" class="nav-link">
+                        <i class="bi bi-gear"></i>
+                        Site Settings
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_apiconfiguration_changelist' as api_url %}
+                {% if api_url %}
+                <div class="nav-item">
+                    <a href="{{ api_url }}" class="nav-link">
+                        <i class="bi bi-code-square"></i>
+                        API Configuration
+                    </a>
+                </div>
+                {% endif %}
+                {% url 'admin:dashboard_dashboardmetrics_changelist' as metrics_url %}
+                {% if metrics_url %}
+                <div class="nav-item">
+                    <a href="{{ metrics_url }}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i>
+                        Dashboard Metrics
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="admin-main">
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="header-content">
+            <h1 class="header-title">{% block content_title %}{% endblock %}</h1>
+            <div class="header-actions">
+                <!-- Quick Search -->
+                <div class="search-box me-3">
+                    <input type="text" id="admin-search" class="form-control" placeholder="Search models..." style="width: 250px;">
+                </div>
+                
+                <a href="{% url 'website:home' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-globe"></i>
+                    View Site
+                </a>
+                <a href="{% url 'dashboard:logout' %}" class="user-menu">
+                    <i class="bi bi-person-circle"></i>
+                    <span>{{ user.get_full_name|default:user.username }}</span>
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="admin-content">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}x-circle{% else %}info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block breadcrumbs %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Home</a></li>
+                {% block breadcrumb_items %}{% endblock %}
+            </ol>
+        </nav>
+        {% endblock %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function toggleSection(titleElement) {
+    const section = titleElement.closest('.nav-section');
+    section.classList.toggle('collapsed');
+    
+    // Save collapsed state to localStorage
+    const sectionTitle = titleElement.querySelector('span').textContent;
+    const isCollapsed = section.classList.contains('collapsed');
+    localStorage.setItem('admin-nav-' + sectionTitle, isCollapsed);
+}
+
+// Restore collapsed states on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const sections = document.querySelectorAll('.nav-section[data-collapsible]');
+    sections.forEach(section => {
+        const titleElement = section.querySelector('.nav-section-title span');
+        if (titleElement) {
+            const sectionTitle = titleElement.textContent;
+            const isCollapsed = localStorage.getItem('admin-nav-' + sectionTitle) === 'true';
+            if (isCollapsed) {
+                section.classList.add('collapsed');
+            }
+        }
+    });
+});
+
+// Add active state handling
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+            // Expand parent section if collapsed
+            const section = link.closest('.nav-section');
+            if (section && section.classList.contains('collapsed')) {
+                section.classList.remove('collapsed');
+            }
+        }
+    });
+});
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('admin-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('.nav-section');
+            
+            if (searchTerm === '') {
+                // Show all items and sections
+                navItems.forEach(item => item.style.display = '');
+                sections.forEach(section => {
+                    section.style.display = '';
+                    section.classList.remove('collapsed');
+                });
+                return;
+            }
+            
+            // Hide all sections first
+            sections.forEach(section => section.style.display = 'none');
+            
+            // Show matching items and their sections
+            navItems.forEach(item => {
+                const link = item.querySelector('.nav-link');
+                if (link) {
+                    const text = link.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        item.style.display = '';
+                        // Show parent section
+                        const section = item.closest('.nav-section');
+                        if (section) {
+                            section.style.display = '';
+                            section.classList.remove('collapsed');
+                        }
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        });
+    }
+});
+</script>
+
+{% block extrajs %}{% endblock %}
+
+</body>
+</html>

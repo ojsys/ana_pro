@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Button Test - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Button Test Page</h1>
+    
+    <div class="row">
+        <div class="col-6">
+            <h3>Test Buttons</h3>
+            
+            <button class="btn btn-primary btn-test mb-3" 
+                    data-membership="individual" 
+                    data-amount="10000"
+                    onclick="basicTest('individual')">
+                Test Individual Button
+            </button>
+            
+            <button class="btn btn-success btn-test mb-3" 
+                    data-membership="organization" 
+                    data-amount="50000"
+                    onclick="basicTest('organization')">
+                Test Organization Button
+            </button>
+            
+            <button class="btn btn-warning mb-3" onclick="testPaystackAPI()">
+                Test Paystack API
+            </button>
+            
+            <button class="btn btn-info mb-3" onclick="alert('Basic onclick works!')">
+                Basic Alert Test
+            </button>
+        </div>
+        
+        <div class="col-6">
+            <h3>Debug Info</h3>
+            <div id="debug-info">
+                <p>User: {{ user.username }}</p>
+                <p>Email: {{ user.email }}</p>
+                <p>Membership: {{ membership.membership_type|default:"None" }}</p>
+                <p>Status: {{ membership.status|default:"None" }}</p>
+                <p>Active: {{ membership.is_active|default:"False" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// First, test basic JavaScript functionality
+console.log('JavaScript is working!');
+alert('JavaScript test - this should show immediately');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up event listeners');
+    alert('DOM loaded - setting up buttons');
+    const testButtons = document.querySelectorAll('.btn-test');
+    
+    testButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const membershipType = this.getAttribute('data-membership');
+            const amount = this.getAttribute('data-amount');
+            
+            console.log('Test button clicked:', membershipType, amount);
+            alert('Button works! Type: ' + membershipType + ', Amount: ' + amount);
+            
+            // Test the actual payment endpoint
+            fetch('{% url "dashboard:initiate_payment" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    membership_type: membershipType
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('API Response:', data);
+                if (data.success) {
+                    alert('API call successful! Would redirect to: ' + data.authorization_url);
+                } else {
+                    alert('API call failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('API Error:', error);
+                alert('API Error: ' + error.message);
+            });
+        });
+    });
+});
+
+function testPaystackAPI() {
+    alert('Testing Paystack API connection...');
+    
+    fetch('{% url "dashboard:initiate_payment" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            membership_type: 'individual'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Paystack test response:', data);
+        if (data.success) {
+            alert('Paystack connection successful!\nAuthorization URL: ' + data.authorization_url);
+        } else {
+            alert('Paystack connection failed:\n' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Paystack test error:', error);
+        alert('Paystack test failed: ' + error.message);
+    });
+}
+
+function basicTest(type) {
+    alert('Basic test button clicked: ' + type);
+    console.log('Basic test:', type);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -15,12 +15,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Avg, F, Case, When, IntegerField
+from django.utils import timezone
 from datetime import datetime, timedelta
-import json
 import logging
 
 from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
-                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization)
+                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization,
+                    Membership, Payment)
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
 from .services import AkilimoDataService
 
@@ -48,7 +49,9 @@ class DashboardHomeView(TemplateView):
             female_count = AkilimoParticipant.objects.filter(farmer_gender__icontains='female').count()
             
             # Geographic distribution (admin_level1 = state)
-            state_stats = AkilimoParticipant.objects.values('admin_level1').annotate(
+            state_stats = AkilimoParticipant.objects.exclude(
+                admin_level1__isnull=True
+            ).exclude(admin_level1='').values('admin_level1').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
@@ -78,25 +81,30 @@ class DashboardHomeView(TemplateView):
                 event_type__isnull=True
             ).exclude(event_type='').values('event_type').annotate(
                 count=Count('id')
-            ).order_by('-count')
+            ).order_by('-count')[:5]
             
             # Age category distribution
             age_category_stats = AkilimoParticipant.objects.exclude(
                 age_category__isnull=True
             ).exclude(age_category='').values('age_category').annotate(
                 count=Count('id')
-            ).order_by('-count')
+            ).order_by('-count')[:5]
             
-            # Monthly participation trends (last 12 months)
+            # Monthly participation trends (based on event dates)
             monthly_trend = []
+            from django.utils import timezone
+            from calendar import monthrange
+            
             for i in range(12):
-                month_start = (datetime.now().date().replace(day=1) - timedelta(days=30*i))
-                month_end = month_start.replace(day=28) + timedelta(days=4)
-                month_end = month_end - timedelta(days=month_end.day)
+                # Calculate month boundaries properly
+                today = timezone.now().date()
+                target_date = today.replace(day=1) - timedelta(days=30*i)
+                month_start = target_date.replace(day=1)
+                month_end = target_date.replace(day=monthrange(target_date.year, target_date.month)[1])
                 
                 count = AkilimoParticipant.objects.filter(
-                    created_at__gte=month_start,
-                    created_at__lte=month_end
+                    event_date__gte=month_start,
+                    event_date__lte=month_end
                 ).count()
                 
                 monthly_trend.append({
@@ -120,6 +128,30 @@ class DashboardHomeView(TemplateView):
             unique_events = AkilimoParticipant.objects.values(
                 'event_date', 'event_venue', 'event_type'
             ).distinct().count()
+            
+            # Count extension agents (organizational contacts)
+            extension_agents = AkilimoParticipant.objects.exclude(
+                org_first_name__isnull=True
+            ).exclude(org_first_name='').values(
+                'org_first_name', 'org_surname', 'org_phone_no', 'partner'
+            ).distinct().count()
+            
+            # Count unique partners from participant data
+            unique_partners_from_data = AkilimoParticipant.objects.exclude(
+                partner__isnull=True
+            ).exclude(partner='').values('partner').distinct().count()
+            
+            # Count actual partner organizations in PartnerOrganization table
+            total_partner_organizations = PartnerOrganization.objects.filter(is_active=True).count()
+            
+            # Count total unique states and cities (for dashboard totals)
+            total_states_count = AkilimoParticipant.objects.exclude(
+                admin_level1__isnull=True
+            ).exclude(admin_level1='').values('admin_level1').distinct().count()
+            
+            total_cities_count = AkilimoParticipant.objects.exclude(
+                event_city__isnull=True
+            ).exclude(event_city='').values('event_city').distinct().count()
             
             # Rename for template compatibility
             gender_stats = [{'gender': item['farmer_gender'], 'count': item['count']} for item in gender_stats]
@@ -174,6 +206,11 @@ class DashboardHomeView(TemplateView):
             'female_count': female_count,
             'farmers_with_phones': farmers_with_phones,
             'unique_events': unique_events,
+            'extension_agents': locals().get('extension_agents', 0),
+            'unique_partners': locals().get('unique_partners_from_data', 0),
+            'total_partner_organizations': locals().get('total_partner_organizations', 0),
+            'total_states_count': locals().get('total_states_count', 0),
+            'total_cities_count': locals().get('total_cities_count', 0),
             'gender_stats': list(gender_stats),
             'state_stats': list(state_stats),
             'city_stats': list(city_stats),
@@ -484,17 +521,24 @@ class CustomLoginView(LoginView):
     
     def form_valid(self, form):
         """Add success message on successful login"""
+        # Clear any existing messages (like logout messages) to avoid confusion
+        storage = messages.get_messages(self.request)
+        storage.used = True
+        
         messages.success(self.request, f'Welcome back, {form.get_user().get_full_name() or form.get_user().username}!')
         return super().form_valid(form)
 
 
-class CustomLogoutView(LogoutView):
-    """Custom logout view"""
-    next_page = reverse_lazy('dashboard:login')
+def custom_logout_view(request):
+    """Custom logout function view"""
+    from django.contrib.auth import logout
+    from django.shortcuts import redirect
     
-    def dispatch(self, request, *args, **kwargs):
-        messages.info(request, 'You have been successfully logged out.')
-        return super().dispatch(request, *args, **kwargs)
+    if request.user.is_authenticated:
+        messages.success(request, 'You have been successfully logged out. Thank you for using AKILIMO Nigeria Association!')
+        logout(request)
+    
+    return redirect('website:home')
 
 
 class RegisterView(FormView):
@@ -555,13 +599,32 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         """Handle profile update"""
         form = UserProfileForm(
             request.POST,
+            request.FILES,
             instance=request.user.profile,
             user=request.user
         )
         
         if form.is_valid():
+            # Check if profile was completed before save
+            was_completed_before = request.user.profile.profile_completed
+            
             form.save()
-            messages.success(request, 'Your profile has been updated successfully.')
+            
+            # Check if profile became completed after save
+            is_completed_now = request.user.profile.profile_completed
+            
+            if is_completed_now and not was_completed_before:
+                messages.success(request, '🎉 Congratulations! Your profile is now complete. You can now download your membership certificate and ID card.')
+            elif is_completed_now:
+                messages.success(request, 'Your profile has been updated successfully.')
+            else:
+                # Show what's still missing
+                missing = request.user.profile.missing_fields
+                if missing:
+                    messages.warning(request, f'Profile updated. To complete your profile, please fill in: {", ".join(missing)}')
+                else:
+                    messages.success(request, 'Your profile has been updated successfully.')
+            
             return redirect('dashboard:profile')
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -576,18 +639,18 @@ class PartnerDashboardView(LoginRequiredMixin, TemplateView):
     
     def dispatch(self, request, *args, **kwargs):
         """Check if user can access partner dashboard"""
-        if not hasattr(request.user, 'profile') or not request.user.profile.can_view_partner_data:
-            messages.error(request, 'You do not have access to partner-specific data. Please contact your administrator.')
+        if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
+            messages.error(request, 'You do not have access to partner-specific data. Please ensure you have a partner organization assigned.')
             return redirect('dashboard:home')
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user_profile = self.request.user.profile
-        partner_org = user_profile.partner_organization
+        partner_name = user_profile.partner_name
         
-        # Get partner-specific farmers
-        partner_farmers = user_profile.accessible_farmers
+        # Get partner-specific farmers using partner_name
+        partner_farmers = AkilimoParticipant.objects.filter(partner=partner_name)
         
         # Partner metrics
         total_partner_farmers = partner_farmers.count()
@@ -646,7 +709,7 @@ class PartnerDashboardView(LoginRequiredMixin, TemplateView):
         monthly_trend.reverse()
         
         context.update({
-            'partner_organization': partner_org,
+            'partner_name': partner_name,
             'total_partner_farmers': total_partner_farmers,
             'partner_gender_stats': list(partner_gender_stats),
             'partner_state_stats': list(partner_state_stats),
@@ -655,6 +718,305 @@ class PartnerDashboardView(LoginRequiredMixin, TemplateView):
             'recent_partner_events': recent_partner_events,
             'partner_event_types': list(partner_event_types),
             'monthly_trend': monthly_trend,
+        })
+        
+        return context
+
+
+class PartnerDataView(LoginRequiredMixin, TemplateView):
+    """Partner-specific data overview"""
+    template_name = 'dashboard/partner_data.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
+            messages.error(request, 'You do not have access to partner-specific data.')
+            return redirect('dashboard:home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_profile = self.request.user.profile
+        partner_name = user_profile.partner_name
+        
+        # Partner-specific data
+        partner_farmers = AkilimoParticipant.objects.filter(partner=partner_name)
+        
+        # Basic statistics
+        total_farmers = partner_farmers.count()
+        
+        # Events organized by partner
+        partner_events = partner_farmers.filter(
+            event_date__isnull=False
+        ).values('event_date', 'event_venue', 'event_type', 'event_city').distinct()
+        
+        # Cities of influence
+        cities_of_influence = partner_farmers.exclude(
+            event_city__isnull=True
+        ).exclude(event_city='').values('event_city').annotate(
+            farmer_count=Count('id'),
+            event_count=Count('event_date', distinct=True)
+        ).order_by('-farmer_count')
+        
+        # States of influence
+        states_of_influence = partner_farmers.exclude(
+            admin_level1__isnull=True
+        ).exclude(admin_level1='').values('admin_level1').annotate(
+            farmer_count=Count('id'),
+            city_count=Count('event_city', distinct=True)
+        ).order_by('-farmer_count')
+        
+        # Crops promoted
+        crops_promoted = partner_farmers.exclude(
+            crop__isnull=True
+        ).exclude(crop='').values('crop').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Training methods/event types
+        training_methods = partner_farmers.exclude(
+            event_type__isnull=True
+        ).exclude(event_type='').values('event_type').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Monthly activity (last 12 months)
+        monthly_activity = []
+        for i in range(12):
+            month_start = (datetime.now().date().replace(day=1) - timedelta(days=30*i))
+            month_end = month_start.replace(day=28) + timedelta(days=4)
+            month_end = month_end - timedelta(days=month_end.day)
+            
+            count = partner_farmers.filter(
+                event_date__gte=month_start,
+                event_date__lte=month_end
+            ).count()
+            
+            monthly_activity.append({
+                'month': month_start.strftime('%B %Y'),
+                'count': count
+            })
+        
+        monthly_activity.reverse()
+        
+        context.update({
+            'partner_name': partner_name,
+            'total_farmers': total_farmers,
+            'partner_events': partner_events,
+            'cities_of_influence': list(cities_of_influence),
+            'states_of_influence': list(states_of_influence),
+            'crops_promoted': list(crops_promoted),
+            'training_methods': list(training_methods),
+            'monthly_activity': monthly_activity,
+        })
+        
+        return context
+
+
+class PartnerFarmersView(LoginRequiredMixin, TemplateView):
+    """Partner-specific farmer demographics and details"""
+    template_name = 'dashboard/partner_farmers.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
+            messages.error(request, 'You do not have access to partner-specific data.')
+            return redirect('dashboard:home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_profile = self.request.user.profile
+        partner_name = user_profile.partner_name
+        
+        # Get filter parameters
+        state_filter = self.request.GET.get('state', '')
+        gender_filter = self.request.GET.get('gender', '')
+        age_filter = self.request.GET.get('age_category', '')
+        
+        # Partner-specific farmers
+        partner_farmers = AkilimoParticipant.objects.filter(partner=partner_name)
+        
+        # Apply filters
+        if state_filter:
+            partner_farmers = partner_farmers.filter(admin_level1__icontains=state_filter)
+        if gender_filter:
+            partner_farmers = partner_farmers.filter(farmer_gender__icontains=gender_filter)
+        if age_filter:
+            partner_farmers = partner_farmers.filter(age_category__icontains=age_filter)
+        
+        # Demographics
+        gender_distribution = partner_farmers.values('farmer_gender').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        age_distribution = partner_farmers.exclude(
+            age_category__isnull=True
+        ).exclude(age_category='').values('age_category').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Geographic distribution
+        state_distribution = partner_farmers.exclude(
+            admin_level1__isnull=True
+        ).exclude(admin_level1='').values('admin_level1').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        city_distribution = partner_farmers.exclude(
+            event_city__isnull=True
+        ).exclude(event_city='').values('event_city').annotate(
+            count=Count('id')
+        ).order_by('-count')[:20]
+        
+        # Phone access
+        farmers_with_phones = partner_farmers.exclude(
+            farmer_phone_no__isnull=True
+        ).exclude(farmer_phone_no='').count()
+        
+        farmers_own_phones = partner_farmers.filter(
+            farmer_own_phone__icontains='yes'
+        ).count()
+        
+        # Recent farmers (pagination)
+        from django.core.paginator import Paginator
+        paginator = Paginator(partner_farmers.order_by('-created_at'), 25)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Filter options for dropdowns
+        unique_states = partner_farmers.exclude(
+            admin_level1__isnull=True
+        ).exclude(admin_level1='').values_list('admin_level1', flat=True).distinct()
+        
+        unique_genders = partner_farmers.exclude(
+            farmer_gender__isnull=True
+        ).exclude(farmer_gender='').values_list('farmer_gender', flat=True).distinct()
+        
+        unique_ages = partner_farmers.exclude(
+            age_category__isnull=True
+        ).exclude(age_category='').values_list('age_category', flat=True).distinct()
+        
+        # Calculate percentages
+        total_count = partner_farmers.count()
+        phone_percentage = (farmers_with_phones * 100 / total_count) if total_count > 0 else 0
+        own_phone_percentage = (farmers_own_phones * 100 / total_count) if total_count > 0 else 0
+        
+        context.update({
+            'partner_name': partner_name,
+            'total_farmers': total_count,
+            'gender_distribution': list(gender_distribution),
+            'age_distribution': list(age_distribution),
+            'state_distribution': list(state_distribution),
+            'city_distribution': list(city_distribution),
+            'farmers_with_phones': farmers_with_phones,
+            'farmers_own_phones': farmers_own_phones,
+            'phone_percentage': round(phone_percentage, 1),
+            'own_phone_percentage': round(own_phone_percentage, 1),
+            'farmers': page_obj,
+            'unique_states': unique_states,
+            'unique_genders': unique_genders,
+            'unique_ages': unique_ages,
+            'current_filters': {
+                'state': state_filter,
+                'gender': gender_filter,
+                'age_category': age_filter
+            }
+        })
+        
+        return context
+
+
+class PartnerExtensionAgentsView(LoginRequiredMixin, TemplateView):
+    """Partner-specific extension agents data"""
+    template_name = 'dashboard/partner_extension_agents.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
+            messages.error(request, 'You do not have access to partner-specific data.')
+            return redirect('dashboard:home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_profile = self.request.user.profile
+        partner_name = user_profile.partner_name
+        
+        # Partner-specific data
+        partner_data = AkilimoParticipant.objects.filter(partner=partner_name)
+        
+        # Extension agents (org contacts) with their performance
+        extension_agents = partner_data.exclude(
+            org_first_name__isnull=True
+        ).exclude(org_first_name='').values(
+            'org_first_name', 'org_surname', 'org_phone_no'
+        ).annotate(
+            farmers_reached=Count('id'),
+            events_conducted=Count('event_date', distinct=True),
+            states_covered=Count('admin_level1', distinct=True),
+            cities_covered=Count('event_city', distinct=True)
+        ).order_by('-farmers_reached')
+        
+        # Extension agent performance by state
+        ea_by_state = partner_data.exclude(
+            org_first_name__isnull=True
+        ).exclude(org_first_name='').exclude(
+            admin_level1__isnull=True
+        ).exclude(admin_level1='').values(
+            'admin_level1'
+        ).annotate(
+            unique_agents=Count('org_first_name', distinct=True),
+            farmers_reached=Count('id')
+        ).order_by('-farmers_reached')
+        
+        # Monthly EA activity
+        monthly_ea_activity = []
+        for i in range(12):
+            month_start = (datetime.now().date().replace(day=1) - timedelta(days=30*i))
+            month_end = month_start.replace(day=28) + timedelta(days=4)
+            month_end = month_end - timedelta(days=month_end.day)
+            
+            agents_active = partner_data.exclude(
+                org_first_name__isnull=True
+            ).exclude(org_first_name='').filter(
+                event_date__gte=month_start,
+                event_date__lte=month_end
+            ).values('org_first_name', 'org_surname').distinct().count()
+            
+            farmers_reached = partner_data.filter(
+                event_date__gte=month_start,
+                event_date__lte=month_end
+            ).count()
+            
+            monthly_ea_activity.append({
+                'month': month_start.strftime('%B %Y'),
+                'agents_active': agents_active,
+                'farmers_reached': farmers_reached
+            })
+        
+        monthly_ea_activity.reverse()
+        
+        # Training effectiveness metrics
+        training_effectiveness = partner_data.exclude(
+            event_type__isnull=True
+        ).exclude(event_type='').values('event_type').annotate(
+            farmers_trained=Count('id'),
+            agents_involved=Count('org_first_name', distinct=True),
+            avg_farmers_per_agent=Count('id') / Count('org_first_name', distinct=True)
+        ).order_by('-farmers_trained')
+        
+        # Calculate average farmers per agent
+        total_agents = extension_agents.count()
+        total_farmers_reached = partner_data.count()
+        avg_farmers_per_agent = (total_farmers_reached / total_agents) if total_agents > 0 else 0
+        
+        context.update({
+            'partner_name': partner_name,
+            'extension_agents': list(extension_agents),
+            'total_agents': total_agents,
+            'ea_by_state': list(ea_by_state),
+            'monthly_ea_activity': monthly_ea_activity,
+            'training_effectiveness': list(training_effectiveness),
+            'total_farmers_reached': total_farmers_reached,
+            'avg_farmers_per_agent': avg_farmers_per_agent,
         })
         
         return context
@@ -706,3 +1068,370 @@ def api_partner_metrics(request):
             'days': days_filter
         }
     })
+
+
+# Membership Certificate and ID Card Views
+@login_required
+def download_certificate(request):
+    """Download membership certificate as PDF"""
+    from .certificate_service import CertificateService
+    
+    try:
+        membership = request.user.membership
+        if not membership.is_active:
+            messages.error(request, "Your membership is not active. Please renew to download certificate.")
+            return redirect('dashboard:profile')
+        
+        # Generate certificate
+        certificate_service = CertificateService()
+        pdf_buffer = certificate_service.generate_membership_certificate(membership)
+        
+        # Mark certificate as generated
+        membership.certificate_generated = True
+        membership.save()
+        
+        # Create response
+        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="ANA_Certificate_{membership.certificate_number}.pdf"'
+        
+        return response
+        
+    except Membership.DoesNotExist:
+        messages.error(request, "No membership found. Please contact support.")
+        return redirect('dashboard:profile')
+    except Exception as e:
+        logger.error(f"Certificate generation error for user {request.user.id}: {str(e)}")
+        messages.error(request, "Error generating certificate. Please try again later.")
+        return redirect('dashboard:profile')
+
+
+@login_required
+def download_id_card(request):
+    """Download membership ID card as PDF"""
+    from .certificate_service import CertificateService
+    
+    try:
+        membership = request.user.membership
+        if not membership.is_active:
+            messages.error(request, "Your membership is not active. Please renew to download ID card.")
+            return redirect('dashboard:profile')
+        
+        # Generate ID card
+        certificate_service = CertificateService()
+        pdf_buffer = certificate_service.generate_id_card(membership)
+        
+        # Mark ID card as generated
+        membership.id_card_generated = True
+        membership.save()
+        
+        # Create response
+        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="ANA_ID_Card_{membership.certificate_number}.pdf"'
+        
+        return response
+        
+    except Membership.DoesNotExist:
+        messages.error(request, "No membership found. Please contact support.")
+        return redirect('dashboard:profile')
+    except Exception as e:
+        logger.error(f"ID card generation error for user {request.user.id}: {str(e)}")
+        messages.error(request, "Error generating ID card. Please try again later.")
+        return redirect('dashboard:profile')
+
+
+def verify_membership(request, qr_code):
+    """Public view to verify membership via QR code"""
+    try:
+        membership = get_object_or_404(Membership, qr_code=qr_code)
+        
+        context = {
+            'membership': membership,
+            'is_valid': membership.is_active,
+            'member_name': membership.member.get_full_name() or membership.member.username,
+            'certificate_number': membership.certificate_number,
+            'membership_type': membership.get_membership_type_display(),
+            'valid_until': membership.end_date,
+            'partner_name': getattr(membership.member.profile, 'partner_name', 'N/A') if hasattr(membership.member, 'profile') else 'N/A'
+        }
+        
+        return render(request, 'dashboard/verify_membership.html', context)
+        
+    except Membership.DoesNotExist:
+        context = {
+            'is_valid': False,
+            'error_message': 'Invalid or expired membership verification code.'
+        }
+        return render(request, 'dashboard/verify_membership.html', context)
+
+
+# Membership Application and Payment Views
+@login_required
+def membership_subscription(request):
+    """Membership subscription page with payment options"""
+    from .paystack_service import MEMBERSHIP_PRICING
+    
+    try:
+        membership = request.user.membership
+    except Membership.DoesNotExist:
+        # Create individual membership if it doesn't exist
+        membership = Membership.objects.create(
+            member=request.user,
+            membership_type='individual',
+            status='pending'
+        )
+    
+    # Convert Decimal pricing to float for JavaScript
+    pricing_for_template = {
+        'individual': float(MEMBERSHIP_PRICING['individual']),
+        'organization': float(MEMBERSHIP_PRICING['organization']),
+    }
+    
+    context = {
+        'membership': membership,
+        'pricing': pricing_for_template,
+        'user_has_active_membership': membership.is_active if membership else False,
+    }
+    
+    return render(request, 'dashboard/membership_subscription.html', context)
+
+
+@login_required
+def initiate_payment(request):
+    """Initiate Paystack payment for membership"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    import json
+    from .paystack_service import PaystackService, get_membership_price, generate_payment_reference
+    
+    try:
+        data = json.loads(request.body)
+        membership_type = data.get('membership_type', 'individual')
+        
+        # Validate membership type
+        if membership_type not in ['individual', 'organization']:
+            return JsonResponse({'error': 'Invalid membership type'}, status=400)
+        
+        # Get or create membership
+        membership, created = Membership.objects.get_or_create(
+            member=request.user,
+            defaults={
+                'membership_type': membership_type,
+                'status': 'pending'
+            }
+        )
+        
+        # Update membership type if different
+        if membership.membership_type != membership_type:
+            membership.membership_type = membership_type
+            membership.save()
+        
+        # Get pricing
+        amount = get_membership_price(membership_type)
+        
+        # Generate unique reference
+        reference = generate_payment_reference(request.user.id, membership_type)
+        
+        # Create payment record
+        payment = Payment.objects.create(
+            membership=membership,
+            amount=amount,
+            currency='NGN',
+            payment_method='paystack',
+            description=f'ANA {membership.get_membership_type_display()} - 1 Year Subscription',
+            paystack_reference=reference
+        )
+        
+        # Initialize Paystack transaction
+        paystack = PaystackService()
+        callback_url = request.build_absolute_uri('/dashboard/payment/verify/')
+        
+        metadata = {
+            'payment_id': str(payment.payment_id),
+            'membership_type': membership_type,
+            'user_id': request.user.id,
+            'user_name': request.user.get_full_name() or request.user.username,
+        }
+        
+        # Debug information
+        logger.info(f"Initializing payment for user {request.user.email}, amount: {amount}, reference: {reference}")
+        
+        paystack_response = paystack.initialize_transaction(
+            email=request.user.email,
+            amount=amount,
+            reference=reference,
+            callback_url=callback_url,
+            metadata=metadata
+        )
+        
+        logger.info(f"Paystack response: {paystack_response}")
+        
+        if paystack_response.get('status'):
+            # Update payment with Paystack data
+            payment.paystack_access_code = paystack_response['data'].get('access_code')
+            payment.gateway_response = paystack_response
+            payment.save()
+            
+            return JsonResponse({
+                'success': True,
+                'payment_id': str(payment.payment_id),
+                'amount': float(amount),
+                'currency': 'NGN',
+                'description': payment.description,
+                'customer_email': request.user.email,
+                'reference': reference,
+                'authorization_url': paystack_response['data']['authorization_url'],
+                'access_code': paystack_response['data'].get('access_code'),
+            })
+        else:
+            # Payment initialization failed
+            payment.status = 'failed'
+            payment.gateway_response = paystack_response
+            payment.save()
+            
+            return JsonResponse({
+                'success': False,
+                'error': paystack_response.get('message', 'Payment initialization failed')
+            }, status=400)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Payment initiation error: {str(e)}")
+        return JsonResponse({'error': 'Payment initiation failed'}, status=500)
+
+
+@login_required
+def payment_verification(request):
+    """Handle payment verification from Paystack"""
+    from .paystack_service import PaystackService
+    
+    reference = request.GET.get('reference')
+    
+    if not reference:
+        messages.error(request, "Invalid payment reference")
+        return redirect('dashboard:membership_subscription')
+    
+    try:
+        # Find payment by reference
+        payment = Payment.objects.get(paystack_reference=reference)
+        logger.info(f"Found payment: {payment.payment_id} for reference: {reference}")
+        
+        # Verify with Paystack API
+        paystack = PaystackService()
+        verification_response = paystack.verify_transaction(reference)
+        logger.info(f"Paystack verification response: {verification_response}")
+        
+        if verification_response.get('status') and verification_response.get('data'):
+            transaction_data = verification_response['data']
+            
+            # Check if payment was successful
+            if transaction_data.get('status') == 'success':
+                # Update payment status
+                payment.status = 'successful'
+                payment.paid_at = timezone.now()
+                payment.gateway_response = verification_response
+                payment.save()
+                
+                # Activate membership
+                membership = payment.membership
+                membership.status = 'active'
+                membership.start_date = timezone.now()
+                # end_date is set automatically in the save method (1 year from start)
+                membership.save()
+                
+                messages.success(
+                    request, 
+                    f"Payment successful! Your {membership.get_membership_type_display()} membership is now active for 1 year."
+                )
+                return redirect('dashboard:profile')
+            else:
+                # Payment failed
+                payment.status = 'failed'
+                payment.gateway_response = verification_response
+                payment.save()
+                
+                messages.error(request, f"Payment failed: {transaction_data.get('gateway_response', 'Unknown error')}")
+                return redirect('dashboard:membership_subscription')
+        else:
+            # Verification failed
+            payment.status = 'failed'
+            payment.gateway_response = verification_response
+            payment.save()
+            
+            error_msg = verification_response.get('message', 'Payment verification failed')
+            messages.error(request, f"Payment verification failed: {error_msg}. Please contact support if you were charged.")
+            return redirect('dashboard:membership_subscription')
+        
+    except Payment.DoesNotExist:
+        messages.error(request, "Payment verification failed. Invalid reference.")
+        return redirect('dashboard:membership_subscription')
+    except Exception as e:
+        logger.error(f"Payment verification error: {str(e)}")
+        messages.error(request, "Payment verification failed. Please contact support.")
+        return redirect('dashboard:membership_subscription')
+
+
+@login_required
+def mock_payment_page(request, payment_id):
+    """Mock payment page for testing (replace with actual Paystack integration)"""
+    try:
+        payment = get_object_or_404(Payment, payment_id=payment_id)
+        
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            
+            if action == 'success':
+                payment.status = 'successful'
+                payment.paid_at = timezone.now()
+                payment.save()
+                
+                # Activate membership
+                membership = payment.membership
+                membership.status = 'active'
+                membership.start_date = timezone.now()
+                membership.save()
+                
+                return redirect(f'/dashboard/payment/verify/?reference={payment.paystack_reference}')
+            
+            elif action == 'failed':
+                payment.status = 'failed'
+                payment.save()
+                messages.error(request, "Payment failed. Please try again.")
+                return redirect('dashboard:membership_subscription')
+        
+        context = {
+            'payment': payment,
+            'membership': payment.membership
+        }
+        
+        return render(request, 'dashboard/mock_payment.html', context)
+        
+    except Payment.DoesNotExist:
+        messages.error(request, "Invalid payment.")
+        return redirect('dashboard:membership_subscription')
+
+
+@login_required
+def test_buttons(request):
+    """Test page for debugging buttons"""
+    try:
+        membership = request.user.membership
+    except Membership.DoesNotExist:
+        membership = None
+    
+    context = {
+        'membership': membership,
+    }
+    
+    return render(request, 'dashboard/test_buttons.html', context)
+
+
+def simple_test(request):
+    """Very basic test page"""
+    from django.http import HttpResponse
+    
+    with open('/Users/Apple/projects/ana_pro/templates/dashboard/simple_test.html', 'r') as f:
+        content = f.read()
+    
+    return HttpResponse(content)

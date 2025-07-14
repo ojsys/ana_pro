@@ -19,6 +19,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+# Customize admin site
+admin.site.site_header = "AKILIMO Nigeria Association Admin"
+admin.site.site_title = "AKILIMO Admin" 
+admin.site.index_title = "Welcome to AKILIMO Nigeria Association Administration"
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('dashboard/', include('dashboard.urls')),

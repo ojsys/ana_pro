@@ -1,0 +1,328 @@
+{% extends "admin/base.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}
+    {% if add %}
+        Add {{ opts.verbose_name }} | {{ site_title|default:_('Django site admin') }}
+    {% else %}
+        Change {{ opts.verbose_name }} | {{ site_title|default:_('Django site admin') }}
+    {% endif %}
+{% endblock %}
+
+{% block content_title %}
+    {% if add %}
+        Add {{ opts.verbose_name }}
+    {% else %}
+        Change {{ opts.verbose_name }}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a></li>
+    <li class="breadcrumb-item active">
+        {% if add %}
+            Add
+        {% else %}
+            {{ original|truncatewords:"18" }}
+        {% endif %}
+    </li>
+{% endblock %}
+
+{% block content %}
+<form method="post" {% if has_file_field %}enctype="multipart/form-data"{% endif %} novalidate>
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-{% if add %}plus-circle{% else %}pencil{% endif %} me-2"></i>
+                        {{ opts.verbose_name|capfirst }} Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Please correct the errors below:</strong>
+                            {{ adminform.form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    {% if adminform %}
+                        <fieldset class="module aligned">
+                            {% for fieldset in adminform %}
+                                {% include "admin/includes/fieldset.html" %}
+                            {% endfor %}
+                        </fieldset>
+                    {% endif %}
+
+                    {% block after_field_sets %}{% endblock %}
+
+                    {% for inline_admin_formset in inline_admin_formsets %}
+                        {% include inline_admin_formset.opts.template %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Actions Card -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="_save" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Save
+                        </button>
+                        
+                        {% if show_save_and_continue %}
+                            <button type="submit" name="_continue" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-right-circle me-1"></i>
+                                Save and continue editing
+                            </button>
+                        {% endif %}
+                        
+                        {% if show_save_and_add_another %}
+                            <button type="submit" name="_addanother" class="btn btn-outline-success">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Save and add another
+                            </button>
+                        {% endif %}
+                        
+                        {% if show_delete_link %}
+                            <a href="{% url opts|admin_urlname:'delete' original.pk|admin_urlquote %}" class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i>
+                                Delete
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url opts|admin_urlname:'changelist' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {% if not add and object_id %}
+            <!-- Object Info Card -->
+            <div class="admin-card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Object Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>Created:</strong><br>
+                            {% if original.created_at %}
+                                {{ original.created_at|date:"M d, Y H:i" }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Last modified:</strong><br>
+                            {% if original.updated_at %}
+                                {{ original.updated_at|date:"M d, Y H:i" }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                        <div>
+                            <strong>ID:</strong> {{ object_id }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if show_save_and_add_another or show_save_and_continue %}
+            <!-- Help Card -->
+            <div class="admin-card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-question-circle me-2"></i>
+                        Quick Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-1"></i>
+                                <strong>Save:</strong> Save changes and return to list
+                            </li>
+                            {% if show_save_and_continue %}
+                            <li class="mb-2">
+                                <i class="bi bi-arrow-right-circle text-primary me-1"></i>
+                                <strong>Save and continue:</strong> Save changes and stay on this page
+                            </li>
+                            {% endif %}
+                            {% if show_save_and_add_another %}
+                            <li class="mb-2">
+                                <i class="bi bi-plus-circle text-success me-1"></i>
+                                <strong>Save and add another:</strong> Save changes and create a new {{ opts.verbose_name|lower }}
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+<style>
+.form-row {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.errorlist {
+    color: #D32F2F;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    list-style: none;
+    padding: 0;
+}
+
+.errorlist li {
+    margin-bottom: 0.25rem;
+}
+
+.field-box {
+    margin-bottom: 1.5rem;
+}
+
+.field-box label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.required label::after {
+    content: " *";
+    color: #D32F2F;
+}
+
+.wide label {
+    width: 100%;
+}
+
+.vTextField, .vURLField, .vEmailField {
+    width: 100%;
+    max-width: none;
+}
+
+.vIntegerField, .vPositiveIntegerField {
+    width: auto;
+    min-width: 120px;
+}
+
+.vDateField {
+    width: auto;
+    min-width: 150px;
+}
+
+.vTimeField {
+    width: auto;
+    min-width: 100px;
+}
+
+.vDateTimeField {
+    width: auto;
+    min-width: 200px;
+}
+
+.vLargeTextField {
+    width: 100%;
+    min-height: 120px;
+}
+
+.vCheckboxField {
+    margin-right: 0.5rem;
+}
+
+.checkbox-row label {
+    display: inline;
+    margin-left: 0.5rem;
+}
+
+.aligned .form-row label {
+    padding-top: 0.5rem;
+}
+
+.module {
+    border: none;
+    margin: 0;
+}
+
+.module h2 {
+    background: var(--surface-green);
+    color: var(--primary-green);
+    font-size: 1.125rem;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    margin: 0 -2rem 1.5rem -2rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.collapse {
+    border: none;
+}
+
+.collapse h3 {
+    background: var(--bg-light);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    margin: 1rem -1rem 0.5rem -1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.collapse h3:hover {
+    background: var(--surface-green);
+    color: var(--primary-green);
+}
+</style>
+
+{% endblock %}

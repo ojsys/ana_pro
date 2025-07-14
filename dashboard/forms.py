@@ -103,6 +103,13 @@ class CustomUserCreationForm(UserCreationForm):
         
         self.fields['partner_organization'].choices = partner_choices
     
+    def clean_email(self):
+        """Ensure email uniqueness"""
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError("A user with this email address already exists.")
+        return email
+    
     def clean(self):
         cleaned_data = super().clean()
         partner_organization = cleaned_data.get('partner_organization')
@@ -152,18 +159,36 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class CustomAuthenticationForm(AuthenticationForm):
-    """Enhanced login form with Bootstrap styling"""
+    """Enhanced login form with email authentication and Bootstrap styling"""
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Change username field to email
+        self.fields['username'].label = 'Email Address'
         self.fields['username'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Enter your username'
+            'placeholder': 'Enter your email address',
+            'type': 'email'
         })
         self.fields['password'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Enter your password'
         })
+    
+    def clean_username(self):
+        """Validate email format for username field"""
+        username = self.cleaned_data.get('username')
+        if username:
+            # Allow both email and username for flexibility
+            if '@' in username:
+                # If it contains @, validate as email
+                from django.core.validators import validate_email
+                from django.core.exceptions import ValidationError
+                try:
+                    validate_email(username)
+                except ValidationError:
+                    raise forms.ValidationError("Please enter a valid email address.")
+        return username
 
 
 class UserProfileForm(forms.ModelForm):
@@ -182,14 +207,22 @@ class UserProfileForm(forms.ModelForm):
         required=True,
         widget=forms.EmailInput(attrs={'class': 'form-control'})
     )
+    partner_organization_select = forms.ModelChoiceField(
+        queryset=PartnerOrganization.objects.filter(is_active=True),
+        required=False,
+        empty_label="Select a partner organization (optional)",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text="Link your profile to an official partner organization for verification"
+    )
     
     class Meta:
         model = UserProfile
-        fields = ['phone_number', 'position', 'department', 'email_notifications']
+        fields = ['phone_number', 'position', 'department', 'profile_photo', 'email_notifications']
         widgets = {
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'position': forms.TextInput(attrs={'class': 'form-control'}),
             'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'profile_photo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
             'email_notifications': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
     
@@ -202,17 +235,9 @@ class UserProfileForm(forms.ModelForm):
             self.fields['last_name'].initial = self.user.last_name
             self.fields['email'].initial = self.user.email
             
-        # Make partner organization read-only if already set
+        # Set initial value for partner organization if one is already linked
         if self.instance and self.instance.partner_organization:
-            self.fields['partner_organization'] = forms.ModelChoiceField(
-                queryset=PartnerOrganization.objects.filter(is_active=True),
-                widget=forms.Select(attrs={
-                    'class': 'form-control',
-                    'disabled': 'disabled'
-                }),
-                initial=self.instance.partner_organization,
-                required=False
-            )
+            self.fields['partner_organization_select'].initial = self.instance.partner_organization
     
     def save(self, commit=True):
         profile = super().save(commit=False)
@@ -222,6 +247,11 @@ class UserProfileForm(forms.ModelForm):
             self.user.first_name = self.cleaned_data['first_name']
             self.user.last_name = self.cleaned_data['last_name']
             self.user.email = self.cleaned_data['email']
+            
+            # Handle partner organization selection
+            partner_org = self.cleaned_data.get('partner_organization_select')
+            if partner_org:
+                profile.partner_organization = partner_org
             
             if commit:
                 self.user.save()

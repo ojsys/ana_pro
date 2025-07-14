@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>Simple JavaScript Test</h1>
+    
+    <button onclick="alert('This should work!')">Test Alert</button>
+    
+    <button onclick="console.log('Console test')">Test Console</button>
+    
+    <button id="testBtn">Test Event Listener</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        // Immediate execution
+        console.log('Script loaded');
+        document.getElementById('output').innerHTML = 'JavaScript is working!';
+        
+        // Event listener test
+        document.getElementById('testBtn').addEventListener('click', function() {
+            alert('Event listener works!');
+            console.log('Event listener triggered');
+        });
+        
+        // Test fetch (basic connectivity)
+        function testFetch() {
+            fetch('/dashboard/')
+                .then(response => {
+                    console.log('Fetch response:', response.status);
+                    alert('Server connection: ' + response.status);
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('Fetch error: ' + error.message);
+                });
+        }
+        
+        // Auto-run tests
+        setTimeout(function() {
+            console.log('Timeout test working');
+            document.getElementById('output').innerHTML += '<br>Timeout working!';
+        }, 1000);
+    </script>
+    
+    <br><br>
+    <button onclick="testFetch()">Test Server Connection</button>
+</body>
+</html>

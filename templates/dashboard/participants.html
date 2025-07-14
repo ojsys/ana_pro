@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Participants - Akilimo Nigeria Association{% endblock %}
 
@@ -123,21 +124,21 @@
                                         </td>
                                         <td>
                                             {% if participant.farm_size %}
-                                                {{ participant.farm_size|floatformat:1 }}
+                                                {{ participant.farm_size|floatformat:1|intcomma }}
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if participant.previous_yield %}
-                                                {{ participant.previous_yield|floatformat:1 }} t/ha
+                                                {{ participant.previous_yield|floatformat:1|intcomma }} t/ha
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if participant.expected_yield %}
-                                                <span class="text-success">{{ participant.expected_yield|floatformat:1 }} t/ha</span>
+                                                <span class="text-success">{{ participant.expected_yield|floatformat:1|intcomma }} t/ha</span>
                                                 {% if participant.previous_yield and participant.expected_yield > participant.previous_yield %}
                                                     <small class="text-success d-block">
                                                         <i class="fas fa-arrow-up"></i>

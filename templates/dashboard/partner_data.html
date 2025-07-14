@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Our Data - {{ partner_name }} - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">analytics</span>
+        Our Data Overview
+    </h1>
+    <p class="page-subtitle">{{ partner_name }} - Partner-specific analytics and insights</p>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">people</span>
+            </div>
+            <div class="metric-label">Farmers Reached</div>
+            <div class="metric-value">{{ total_farmers|default:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">event</span>
+            </div>
+            <div class="metric-label">Events Organized</div>
+            <div class="metric-value">{{ partner_events.count|default:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">location_city</span>
+            </div>
+            <div class="metric-label">Cities of Influence</div>
+            <div class="metric-value">{{ cities_of_influence.count|default:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">map</span>
+            </div>
+            <div class="metric-label">States Covered</div>
+            <div class="metric-value">{{ states_of_influence.count|default:0|intcomma }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-5">
+    <!-- Cities of Influence -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">location_city</span>
+                    Top Cities of Influence
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 400px;">
+                    <canvas id="citiesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- States Coverage -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">map</span>
+                    State Coverage
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 400px;">
+                    <canvas id="statesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Crops Promoted -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">eco</span>
+                    Crops Promoted
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 350px;">
+                    <canvas id="cropsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Training Methods -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">school</span>
+                    Training Methods
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 350px;">
+                    <canvas id="trainingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Activity Trend -->
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">trending_up</span>
+                    Monthly Activity Trend (Last 12 Months)
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 400px;">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables -->
+<div class="row g-4">
+    <!-- Recent Events -->
+    <div class="col-lg-6">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">schedule</span>
+                    Recent Events
+                </h5>
+            </div>
+            <div class="table-responsive">
+                {% if partner_events %}
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>City</th>
+                                <th>Type</th>
+                                <th>Venue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in partner_events|slice:":10" %}
+                            <tr>
+                                <td>
+                                    {% if event.event_date %}
+                                        {{ event.event_date|date:"M d, Y" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ event.event_city|default:"-" }}</span>
+                                </td>
+                                <td>{{ event.event_type|default:"-" }}</td>
+                                <td>{{ event.event_venue|truncatechars:30|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center py-4">
+                        <span class="material-icons text-muted" style="font-size: 48px;">event_busy</span>
+                        <p class="text-muted mt-2">No events data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Cities Performance -->
+    <div class="col-lg-6">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">star</span>
+                    Top Performing Cities
+                </h5>
+            </div>
+            <div class="table-responsive">
+                {% if cities_of_influence %}
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>City</th>
+                                <th>Farmers</th>
+                                <th>Events</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for city in cities_of_influence|slice:":10" %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="material-icons text-success me-2">location_on</span>
+                                        <strong>{{ city.event_city }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ city.farmer_count }}</span>
+                                </td>
+                                <td>{{ city.event_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center py-4">
+                        <span class="material-icons text-muted" style="font-size: 48px;">location_off</span>
+                        <p class="text-muted mt-2">No city data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const greenPalette = [
+        '#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7',
+        '#388E3C', '#43A047', '#689F38', '#827717', '#558B2F'
+    ];
+    
+    const diversePalette = [
+        '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336',
+        '#00BCD4', '#FFEB3B', '#795548', '#607D8B', '#E91E63'
+    ];
+
+    // Cities Chart
+    const citiesData = {{ cities_of_influence|safe }};
+    if (citiesData.length > 0) {
+        const cityLabels = citiesData.slice(0, 10).map(item => item.event_city);
+        const cityCounts = citiesData.slice(0, 10).map(item => item.farmer_count);
+        
+        const citiesCtx = document.getElementById('citiesChart').getContext('2d');
+        new Chart(citiesCtx, {
+            type: 'bar',
+            data: {
+                labels: cityLabels,
+                datasets: [{
+                    label: 'Farmers Reached',
+                    data: cityCounts,
+                    backgroundColor: '#4CAF50',
+                    borderColor: '#2E7D32',
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 45 }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // States Chart
+    const statesData = {{ states_of_influence|safe }};
+    if (statesData.length > 0) {
+        const stateLabels = statesData.map(item => item.admin_level1);
+        const stateCounts = statesData.map(item => item.farmer_count);
+        
+        const statesCtx = document.getElementById('statesChart').getContext('2d');
+        new Chart(statesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: stateLabels,
+                datasets: [{
+                    data: stateCounts,
+                    backgroundColor: greenPalette.slice(0, stateLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+
+    // Crops Chart
+    const cropsData = {{ crops_promoted|safe }};
+    if (cropsData.length > 0) {
+        const cropLabels = cropsData.map(item => item.crop);
+        const cropCounts = cropsData.map(item => item.count);
+        
+        const cropsCtx = document.getElementById('cropsChart').getContext('2d');
+        new Chart(cropsCtx, {
+            type: 'pie',
+            data: {
+                labels: cropLabels,
+                datasets: [{
+                    data: cropCounts,
+                    backgroundColor: diversePalette.slice(0, cropLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 10, usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+
+    // Training Methods Chart
+    const trainingData = {{ training_methods|safe }};
+    if (trainingData.length > 0) {
+        const trainingLabels = trainingData.map(item => item.event_type);
+        const trainingCounts = trainingData.map(item => item.count);
+        
+        const trainingCtx = document.getElementById('trainingChart').getContext('2d');
+        new Chart(trainingCtx, {
+            type: 'bar',
+            data: {
+                labels: trainingLabels,
+                datasets: [{
+                    label: 'Sessions',
+                    data: trainingCounts,
+                    backgroundColor: '#2196F3',
+                    borderColor: '#1976D2',
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    y: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // Monthly Trend Chart
+    const monthlyData = {{ monthly_activity|safe }};
+    if (monthlyData.length > 0) {
+        const monthLabels = monthlyData.map(item => item.month.split(' ')[0]);
+        const monthlyCounts = monthlyData.map(item => item.count);
+        
+        const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Farmers Reached',
+                    data: monthlyCounts,
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#4CAF50',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+</script>
+{% endblock %}

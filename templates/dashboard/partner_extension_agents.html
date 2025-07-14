@@ -1,0 +1,484 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Our Extension Agents - {{ partner_name }} - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">support_agent</span>
+        Our Extension Agents
+    </h1>
+    <p class="page-subtitle">{{ partner_name }} - Extension agents performance and impact</p>
+</div>
+
+<!-- Key Metrics -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">support_agent</span>
+            </div>
+            <div class="metric-label">Total Extension Agents</div>
+            <div class="metric-value">{{ total_agents|default:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">people</span>
+            </div>
+            <div class="metric-label">Farmers Reached</div>
+            <div class="metric-value">{{ total_farmers_reached|default:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">calculate</span>
+            </div>
+            <div class="metric-label">Avg Farmers per Agent</div>
+            <div class="metric-value">{{ avg_farmers_per_agent|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <span class="material-icons">map</span>
+            </div>
+            <div class="metric-label">States Covered</div>
+            <div class="metric-value">{{ ea_by_state.count|default:0|intcomma }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-5">
+    <!-- Monthly EA Activity -->
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">trending_up</span>
+                    Monthly Extension Agent Activity
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 400px;">
+                    <canvas id="monthlyActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- EA Performance by State -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">map</span>
+                    Coverage by State
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 400px;">
+                    <canvas id="stateChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Effectiveness -->
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">school</span>
+                    Training Effectiveness by Method
+                </h5>
+            </div>
+            <div class="chart-body">
+                <div style="position: relative; height: 350px;">
+                    <canvas id="trainingEffectivenessChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables -->
+<div class="row g-4">
+    <!-- Top Performing Extension Agents -->
+    <div class="col-lg-8">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">star</span>
+                    Top Performing Extension Agents
+                </h5>
+            </div>
+            <div class="table-responsive">
+                {% if extension_agents %}
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Extension Agent</th>
+                                <th>Farmers Reached</th>
+                                <th>Events Conducted</th>
+                                <th>States Covered</th>
+                                <th>Cities Covered</th>
+                                <th>Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agent in extension_agents %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 32px; height: 32px;">
+                                            <span class="material-icons text-white" style="font-size: 16px;">support_agent</span>
+                                        </div>
+                                        <div>
+                                            <strong>{{ agent.org_first_name }} {{ agent.org_surname }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ agent.farmers_reached }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="material-icons text-primary me-1" style="font-size: 16px;">event</span>
+                                        {{ agent.events_conducted }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="material-icons text-success me-1" style="font-size: 16px;">map</span>
+                                        {{ agent.states_covered }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="material-icons text-info me-1" style="font-size: 16px;">location_city</span>
+                                        {{ agent.cities_covered }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if agent.org_phone_no %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="material-icons text-success me-1" style="font-size: 16px;">phone</span>
+                                            <small>{{ agent.org_phone_no }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <span class="material-icons text-muted" style="font-size: 64px;">support_agent</span>
+                        </div>
+                        <h5 class="text-muted mb-2">No Extension Agents Found</h5>
+                        <p class="text-muted">No extension agent data available for this partner.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- State Performance Summary -->
+    <div class="col-lg-4">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">leaderboard</span>
+                    State Performance
+                </h5>
+            </div>
+            <div class="table-responsive">
+                {% if ea_by_state %}
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>State</th>
+                                <th>Agents</th>
+                                <th>Farmers</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for state in ea_by_state %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="material-icons text-primary me-2" style="font-size: 16px;">place</span>
+                                        <strong>{{ state.admin_level1 }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ state.unique_agents }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ state.farmers_reached }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center py-4">
+                        <span class="material-icons text-muted" style="font-size: 48px;">location_off</span>
+                        <p class="text-muted mt-2">No state data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Effectiveness Table -->
+{% if training_effectiveness %}
+<div class="row g-4 mt-4">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <span class="material-icons">analytics</span>
+                    Training Method Effectiveness
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Training Method</th>
+                            <th>Farmers Trained</th>
+                            <th>Agents Involved</th>
+                            <th>Avg Farmers per Agent</th>
+                            <th>Effectiveness</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for method in training_effectiveness %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="material-icons text-success me-2" style="font-size: 16px;">school</span>
+                                    <strong>{{ method.event_type }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ method.farmers_trained }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ method.agents_involved }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ method.avg_farmers_per_agent|floatformat:0|intcomma }}</span>
+                            </td>
+                            <td>
+                                {% if method.avg_farmers_per_agent >= 50 %}
+                                    <span class="badge bg-success">High</span>
+                                {% elif method.avg_farmers_per_agent >= 20 %}
+                                    <span class="badge bg-warning">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Low</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const greenPalette = [
+        '#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7',
+        '#388E3C', '#43A047', '#689F38', '#827717', '#558B2F'
+    ];
+
+    // Monthly Activity Chart
+    const monthlyData = {{ monthly_ea_activity|safe }};
+    if (monthlyData.length > 0) {
+        const monthLabels = monthlyData.map(item => item.month.split(' ')[0]);
+        const agentsActive = monthlyData.map(item => item.agents_active);
+        const farmersReached = monthlyData.map(item => item.farmers_reached);
+        
+        const monthlyCtx = document.getElementById('monthlyActivityChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Active Agents',
+                    data: agentsActive,
+                    borderColor: '#2196F3',
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#2196F3',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Farmers Reached',
+                    data: farmersReached,
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#4CAF50',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Active Agents' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Farmers Reached' },
+                        grid: { drawOnChartArea: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+
+    // State Performance Chart
+    const stateData = {{ ea_by_state|safe }};
+    if (stateData.length > 0) {
+        const stateLabels = stateData.map(item => item.admin_level1);
+        const stateFarmers = stateData.map(item => item.farmers_reached);
+        
+        const stateCtx = document.getElementById('stateChart').getContext('2d');
+        new Chart(stateCtx, {
+            type: 'doughnut',
+            data: {
+                labels: stateLabels,
+                datasets: [{
+                    data: stateFarmers,
+                    backgroundColor: greenPalette.slice(0, stateLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { 
+                            padding: 10, 
+                            usePointStyle: true,
+                            font: { size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Training Effectiveness Chart
+    const trainingData = {{ training_effectiveness|safe }};
+    if (trainingData.length > 0) {
+        const trainingLabels = trainingData.map(item => item.event_type);
+        const farmersTrained = trainingData.map(item => item.farmers_trained);
+        const agentsInvolved = trainingData.map(item => item.agents_involved);
+        
+        const trainingCtx = document.getElementById('trainingEffectivenessChart').getContext('2d');
+        new Chart(trainingCtx, {
+            type: 'bar',
+            data: {
+                labels: trainingLabels,
+                datasets: [{
+                    label: 'Farmers Trained',
+                    data: farmersTrained,
+                    backgroundColor: '#4CAF50',
+                    borderColor: '#2E7D32',
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Agents Involved',
+                    data: agentsInvolved,
+                    backgroundColor: '#2196F3',
+                    borderColor: '#1976D2',
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Farmers Trained' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Agents Involved' },
+                        grid: { drawOnChartArea: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

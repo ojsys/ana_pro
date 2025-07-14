@@ -1,0 +1,297 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content_title %}Admin Dashboard{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <!-- Quick Stats Cards -->
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-people display-4 text-primary"></i>
+                </div>
+                <h3 class="text-primary mb-1">{{ total_users|default:"0" }}</h3>
+                <p class="text-muted mb-0">Total Users</p>
+                <a href="{% url 'admin:auth_user_changelist' %}" class="btn btn-outline-primary btn-sm mt-2">
+                    <i class="bi bi-arrow-right"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-building display-4 text-success"></i>
+                </div>
+                <h3 class="text-success mb-1">{{ total_partners|default:"0" }}</h3>
+                <p class="text-muted mb-0">Partner Organizations</p>
+                <a href="{% url 'admin:dashboard_partnerorganization_changelist' %}" class="btn btn-outline-success btn-sm mt-2">
+                    <i class="bi bi-arrow-right"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-card-heading display-4 text-warning"></i>
+                </div>
+                <h3 class="text-warning mb-1">{{ total_memberships|default:"0" }}</h3>
+                <p class="text-muted mb-0">Active Memberships</p>
+                <a href="{% url 'admin:dashboard_membership_changelist' %}" class="btn btn-outline-warning btn-sm mt-2">
+                    <i class="bi bi-arrow-right"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-people-fill display-4 text-info"></i>
+                </div>
+                <h3 class="text-info mb-1">{{ total_participants|default:"0" }}</h3>
+                <p class="text-muted mb-0">AKILIMO Participants</p>
+                <a href="{% url 'admin:dashboard_akilimoparticipant_changelist' %}" class="btn btn-outline-info btn-sm mt-2">
+                    <i class="bi bi-arrow-right"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All Models Overview -->
+<div class="admin-card mb-4">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="bi bi-grid me-2"></i>
+            All Models
+        </h5>
+    </div>
+    <div class="card-body">
+        {% include "admin/app_list.html" %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Recent Users
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                    <div class="list-group list-group-flush">
+                        {% for user in recent_users %}
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ user.get_full_name|default:user.username }}</h6>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </div>
+                                <small class="text-muted">{{ user.date_joined|timesince }} ago</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'admin:auth_user_changelist' %}" class="btn btn-outline-primary">
+                            View All Users
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-person display-4 mb-3"></i>
+                        <p>No users yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Memberships -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-card-heading me-2"></i>
+                    Recent Memberships
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_memberships %}
+                    <div class="list-group list-group-flush">
+                        {% for membership in recent_memberships %}
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ membership.member.get_full_name|default:membership.member.username }}</h6>
+                                    <small class="text-muted">
+                                        <span class="badge bg-{% if membership.status == 'active' %}success{% elif membership.status == 'pending' %}warning{% else %}secondary{% endif %}">
+                                            {{ membership.get_status_display }}
+                                        </span>
+                                    </small>
+                                </div>
+                                <small class="text-muted">{{ membership.created_at|timesince }} ago</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'admin:dashboard_membership_changelist' %}" class="btn btn-outline-primary">
+                            View All Memberships
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-card-heading display-4 mb-3"></i>
+                        <p>No memberships yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-lg-8 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-lightning me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{% url 'admin:auth_user_add' %}" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-person-plus display-6 mb-2"></i>
+                            <span>Add User</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'admin:dashboard_partnerorganization_add' %}" class="btn btn-outline-success w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-building-add display-6 mb-2"></i>
+                            <span>Add Partner</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'admin:website_newsarticle_add' %}" class="btn btn-outline-info w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-newspaper display-6 mb-2"></i>
+                            <span>Add News</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="col-lg-4 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-gear me-2"></i>
+                    System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Database</span>
+                        <span class="badge bg-success">Online</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>User Sessions</span>
+                        <span class="badge bg-success">{{ active_sessions|default:"0" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Last Sync</span>
+                        <small class="text-muted">{{ last_sync|default:"Never"|timesince }} ago</small>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dashboard:api_sync_data' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-repeat me-1"></i>
+                        Sync Data
+                    </a>
+                    <a href="{% url 'website:home' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-globe me-1"></i>
+                        View Website
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-activity me-2"></i>
+                    Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_activity %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Object</th>
+                                    <th>User</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activity %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{% if activity.action_flag == 1 %}success{% elif activity.action_flag == 2 %}warning{% else %}danger{% endif %}">
+                                            {% if activity.action_flag == 1 %}Added{% elif activity.action_flag == 2 %}Changed{% else %}Deleted{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ activity.object_repr }}</td>
+                                    <td>{{ activity.user.get_full_name|default:activity.user.username }}</td>
+                                    <td>{{ activity.action_time|timesince }} ago</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-activity display-4 mb-3"></i>
+                        <p>No recent activity</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

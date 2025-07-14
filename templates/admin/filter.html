@@ -1,0 +1,32 @@
+{% load i18n %}
+<div class="filter-group" data-filter-title="{{ title }}">
+    <div class="filter-title-wrapper">
+        <h6 class="filter-title">
+            <i class="bi bi-tag me-2"></i>
+            {% blocktranslate with filter_title=title %}{{ filter_title }}{% endblocktranslate %}
+        </h6>
+    </div>
+    <div class="filter-options">
+        {% for choice in choices %}
+            <div class="filter-choice">
+                <a href="{{ choice.query_string|iriencode }}" 
+                   class="filter-link {% if choice.selected %}active{% endif %}"
+                   title="{{ choice.display }}">
+                    <span class="filter-icon">
+                        {% if choice.selected %}
+                            <i class="bi bi-check-circle-fill"></i>
+                        {% else %}
+                            <i class="bi bi-circle"></i>
+                        {% endif %}
+                    </span>
+                    <span class="filter-text">{{ choice.display }}</span>
+                    {% if choice.selected %}
+                        <span class="filter-badge ms-auto">
+                            <i class="bi bi-check"></i>
+                        </span>
+                    {% endif %}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>

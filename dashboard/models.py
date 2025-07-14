@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import uuid
+from datetime import timedelta
 
 class APIConfiguration(models.Model):
     """Store API configuration and tokens"""
@@ -76,6 +78,7 @@ class UserProfile(models.Model):
     phone_number = models.CharField(max_length=20, blank=True)
     position = models.CharField(max_length=100, blank=True, help_text="Job title/position in organization")
     department = models.CharField(max_length=100, blank=True)
+    profile_photo = models.ImageField(upload_to='profiles/', blank=True, null=True, help_text="Profile photo for ID card")
     
     # Profile status
     is_partner_verified = models.BooleanField(default=False, help_text="Has partner organization been verified?")
@@ -97,13 +100,92 @@ class UserProfile(models.Model):
         return f"{self.user.get_full_name() or self.user.username} - {self.partner_organization or 'No Partner'}"
     
     def save(self, *args, **kwargs):
-        # Check if profile is completed
-        if (self.partner_organization and self.phone_number and 
-            self.position and not self.profile_completed):
-            self.profile_completed = True
+        # Check if profile is completed based on essential fields
+        was_completed = self.profile_completed
+        
+        # Core profile completion criteria
+        has_basic_info = bool(self.user.first_name and self.user.last_name and self.user.email)
+        has_contact = bool(self.phone_number)
+        has_position = bool(self.position)
+        has_partner = bool(self.partner_organization or self.partner_name)
+        
+        # Profile is completed if all essential fields are filled
+        self.profile_completed = has_basic_info and has_contact and has_position and has_partner
+        
+        # Set completion date when profile becomes completed for the first time
+        if self.profile_completed and not was_completed:
             self.profile_completion_date = timezone.now()
+        elif not self.profile_completed and was_completed:
+            # If profile becomes incomplete, clear the completion date
+            self.profile_completion_date = None
         
         super().save(*args, **kwargs)
+    
+    @property
+    def completion_percentage(self):
+        """Calculate profile completion percentage"""
+        total_fields = 6  # Basic info (3) + contact + position + partner
+        completed_fields = 0
+        
+        # Basic info (first name, last name, email)
+        if self.user.first_name and self.user.last_name and self.user.email:
+            completed_fields += 3
+        
+        # Contact info
+        if self.phone_number:
+            completed_fields += 1
+            
+        # Position
+        if self.position:
+            completed_fields += 1
+            
+        # Partner info
+        if self.partner_organization or self.partner_name:
+            completed_fields += 1
+            
+        return int((completed_fields / total_fields) * 100)
+    
+    @property
+    def profile_status_text(self):
+        """Get human-readable profile status"""
+        if self.profile_completed:
+            return "Complete"
+        else:
+            percentage = self.completion_percentage
+            if percentage >= 80:
+                return "Almost Complete"
+            elif percentage >= 50:
+                return "In Progress"
+            else:
+                return "Incomplete"
+    
+    @property
+    def partner_status_text(self):
+        """Get human-readable partner verification status"""
+        if self.is_partner_verified:
+            return "Verified"
+        elif self.partner_organization:
+            return "Pending Verification"
+        else:
+            return "No Partner Organization"
+    
+    @property
+    def missing_fields(self):
+        """Get list of missing required fields"""
+        missing = []
+        
+        if not (self.user.first_name and self.user.last_name):
+            missing.append("Full Name")
+        if not self.user.email:
+            missing.append("Email")
+        if not self.phone_number:
+            missing.append("Phone Number")
+        if not self.position:
+            missing.append("Position/Title")
+        if not (self.partner_organization or self.partner_name):
+            missing.append("Partner Organization")
+            
+        return missing
     
     @property
     def can_view_partner_data(self):
@@ -336,3 +418,159 @@ class ParticipantRecord(models.Model):
     
     def __str__(self):
         return f"Legacy Participant {self.external_id} - {self.location}"
+
+
+class Membership(models.Model):
+    """Membership subscription model for AKILIMO Nigeria Association"""
+    MEMBERSHIP_TYPES = [
+        ('individual', 'Individual Membership'),
+        ('organization', 'Partner Organization Membership'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+        ('pending', 'Pending Payment'),
+    ]
+    
+    # Membership identification
+    membership_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    member = models.OneToOneField(User, on_delete=models.CASCADE, related_name='membership')
+    
+    # Membership details
+    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_TYPES, default='basic')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Subscription period
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField()
+    
+    # Certificate and ID card
+    certificate_generated = models.BooleanField(default=False)
+    id_card_generated = models.BooleanField(default=False)
+    certificate_number = models.CharField(max_length=20, unique=True, blank=True)
+    
+    # QR Code for verification
+    qr_code = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Membership"
+        verbose_name_plural = "Memberships"
+    
+    def __str__(self):
+        return f"{self.member.get_full_name()} - {self.get_membership_type_display()} ({self.status})"
+    
+    def save(self, *args, **kwargs):
+        # Generate certificate number if not exists
+        if not self.certificate_number:
+            self.certificate_number = f"ANA-{timezone.now().year}-{str(self.membership_id)[:8].upper()}"
+        
+        # Set end date to 1 year from start date for all memberships
+        if not self.end_date:
+            self.end_date = self.start_date + timedelta(days=365)  # 1 year for all types
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_active(self):
+        """Check if membership is currently active"""
+        return (self.status == 'active' and 
+                self.start_date <= timezone.now() <= self.end_date)
+    
+    @property
+    def is_expired(self):
+        """Check if membership has expired"""
+        return timezone.now() > self.end_date
+    
+    @property
+    def days_remaining(self):
+        """Calculate days remaining in membership"""
+        if self.is_expired:
+            return 0
+        return (self.end_date - timezone.now()).days
+    
+    @property
+    def verification_url(self):
+        """Generate verification URL for QR code"""
+        from django.urls import reverse
+        return reverse('dashboard:verify_membership', kwargs={'qr_code': self.qr_code})
+
+
+class Payment(models.Model):
+    """Payment tracking for membership subscriptions"""
+    PAYMENT_STATUS = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('successful', 'Successful'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    PAYMENT_METHODS = [
+        ('paystack', 'Paystack'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('card', 'Card Payment'),
+        ('ussd', 'USSD'),
+        ('mobile_money', 'Mobile Money'),
+    ]
+    
+    # Payment identification
+    payment_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    membership = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name='payments')
+    
+    # Payment details
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='NGN')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='paystack')
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
+    
+    # Gateway integration
+    paystack_reference = models.CharField(max_length=100, blank=True, null=True)
+    paystack_access_code = models.CharField(max_length=100, blank=True, null=True)
+    gateway_response = models.JSONField(default=dict, blank=True)
+    
+    # Transaction details
+    description = models.CharField(max_length=255, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Payment"
+        verbose_name_plural = "Payments"
+    
+    def __str__(self):
+        return f"Payment {self.payment_id} - {self.membership.member.get_full_name()} - ₦{self.amount} ({self.status})"
+    
+    @property
+    def is_successful(self):
+        """Check if payment was successful"""
+        return self.status == 'successful'
+    
+    @property
+    def formatted_amount(self):
+        """Return formatted amount with currency"""
+        return f"₦{self.amount:,.2f}"
+
+
+@receiver(post_save, sender=User)
+def create_user_membership(sender, instance, created, **kwargs):
+    """Create basic membership when User is created"""
+    if created:
+        Membership.objects.get_or_create(
+            member=instance,
+            defaults={
+                'membership_type': 'individual',
+                'status': 'pending'
+            }
+        )

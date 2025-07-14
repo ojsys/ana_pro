@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if is_valid %}
+        Membership Verified - {{ member_name }}
+    {% else %}
+        Membership Verification Failed
+    {% endif %}
+    - AKILIMO Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">
+            {% if is_valid %}verified{% else %}error{% endif %}
+        </span>
+        Membership Verification
+    </h1>
+    <p class="page-subtitle">AKILIMO Nigeria Association - Member Verification Portal</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <div class="chart-body text-center">
+                {% if is_valid %}
+                    <!-- Valid Membership -->
+                    <div class="mb-4">
+                        <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                             style="width: 80px; height: 80px;">
+                            <span class="material-icons text-white" style="font-size: 48px;">verified</span>
+                        </div>
+                        <h2 class="text-success mb-2">✓ Valid Membership</h2>
+                        <p class="text-muted">This member has an active subscription with AKILIMO Nigeria Association</p>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Member Name</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ member_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Certificate Number</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ certificate_number }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Membership Type</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ membership_type }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Valid Until</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ valid_until|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if partner_name and partner_name != 'N/A' %}
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <div class="metric-card">
+                                <div class="metric-label">Partner Organization</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ partner_name }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-success" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons me-2">info</span>
+                            <div>
+                                <strong>Membership Status:</strong> Active and Valid<br>
+                                <small>This verification was completed on {{ "now"|date:"M d, Y - H:i" }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                {% else %}
+                    <!-- Invalid Membership -->
+                    <div class="mb-4">
+                        <div class="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                             style="width: 80px; height: 80px;">
+                            <span class="material-icons text-white" style="font-size: 48px;">error</span>
+                        </div>
+                        <h2 class="text-danger mb-2">✗ Invalid Membership</h2>
+                        <p class="text-muted">This verification code is not valid or the membership has expired</p>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons me-2">warning</span>
+                            <div>
+                                <strong>Verification Failed:</strong><br>
+                                {{ error_message|default:"The QR code or verification link is invalid, expired, or does not correspond to an active membership." }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5>What does this mean?</h5>
+                        <ul class="text-start text-muted">
+                            <li>The membership may have expired</li>
+                            <li>The verification code may be invalid or tampered with</li>
+                            <li>The member may have cancelled their subscription</li>
+                            <li>This may be a fraudulent certificate</li>
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <div class="mt-4 pt-4 border-top">
+                    <h6>About AKILIMO Nigeria Association</h6>
+                    <p class="text-muted small">
+                        AKILIMO Nigeria Association is dedicated to improving cassava production and 
+                        agricultural practices across Nigeria through training, technology transfer, 
+                        and sustainable farming methods.
+                    </p>
+                    
+                    <div class="d-flex justify-content-center gap-3 mt-3">
+                        <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary">
+                            <span class="material-icons me-2">home</span>
+                            Visit Dashboard
+                        </a>
+                        {% if not user.is_authenticated %}
+                        <a href="{% url 'dashboard:register' %}" class="btn btn-primary">
+                            <span class="material-icons me-2">person_add</span>
+                            Join ANA
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Security Notice -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="alert alert-info" role="alert">
+            <div class="d-flex align-items-start">
+                <span class="material-icons me-2" style="margin-top: 2px;">security</span>
+                <div>
+                    <strong>Security Notice:</strong><br>
+                    <small>
+                        This verification system uses QR codes with unique identifiers to ensure authenticity. 
+                        Always verify membership through this official portal. If you suspect fraudulent use, 
+                        please contact ANA support immediately.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh verification status every 30 seconds for active sessions
+    {% if is_valid %}
+    setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                // Check if membership is still valid
+                if (html.includes('Invalid Membership')) {
+                    location.reload();
+                }
+            })
+            .catch(error => console.log('Verification check failed:', error));
+    }, 30000);
+    {% endif %}
+</script>
+{% endblock %}

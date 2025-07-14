@@ -202,3 +202,28 @@ docs/_build/
 # Database backups
 *.sql
 *.dump
+
+# Additional deployment-specific ignores
+logs/
+*.pid
+*.sock
+gunicorn.conf
+.env.production
+.env.staging
+static_collected/
+media_uploads/
+
+# SSL certificates (if stored locally)
+*.pem
+*.key
+*.crt
+*.cer
+
+# Compressed deployment files
+*.zip
+*.tar.gz
+*.rar
+
+# Local development settings override
+local_settings.py
+settings_local.py

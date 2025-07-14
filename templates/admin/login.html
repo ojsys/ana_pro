@@ -1,0 +1,367 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% trans 'Log in' %} | AKILIMO Nigeria Association Admin</title>
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --primary-green: #2E7D32;
+        --light-green: #4CAF50;
+        --dark-green: #1B5E20;
+        --accent-green: #66BB6A;
+        --surface-green: #E8F5E8;
+        --success-green: #388E3C;
+        --text-on-green: #FFFFFF;
+        --text-primary: #212121;
+        --text-secondary: #757575;
+        --text-light: #9E9E9E;
+        --bg-light: #FAFAFA;
+        --bg-white: #FFFFFF;
+        --border-light: #E0E0E0;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+    }
+
+    body {
+        background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+        background-size: 50px 50px;
+        animation: float 20s linear infinite;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        100% { transform: translateY(-50px); }
+    }
+
+    .login-container {
+        background: var(--bg-white);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        max-width: 400px;
+        width: 100%;
+        position: relative;
+        z-index: 2;
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, var(--surface-green), rgba(76, 175, 80, 0.1));
+        padding: 3rem 2rem 2rem;
+        text-align: center;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .login-logo {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+        border-radius: 50%;
+        color: var(--text-on-green);
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow);
+    }
+
+    .login-title {
+        font-size: 1.75rem;
+        color: var(--primary-green);
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .login-subtitle {
+        color: var(--text-secondary);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .login-form {
+        padding: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-control {
+        border: 2px solid var(--border-light);
+        border-radius: 12px;
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: var(--bg-white);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-green);
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        outline: none;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        font-weight: 600;
+        color: var(--text-on-green);
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+        margin-top: 1rem;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: var(--text-on-green);
+    }
+
+    .btn-login:active {
+        transform: translateY(0);
+    }
+
+    .login-footer {
+        text-align: center;
+        padding: 1.5rem 2rem;
+        background: var(--bg-light);
+        border-top: 1px solid var(--border-light);
+    }
+
+    .login-footer a {
+        color: var(--primary-green);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .login-footer a:hover {
+        color: var(--dark-green);
+    }
+
+    .alert {
+        border: none;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid;
+    }
+
+    .alert-danger {
+        background: #FFEBEE;
+        color: #D32F2F;
+        border-left-color: #D32F2F;
+    }
+
+    .alert-warning {
+        background: #FFF8E1;
+        color: #F57C00;
+        border-left-color: #F57C00;
+    }
+
+    .alert-info {
+        background: #E3F2FD;
+        color: #1976D2;
+        border-left-color: #1976D2;
+    }
+
+    .invalid-feedback {
+        display: block;
+        color: #D32F2F;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .floating-elements {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .floating-element {
+        position: absolute;
+        color: rgba(255, 255, 255, 0.1);
+        animation: floatRandom 15s linear infinite;
+    }
+
+    @keyframes floatRandom {
+        0% { transform: translateY(100vh) rotate(0deg); }
+        100% { transform: translateY(-100px) rotate(360deg); }
+    }
+
+    .floating-element:nth-child(1) { left: 10%; animation-delay: 0s; font-size: 2rem; }
+    .floating-element:nth-child(2) { left: 20%; animation-delay: 2s; font-size: 1.5rem; }
+    .floating-element:nth-child(3) { left: 70%; animation-delay: 4s; font-size: 2.5rem; }
+    .floating-element:nth-child(4) { left: 80%; animation-delay: 6s; font-size: 1.8rem; }
+    .floating-element:nth-child(5) { left: 50%; animation-delay: 8s; font-size: 2.2rem; }
+
+    @media (max-width: 480px) {
+        .login-container {
+            margin: 1rem;
+            border-radius: 16px;
+        }
+
+        .login-header {
+            padding: 2rem 1.5rem 1.5rem;
+        }
+
+        .login-form {
+            padding: 1.5rem;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+</head>
+
+<body>
+    <!-- Floating Background Elements -->
+    <div class="floating-elements">
+        <i class="bi bi-tree floating-element"></i>
+        <i class="bi bi-people floating-element"></i>
+        <i class="bi bi-building floating-element"></i>
+        <i class="bi bi-graph-up floating-element"></i>
+        <i class="bi bi-globe floating-element"></i>
+    </div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="bi bi-tree"></i>
+            </div>
+            <h1 class="login-title">AKILIMO Admin</h1>
+            <p class="login-subtitle">Nigeria Association Management Portal</p>
+        </div>
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+
+            {% if form.errors %}
+                {% for field in form %}
+                    {% if field.errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>{{ field.label }}:</strong> {{ field.errors.0 }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">
+                    <i class="bi bi-person"></i>
+                    {% trans 'Username' %}
+                </label>
+                {{ form.username }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">
+                    <i class="bi bi-lock"></i>
+                    {% trans 'Password' %}
+                </label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="btn btn-login">
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                {% trans 'Log in to Admin' %}
+            </button>
+
+            {% url 'admin_password_reset' as password_reset_url %}
+            {% if password_reset_url %}
+                <div class="text-center mt-3">
+                    <a href="{{ password_reset_url }}">{% trans 'Forgotten your password?' %}</a>
+                </div>
+            {% endif %}
+        </form>
+
+        <div class="login-footer">
+            <a href="{% url 'website:home' %}">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Website
+            </a>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Add form styling
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.classList.add('form-control');
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

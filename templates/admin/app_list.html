@@ -1,0 +1,109 @@
+{% load i18n %}
+
+<div class="app-list">
+    {% if app_list %}
+        {% for app in app_list %}
+            <div class="admin-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-folder me-2"></i>
+                        {{ app.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for model in app.models %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="model-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="flex-grow-1">
+                                            {% if model.admin_url %}
+                                                <a href="{{ model.admin_url }}" class="model-link">
+                                                    <i class="bi bi-table me-2"></i>
+                                                    {{ model.name }}
+                                                </a>
+                                            {% else %}
+                                                <span class="model-name">
+                                                    <i class="bi bi-table me-2"></i>
+                                                    {{ model.name }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="model-actions">
+                                            {% if model.add_url %}
+                                                <a href="{{ model.add_url }}" class="btn btn-outline-primary btn-sm" title="Add {{ model.name }}">
+                                                    <i class="bi bi-plus"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if model.admin_url %}
+                                                <a href="{{ model.admin_url }}" class="btn btn-outline-secondary btn-sm" title="Change {{ model.name }}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if model.object_name %}
+                                        <small class="text-muted">{{ model.object_name }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="admin-card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                <h5 class="text-muted">No models available</h5>
+                <p class="text-muted mb-0">There are no models registered in the admin.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.model-item {
+    padding: 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: var(--bg-white);
+}
+
+.model-item:hover {
+    border-color: var(--primary-green);
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1);
+}
+
+.model-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.model-link:hover {
+    color: var(--primary-green);
+    text-decoration: none;
+}
+
+.model-name {
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.model-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.model-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>

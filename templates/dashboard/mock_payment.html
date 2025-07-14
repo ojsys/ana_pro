@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Gateway - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="material-icons">payment</span>
+        Payment Gateway (Demo)
+    </h1>
+    <p class="page-subtitle">Complete your ANA membership payment</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-logo">
+                    <span class="material-icons">eco</span>
+                </div>
+                <h3>AKILIMO Nigeria Association</h3>
+                <p class="text-muted">Secure Payment Portal</p>
+            </div>
+            
+            <div class="payment-details">
+                <h5>Payment Summary</h5>
+                <div class="detail-row">
+                    <span>Membership Type:</span>
+                    <strong>{{ membership.get_membership_type_display }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Member:</span>
+                    <strong>{{ payment.membership.member.get_full_name|default:payment.membership.member.username }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Description:</span>
+                    <strong>{{ payment.description }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Reference:</span>
+                    <code>{{ payment.paystack_reference }}</code>
+                </div>
+                <div class="detail-row total">
+                    <span>Total Amount:</span>
+                    <strong class="amount">{{ payment.formatted_amount }}</strong>
+                </div>
+            </div>
+            
+            <div class="payment-notice">
+                <div class="alert alert-info">
+                    <span class="material-icons me-2">info</span>
+                    <strong>Demo Mode:</strong> This is a simulated payment gateway for testing purposes. 
+                    In production, this would integrate with actual Paystack.
+                </div>
+            </div>
+            
+            <form method="post" class="payment-form">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label">Card Number (Demo)</label>
+                    <div class="form-control demo-input">
+                        <span class="material-icons me-2">credit_card</span>
+                        4084 0840 8408 4081 (Test Card)
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <label class="form-label">Expiry Date</label>
+                        <div class="form-control demo-input">12/25</div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">CVV</label>
+                        <div class="form-control demo-input">123</div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Cardholder Name</label>
+                    <div class="form-control demo-input">
+                        {{ payment.membership.member.get_full_name|default:"Test User" }}
+                    </div>
+                </div>
+                
+                <div class="payment-actions">
+                    <button type="submit" name="action" value="success" class="btn btn-success btn-lg w-100 mb-3">
+                        <span class="material-icons me-2">check_circle</span>
+                        Simulate Successful Payment
+                    </button>
+                    
+                    <button type="submit" name="action" value="failed" class="btn btn-danger btn-lg w-100 mb-3">
+                        <span class="material-icons me-2">error</span>
+                        Simulate Failed Payment
+                    </button>
+                    
+                    <a href="{% url 'dashboard:membership_subscription' %}" class="btn btn-outline-secondary w-100">
+                        <span class="material-icons me-2">arrow_back</span>
+                        Cancel Payment
+                    </a>
+                </div>
+            </form>
+            
+            <div class="payment-security">
+                <div class="d-flex align-items-center justify-content-center text-muted">
+                    <span class="material-icons me-2">security</span>
+                    <small>Secured by 256-bit SSL encryption</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.payment-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border: 1px solid #E5E7EB;
+}
+
+.payment-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.payment-logo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.payment-logo .material-icons {
+    font-size: 32px;
+    color: white;
+}
+
+.payment-header h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.payment-details {
+    margin-bottom: 2rem;
+}
+
+.payment-details h5 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row.total {
+    background: #F8FAF8;
+    margin: 1rem -1rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+    border: none;
+}
+
+.detail-row .amount {
+    font-size: 1.25rem;
+    color: var(--primary-green);
+}
+
+.demo-input {
+    background: #F8FAF8;
+    border: 2px dashed #D1D5DB;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    cursor: default;
+}
+
+.demo-input:focus {
+    box-shadow: none;
+    border-color: #D1D5DB;
+}
+
+.payment-notice {
+    margin-bottom: 2rem;
+}
+
+.payment-form .btn {
+    border-radius: 8px;
+    padding: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.payment-form .btn:hover {
+    transform: translateY(-2px);
+}
+
+.payment-security {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #F3F4F6;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+code {
+    background: #F3F4F6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .payment-card {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add some interactive feedback
+    const paymentButtons = document.querySelectorAll('.payment-form .btn');
+    
+    paymentButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (this.type === 'submit') {
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                this.disabled = true;
+            }
+        });
+    });
+    
+    // Auto-fill demo data animation
+    setTimeout(() => {
+        const demoInputs = document.querySelectorAll('.demo-input');
+        demoInputs.forEach((input, index) => {
+            setTimeout(() => {
+                input.style.background = '#E8F5E8';
+                setTimeout(() => {
+                    input.style.background = '#F8FAF8';
+                }, 500);
+            }, index * 200);
+        });
+    }, 1000);
+});
+</script>
+{% endblock %}

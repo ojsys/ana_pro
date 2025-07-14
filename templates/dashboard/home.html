@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Dashboard - Akilimo Nigeria Association{% endblock %}
 
@@ -8,7 +9,9 @@
         <span class="material-icons">dashboard</span>
         Dashboard Overview
     </h1>
-    <p class="page-subtitle">Cassava production training and recommendation tracking for Nigeria</p>
+    <p class="page-subtitle">
+        Welcome to the Akilimo Nigeria Association dashboard.
+    </p>
 </div>
 
 <!-- Enhanced Key Metrics Cards -->
@@ -19,10 +22,10 @@
                 <span class="material-icons">people</span>
             </div>
             <div class="metric-label">Total Farmers</div>
-            <div class="metric-value">{{ total_participants|default:0|floatformat:0 }}</div>
+            <div class="metric-value">{{ total_participants|default:0|intcomma }}</div>
             <div class="metric-detail">
-                <span class="material-icons me-1">male</span>{{ male_count|default:0 }}
-                <span class="material-icons me-1 ms-2">female</span>{{ female_count|default:0 }}
+                <span class="material-icons me-1">male</span>{{ male_count|default:0|intcomma }}
+                <span class="material-icons me-1 ms-2">female</span>{{ female_count|default:0|intcomma }}
             </div>
         </div>
     </div>
@@ -33,7 +36,7 @@
                 <span class="material-icons">location_on</span>
             </div>
             <div class="metric-label">Geographic Reach</div>
-            <div class="metric-value">{{ state_stats|length }}</div>
+            <div class="metric-value">{{ total_states_count|default:0|intcomma }}</div>
             <div class="metric-detail">States covered</div>
         </div>
     </div>
@@ -44,7 +47,7 @@
                 <span class="material-icons">phone</span>
             </div>
             <div class="metric-label">Connected Farmers</div>
-            <div class="metric-value">{{ farmers_with_phones|default:0|floatformat:0 }}</div>
+            <div class="metric-value">{{ farmers_with_phones|default:0|intcomma }}</div>
             <div class="metric-detail">With phone numbers</div>
         </div>
     </div>
@@ -55,7 +58,7 @@
                 <span class="material-icons">event</span>
             </div>
             <div class="metric-label">Training Events</div>
-            <div class="metric-value">{{ unique_events|default:0|floatformat:0 }}</div>
+            <div class="metric-value">{{ unique_events|default:0|intcomma }}</div>
             <div class="metric-detail">Unique sessions</div>
         </div>
     </div>
@@ -69,7 +72,7 @@
                 <span class="material-icons">location_city</span>
             </div>
             <div class="metric-label">Cities Reached</div>
-            <div class="metric-value">{{ city_stats|length }}</div>
+            <div class="metric-value">{{ total_cities_count|default:0|intcomma }}</div>
         </div>
     </div>
     
@@ -79,7 +82,7 @@
                 <span class="material-icons">eco</span>
             </div>
             <div class="metric-label">Crop Types</div>
-            <div class="metric-value">{{ crop_stats|length }}</div>
+            <div class="metric-value">{{ crop_stats|length|intcomma }}</div>
         </div>
     </div>
     
@@ -89,17 +92,17 @@
                 <span class="material-icons">business</span>
             </div>
             <div class="metric-label">Partner Organizations</div>
-            <div class="metric-value">{{ partner_stats|length }}</div>
+            <div class="metric-value">{{ total_partner_organizations|default:0|intcomma }}</div>
         </div>
     </div>
     
     <div class="col-xl-3 col-md-6">
         <div class="metric-card secondary">
             <div class="metric-icon">
-                <span class="material-icons">category</span>
+                <span class="material-icons">support_agent</span>
             </div>
-            <div class="metric-label">Event Types</div>
-            <div class="metric-value">{{ event_type_stats|length }}</div>
+            <div class="metric-label">Extension Agents</div>
+            <div class="metric-value">{{ extension_agents|default:0|intcomma }}</div>
         </div>
     </div>
 </div>
@@ -278,7 +281,7 @@
                                     {% if training.farm_size %}
                                         <div class="d-flex align-items-center">
                                             <span class="material-icons text-success me-1" style="font-size: 16px;">agriculture</span>
-                                            {{ training.farm_size|floatformat:1 }} ha
+                                            {{ training.farm_size|floatformat:1|intcomma }} ha
                                         </div>
                                     {% else %}
                                         <span class="text-muted">-</span>
@@ -309,6 +312,7 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     // Enhanced color palettes
     const greenPalette = [
         '#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7',
@@ -319,6 +323,12 @@
         '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336',
         '#00BCD4', '#FFEB3B', '#795548', '#607D8B', '#E91E63'
     ];
+    
+    // Ensure Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded! Cannot create charts.');
+        return;
+    }
 
     // Gender Distribution Chart
     const genderData = {{ gender_stats|safe }};
@@ -489,36 +499,36 @@
         
         const cityCtx = document.getElementById('cityChart').getContext('2d');
         new Chart(cityCtx, {
-            type: 'horizontalBar',
-            data: {
-                labels: cityLabels,
-                datasets: [{
-                    label: 'Farmers',
-                    data: cityCounts,
-                    backgroundColor: '#FF9800',
-                    borderColor: '#F57C00',
-                    borderWidth: 0,
-                    borderRadius: 8,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
-                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
-                    }
+                type: 'bar',
+                data: {
+                    labels: cityLabels,
+                    datasets: [{
+                        label: 'Farmers',
+                        data: cityCounts,
+                        backgroundColor: '#FF9800',
+                        borderColor: '#F57C00',
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
                 },
-                plugins: { legend: { display: false } }
-            }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
         });
     }
 
@@ -530,58 +540,58 @@
         
         const partnerCtx = document.getElementById('partnerChart').getContext('2d');
         new Chart(partnerCtx, {
-            type: 'bar',
-            data: {
-                labels: partnerLabels,
-                datasets: [{
-                    label: 'Farmers',
-                    data: partnerCounts,
-                    backgroundColor: '#9C27B0',
-                    borderColor: '#7B1FA2',
-                    borderWidth: 0,
-                    borderRadius: 8,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
-                        ticks: { font: { family: 'Roboto' }, color: '#757575' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { 
-                            font: { family: 'Roboto' }, 
-                            color: '#757575',
-                            maxRotation: 45
-                        }
-                    }
+                type: 'bar',
+                data: {
+                    labels: partnerLabels,
+                    datasets: [{
+                        label: 'Farmers',
+                        data: partnerCounts,
+                        backgroundColor: '#9C27B0',
+                        borderColor: '#7B1FA2',
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
                 },
-                plugins: { legend: { display: false } }
-            }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { family: 'Roboto' }, color: '#757575' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                font: { family: 'Roboto' }, 
+                                color: '#757575',
+                                maxRotation: 45
+                            }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
         });
     }
 
     // Add loading animation to metric cards
-    document.addEventListener('DOMContentLoaded', function() {
-        const metricCards = document.querySelectorAll('.metric-card');
-        metricCards.forEach((card, index) => {
+    const metricCards = document.querySelectorAll('.metric-card');
+    metricCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            
             setTimeout(() => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                
-                setTimeout(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, 100);
-            }, index * 50);
-        });
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 50);
     });
+
+}); // End DOMContentLoaded
 </script>
 
 <style>
