@@ -1,38 +1,15 @@
-# Core Django and Python dependencies
-Django>=5.2.4,<6.0
-python-decouple>=3.8
-
-# Database drivers (cPanel compatible)
-PyMySQL>=1.1.0  # Pure Python MySQL driver (cPanel compatible)
-dj-database-url>=2.1.0  # For parsing DATABASE_URL
-
-# Django REST Framework
-djangorestframework>=3.16.0
-
-# CORS handling
-django-cors-headers>=4.7.0
-
-# Static files serving for production
-whitenoise>=6.6.0
-
-# Image processing
-Pillow>=11.3.0
-
-# PDF generation
-reportlab>=4.4.2
-pypdf>=5.8.0
-
-# QR code generation
-qrcode>=8.2
-
-# HTTP requests
-requests>=2.32.4
-
-# Caching (optional - Redis support)
-django-redis>=5.4.0
-
-# Security and monitoring (optional)
-# sentry-sdk>=1.38.0
-
-# Development dependencies (comment out for production)
-# django-debug-toolbar>=4.2.0
+asgiref==3.9.1
+certifi==2025.7.9
+charset-normalizer==3.4.2
+Django==5.2.4
+django-cors-headers==4.7.0
+djangorestframework==3.16.0
+idna==3.10
+pillow==11.3.0
+pypdf==5.8.0
+python-decouple==3.8
+qrcode==8.2
+reportlab==4.4.2
+requests==2.32.4
+sqlparse==0.5.3
+urllib3==2.5.0
