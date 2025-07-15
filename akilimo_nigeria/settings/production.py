@@ -64,6 +64,10 @@ else:
         }
     }
 
+# cPanel MySQL configuration - use PyMySQL as MySQL adapter
+import pymysql
+pymysql.install_as_MySQLdb()
+
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -119,11 +123,18 @@ else:
 
 # Static files configuration for production
 STATIC_URL = config('STATIC_URL', default='/static/')
-STATIC_ROOT = config('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 
-# Add WhiteNoise for static file serving on cPanel
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# cPanel hosting: Use public_html/static for static files
+if config('CPANEL_HOSTING', default=False, cast=bool):
+    # cPanel typically uses public_html as the web root
+    STATIC_ROOT = config('STATIC_ROOT', default='/home/username/public_html/static/')
+    # Don't use WhiteNoise on cPanel - let the web server handle static files
+else:
+    # For other hosting providers (VPS, etc.)
+    STATIC_ROOT = config('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
+    # Add WhiteNoise for static file serving
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files configuration for production
 MEDIA_URL = config('MEDIA_URL', default='/media/')

@@ -2,8 +2,8 @@
 Django>=5.2.4,<6.0
 python-decouple>=3.8
 
-# Database drivers
-mysqlclient>=2.1.1  # For MySQL in production
+# Database drivers (cPanel compatible)
+PyMySQL>=1.1.0  # Pure Python MySQL driver (cPanel compatible)
 dj-database-url>=2.1.0  # For parsing DATABASE_URL
 
 # Django REST Framework
