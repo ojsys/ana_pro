@@ -226,7 +226,7 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>Last Sync</span>
-                        <small class="text-muted">{{ last_sync|default:"Never"|timesince }} ago</small>
+                        <small class="text-muted">{% if last_sync %}{{ last_sync|timesince }} ago{% else %}Never{% endif %}</small>
                     </div>
                 </div>
 
