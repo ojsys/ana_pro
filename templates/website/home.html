@@ -342,16 +342,31 @@
                 <div class="row">
                     {% for partner in featured_partners %}
                         <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
-                            <div class="card h-100 text-center p-3">
+                            <div class="card h-100 text-center p-3 partner-card">
                                 {% if partner.logo %}
-                                    <img src="{{ partner.logo.url }}" alt="{{ partner.partner.name }}" class="img-fluid" style="max-height: 80px; object-fit: contain;">
+                                    <div class="partner-logo mb-3">
+                                        {% if partner.website %}
+                                            <a href="{{ partner.website }}" target="_blank" rel="noopener">
+                                                <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" class="img-fluid" style="max-height: 80px; object-fit: contain; transition: transform 0.3s ease;">
+                                            </a>
+                                        {% else %}
+                                            <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" class="img-fluid" style="max-height: 80px; object-fit: contain;">
+                                        {% endif %}
+                                    </div>
                                 {% else %}
                                     <div class="text-center p-3">
                                         <i class="bi bi-building display-6 text-muted"></i>
                                     </div>
                                 {% endif %}
                                 <div class="card-body p-2">
-                                    <small class="text-muted">{{ partner.partner.name }}</small>
+                                    <small class="text-muted">{{ partner.name }}</small>
+                                    {% if partner.website %}
+                                        <div class="mt-2">
+                                            <a href="{{ partner.website }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-globe me-1"></i>
+                                            </a>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

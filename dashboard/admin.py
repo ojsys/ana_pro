@@ -106,10 +106,11 @@ class DataSyncLogAdmin(admin.ModelAdmin):
 
 @admin.register(PartnerOrganization)
 class PartnerOrganizationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'organization_type', 'city', 'state', 'is_active', 'total_farmers', 'created_at']
-    list_filter = ['organization_type', 'state', 'country', 'is_active', 'created_at']
+    list_display = ['name', 'code', 'organization_type', 'city', 'state', 'is_featured', 'feature_order', 'is_active', 'total_farmers', 'created_at']
+    list_filter = ['organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
     search_fields = ['name', 'code', 'contact_person', 'email', 'city']
     readonly_fields = ['created_at', 'updated_at', 'joined_program_date']
+    list_editable = ['is_featured', 'feature_order']
     
     fieldsets = (
         ('Basic Information', {
@@ -117,6 +118,9 @@ class PartnerOrganizationAdmin(admin.ModelAdmin):
         }),
         ('Contact Information', {
             'fields': ('contact_person', 'email', 'phone_number', 'website')
+        }),
+        ('Visual Branding', {
+            'fields': ('logo', 'is_featured', 'feature_order', 'success_story')
         }),
         ('Location', {
             'fields': ('address', 'city', 'state', 'country')

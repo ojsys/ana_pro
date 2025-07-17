@@ -30,6 +30,16 @@ class PartnerOrganization(models.Model):
     phone_number = models.CharField(max_length=20, blank=True)
     website = models.URLField(blank=True)
     
+    # Visual branding
+    logo = models.ImageField(upload_to='partner_logos/', blank=True, null=True, help_text="Partner organization logo")
+    
+    # Featured status
+    is_featured = models.BooleanField(default=False, help_text="Display on homepage as featured partner")
+    feature_order = models.PositiveIntegerField(default=0, help_text="Order in featured partners section (0=not featured)")
+    
+    # Success story
+    success_story = models.TextField(blank=True, help_text="Success story or achievement highlight")
+    
     # Location information
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)

@@ -267,8 +267,9 @@ class PartnerOrganizationForm(forms.ModelForm):
         model = PartnerOrganization
         fields = [
             'name', 'code', 'description', 'contact_person', 'email',
-            'phone_number', 'website', 'address', 'city', 'state',
-            'country', 'organization_type', 'established_date', 'is_active'
+            'phone_number', 'website', 'logo', 'address', 'city', 'state',
+            'country', 'organization_type', 'established_date', 'is_featured',
+            'feature_order', 'success_story', 'is_active'
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -278,11 +279,15 @@ class PartnerOrganizationForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'website': forms.URLInput(attrs={'class': 'form-control'}),
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'city': forms.TextInput(attrs={'class': 'form-control'}),
             'state': forms.TextInput(attrs={'class': 'form-control'}),
             'country': forms.TextInput(attrs={'class': 'form-control'}),
             'organization_type': forms.TextInput(attrs={'class': 'form-control'}),
             'established_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'is_featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'feature_order': forms.NumberInput(attrs={'class': 'form-control'}),
+            'success_story': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }

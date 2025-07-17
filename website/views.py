@@ -8,6 +8,7 @@ from .models import (
     Page, NewsArticle, HomePageSection, TeamMember, 
     PartnerShowcase, Testimonial, FAQ, ContactInfo, SiteSettings, Statistic
 )
+from dashboard.models import PartnerOrganization
 
 
 class HomeView(TemplateView):
@@ -39,10 +40,10 @@ class HomeView(TemplateView):
             is_featured=True
         )[:3]
         
-        context['featured_partners'] = PartnerShowcase.objects.filter(
+        context['featured_partners'] = PartnerOrganization.objects.filter(
             is_active=True, 
             is_featured=True
-        )[:6]
+        ).order_by('feature_order', 'name')[:10]
         
         # Get site settings
         try:
@@ -119,7 +120,18 @@ class PartnersView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get all active partner showcases
+        # Get all active partner organizations
+        context['all_partners'] = PartnerOrganization.objects.filter(
+            is_active=True
+        ).order_by('name')
+        
+        # Get featured partners
+        context['featured_partners'] = PartnerOrganization.objects.filter(
+            is_active=True, 
+            is_featured=True
+        ).order_by('feature_order', 'name')
+        
+        # Get partner showcases (legacy)
         context['partner_showcases'] = PartnerShowcase.objects.filter(
             is_active=True
         ).order_by('display_order', 'partner__name')
