@@ -73,8 +73,9 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
+SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
 SECURE_REDIRECT_EXEMPT = []
-SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Session security
@@ -84,7 +85,7 @@ SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF security
-CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
 CSRF_COOKIE_HTTPONLY = True
 
 # CORS Configuration for production
@@ -127,7 +128,7 @@ STATIC_URL = config('STATIC_URL', default='/static/')
 # cPanel hosting: Use public_html/static for static files
 if config('CPANEL_HOSTING', default=False, cast=bool):
     # cPanel typically uses public_html as the web root
-    STATIC_ROOT = config('STATIC_ROOT', default='/home/username/public_html/static/')
+    STATIC_ROOT = config('STATIC_ROOT', default='/home/akilimon/public_html/static/')
     # Don't use WhiteNoise on cPanel - let the web server handle static files
 else:
     # For other hosting providers (VPS, etc.)
