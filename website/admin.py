@@ -13,16 +13,6 @@ class RichTextAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 6, 'cols': 80})},
     }
-    
-    class Media:
-        css = {
-            'all': (
-                'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js',
-            )
-        }
-        js = (
-            'admin/js/tinymce_setup.js',
-        )
 
 
 @admin.register(Page)
