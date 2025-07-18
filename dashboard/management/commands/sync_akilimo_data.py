@@ -11,7 +11,7 @@ class Command(BaseCommand):
     help = 'Sync Akilimo participant data from EiA MELIA API to new model structure'
 
     def add_arguments(self, parser):
-        parser.add_argument('--batch-size', type=int, default=1000, help='Number of records per batch')
+        parser.add_argument('--batch-size', type=int, default=3000, help='Number of records per batch')
         parser.add_argument('--max-records', type=int, default=5000, help='Maximum total records to sync (for testing)')
         parser.add_argument('--dry-run', action='store_true', help='Show what would be synced without saving')
         parser.add_argument('--force', action='store_true', help='Update existing records')

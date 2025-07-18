@@ -45,7 +45,7 @@ class EiAMeliaAPIService:
         endpoint = f"data/eventsparts/usecase/{usecase_ref}/"
         params = {
             'page': page,
-            'page_size': min(page_size, 1000)  # Ensure max limit
+            'page_size': min(page_size, 2000)  # Ensure max limit
         }
         
         cache_key = f"participants_{usecase_ref}_{page}_{page_size}"

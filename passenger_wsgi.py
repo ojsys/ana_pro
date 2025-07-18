@@ -1,9 +1,3 @@
-#!/usr/bin/python3.9
-"""
-cPanel Python App Entry Point for AKILIMO Nigeria Association
-This file is required by cPanel's Python App hosting
-"""
-
 import os
 import sys
 
