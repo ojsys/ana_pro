@@ -324,6 +324,30 @@
     color: var(--primary-green);
 }
 
+/* File upload styling */
+input[type="file"] {
+    border: 2px dashed var(--border-light);
+    border-radius: 8px;
+    padding: 1rem;
+    background: var(--bg-light);
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+input[type="file"]:hover {
+    border-color: var(--primary-green);
+    background: var(--surface-green);
+}
+
+.file-upload {
+    position: relative;
+}
+
+.file-upload label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 .collapse h3::after {
     content: "▼";
     float: right;
@@ -338,10 +362,11 @@
 .collapse .fieldset-content {
     overflow: hidden;
     transition: max-height 0.3s ease;
+    max-height: none; /* Show content by default */
 }
 
 .collapse.collapsed .fieldset-content {
-    max-height: 0;
+    max-height: 0 !important;
 }
 </style>
 
@@ -352,15 +377,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     collapseFieldsets.forEach(function(fieldset) {
         const header = fieldset.querySelector('h3, h2');
-        const content = fieldset.querySelector('.fieldset-content') || fieldset;
+        const content = fieldset.querySelector('.fieldset-content');
         
-        if (header) {
-            // Start collapsed
-            fieldset.classList.add('collapsed');
+        if (header && content) {
+            // Start expanded (show all fields)
+            content.style.maxHeight = 'none';
             
             header.style.cursor = 'pointer';
             header.addEventListener('click', function() {
-                fieldset.classList.toggle('collapsed');
+                if (fieldset.classList.contains('collapsed')) {
+                    // Expand
+                    fieldset.classList.remove('collapsed');
+                    content.style.maxHeight = 'none';
+                } else {
+                    // Collapse
+                    fieldset.classList.add('collapsed');
+                    content.style.maxHeight = '0';
+                }
             });
         }
     });
