@@ -26,6 +26,7 @@ admin.site.index_title = "Welcome to AKILIMO Nigeria Association Administration"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('ckeditor/', include('ckeditor_uploader.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('', include('website.urls')),
 ]

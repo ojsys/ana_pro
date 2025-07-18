@@ -60,7 +60,7 @@ class PageAdmin(RichTextAdmin):
 
 
 @admin.register(NewsArticle)
-class NewsArticleAdmin(RichTextAdmin):
+class NewsArticleAdmin(admin.ModelAdmin):
     list_display = ['title', 'category', 'author', 'published_date', 'is_published', 'is_featured', 'views_count']
     list_filter = ['category', 'is_published', 'is_featured', 'published_date', 'author']
     search_fields = ['title', 'excerpt', 'content']

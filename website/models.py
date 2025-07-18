@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from ckeditor_uploader.fields import RichTextUploadingField
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
@@ -67,7 +68,7 @@ class NewsArticle(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
     excerpt = models.TextField(max_length=300, help_text="Brief excerpt for listings")
-    content = models.TextField(help_text="Full article content")
+    content = RichTextUploadingField(config_name='news', help_text="Full article content with rich text formatting")
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='news')
     featured_image = models.ImageField(upload_to='news/', blank=True, null=True)
     
