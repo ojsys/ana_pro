@@ -2,14 +2,19 @@
 
 <fieldset class="module aligned{% if fieldset.classes %} {{ fieldset.classes }}{% endif %}">
     {% if fieldset.name %}
-        <h2>{{ fieldset.name }}</h2>
+        {% if "collapse" in fieldset.classes %}
+            <h3>{{ fieldset.name }}</h3>
+        {% else %}
+            <h2>{{ fieldset.name }}</h2>
+        {% endif %}
     {% endif %}
     
-    {% if fieldset.description %}
-        <div class="description">{{ fieldset.description|safe }}</div>
-    {% endif %}
-    
-    {% for line in fieldset %}
+    <div class="fieldset-content">
+        {% if fieldset.description %}
+            <div class="description">{{ fieldset.description|safe }}</div>
+        {% endif %}
+        
+        {% for line in fieldset %}
         <div class="form-row{% if line.fields|length == 1 and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
             {% if line.fields|length == 1 %}
                 {% for field in line %}
@@ -97,5 +102,6 @@
                 </div>
             {% endif %}
         </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
 </fieldset>

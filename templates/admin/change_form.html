@@ -323,6 +323,48 @@
     background: var(--surface-green);
     color: var(--primary-green);
 }
+
+.collapse h3::after {
+    content: "▼";
+    float: right;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.collapse.collapsed h3::after {
+    transform: rotate(-90deg);
+}
+
+.collapse .fieldset-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.collapse.collapsed .fieldset-content {
+    max-height: 0;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle collapsible fieldsets
+    const collapseFieldsets = document.querySelectorAll('.collapse');
+    
+    collapseFieldsets.forEach(function(fieldset) {
+        const header = fieldset.querySelector('h3, h2');
+        const content = fieldset.querySelector('.fieldset-content') || fieldset;
+        
+        if (header) {
+            // Start collapsed
+            fieldset.classList.add('collapsed');
+            
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                fieldset.classList.toggle('collapsed');
+            });
+        }
+    });
+});
+</script>
 
 {% endblock %}
