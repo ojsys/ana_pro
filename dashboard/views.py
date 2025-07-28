@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -15,13 +15,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Avg, F, Case, When, IntegerField
-from django.utils import timezone
 from datetime import datetime, timedelta
 import logging
 
 from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
-                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization,
-                    Membership, Payment)
+                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization)
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
 from .services import AkilimoDataService
 
@@ -136,22 +134,10 @@ class DashboardHomeView(TemplateView):
                 'org_first_name', 'org_surname', 'org_phone_no', 'partner'
             ).distinct().count()
             
-            # Count unique partners from participant data
-            unique_partners_from_data = AkilimoParticipant.objects.exclude(
+            # Count unique partners
+            unique_partners = AkilimoParticipant.objects.exclude(
                 partner__isnull=True
             ).exclude(partner='').values('partner').distinct().count()
-            
-            # Count actual partner organizations in PartnerOrganization table
-            total_partner_organizations = PartnerOrganization.objects.filter(is_active=True).count()
-            
-            # Count total unique states and cities (for dashboard totals)
-            total_states_count = AkilimoParticipant.objects.exclude(
-                admin_level1__isnull=True
-            ).exclude(admin_level1='').values('admin_level1').distinct().count()
-            
-            total_cities_count = AkilimoParticipant.objects.exclude(
-                event_city__isnull=True
-            ).exclude(event_city='').values('event_city').distinct().count()
             
             # Rename for template compatibility
             gender_stats = [{'gender': item['farmer_gender'], 'count': item['count']} for item in gender_stats]
@@ -207,10 +193,7 @@ class DashboardHomeView(TemplateView):
             'farmers_with_phones': farmers_with_phones,
             'unique_events': unique_events,
             'extension_agents': locals().get('extension_agents', 0),
-            'unique_partners': locals().get('unique_partners_from_data', 0),
-            'total_partner_organizations': locals().get('total_partner_organizations', 0),
-            'total_states_count': locals().get('total_states_count', 0),
-            'total_cities_count': locals().get('total_cities_count', 0),
+            'unique_partners': locals().get('unique_partners', 0),
             'gender_stats': list(gender_stats),
             'state_stats': list(state_stats),
             'city_stats': list(city_stats),
@@ -521,24 +504,17 @@ class CustomLoginView(LoginView):
     
     def form_valid(self, form):
         """Add success message on successful login"""
-        # Clear any existing messages (like logout messages) to avoid confusion
-        storage = messages.get_messages(self.request)
-        storage.used = True
-        
         messages.success(self.request, f'Welcome back, {form.get_user().get_full_name() or form.get_user().username}!')
         return super().form_valid(form)
 
 
-def custom_logout_view(request):
-    """Custom logout function view"""
-    from django.contrib.auth import logout
-    from django.shortcuts import redirect
+class CustomLogoutView(LogoutView):
+    """Custom logout view"""
+    next_page = reverse_lazy('dashboard:login')
     
-    if request.user.is_authenticated:
-        messages.success(request, 'You have been successfully logged out. Thank you for using AKILIMO Nigeria Association!')
-        logout(request)
-    
-    return redirect('website:home')
+    def dispatch(self, request, *args, **kwargs):
+        messages.info(request, 'You have been successfully logged out.')
+        return super().dispatch(request, *args, **kwargs)
 
 
 class RegisterView(FormView):
@@ -599,32 +575,13 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         """Handle profile update"""
         form = UserProfileForm(
             request.POST,
-            request.FILES,
             instance=request.user.profile,
             user=request.user
         )
         
         if form.is_valid():
-            # Check if profile was completed before save
-            was_completed_before = request.user.profile.profile_completed
-            
             form.save()
-            
-            # Check if profile became completed after save
-            is_completed_now = request.user.profile.profile_completed
-            
-            if is_completed_now and not was_completed_before:
-                messages.success(request, '🎉 Congratulations! Your profile is now complete. You can now download your membership certificate and ID card.')
-            elif is_completed_now:
-                messages.success(request, 'Your profile has been updated successfully.')
-            else:
-                # Show what's still missing
-                missing = request.user.profile.missing_fields
-                if missing:
-                    messages.warning(request, f'Profile updated. To complete your profile, please fill in: {", ".join(missing)}')
-                else:
-                    messages.success(request, 'Your profile has been updated successfully.')
-            
+            messages.success(request, 'Your profile has been updated successfully.')
             return redirect('dashboard:profile')
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -927,6 +884,7 @@ class PartnerFarmersView(LoginRequiredMixin, TemplateView):
 
 class PartnerExtensionAgentsView(LoginRequiredMixin, TemplateView):
     """Partner-specific extension agents data"""
+    
     template_name = 'dashboard/partner_extension_agents.html'
     
     def dispatch(self, request, *args, **kwargs):
@@ -1068,370 +1026,3 @@ def api_partner_metrics(request):
             'days': days_filter
         }
     })
-
-
-# Membership Certificate and ID Card Views
-@login_required
-def download_certificate(request):
-    """Download membership certificate as PDF"""
-    from .certificate_service import CertificateService
-    
-    try:
-        membership = request.user.membership
-        if not membership.is_active:
-            messages.error(request, "Your membership is not active. Please renew to download certificate.")
-            return redirect('dashboard:profile')
-        
-        # Generate certificate
-        certificate_service = CertificateService()
-        pdf_buffer = certificate_service.generate_membership_certificate(membership)
-        
-        # Mark certificate as generated
-        membership.certificate_generated = True
-        membership.save()
-        
-        # Create response
-        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="ANA_Certificate_{membership.certificate_number}.pdf"'
-        
-        return response
-        
-    except Membership.DoesNotExist:
-        messages.error(request, "No membership found. Please contact support.")
-        return redirect('dashboard:profile')
-    except Exception as e:
-        logger.error(f"Certificate generation error for user {request.user.id}: {str(e)}")
-        messages.error(request, "Error generating certificate. Please try again later.")
-        return redirect('dashboard:profile')
-
-
-@login_required
-def download_id_card(request):
-    """Download membership ID card as PDF"""
-    from .certificate_service import CertificateService
-    
-    try:
-        membership = request.user.membership
-        if not membership.is_active:
-            messages.error(request, "Your membership is not active. Please renew to download ID card.")
-            return redirect('dashboard:profile')
-        
-        # Generate ID card
-        certificate_service = CertificateService()
-        pdf_buffer = certificate_service.generate_id_card(membership)
-        
-        # Mark ID card as generated
-        membership.id_card_generated = True
-        membership.save()
-        
-        # Create response
-        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="ANA_ID_Card_{membership.certificate_number}.pdf"'
-        
-        return response
-        
-    except Membership.DoesNotExist:
-        messages.error(request, "No membership found. Please contact support.")
-        return redirect('dashboard:profile')
-    except Exception as e:
-        logger.error(f"ID card generation error for user {request.user.id}: {str(e)}")
-        messages.error(request, "Error generating ID card. Please try again later.")
-        return redirect('dashboard:profile')
-
-
-def verify_membership(request, qr_code):
-    """Public view to verify membership via QR code"""
-    try:
-        membership = get_object_or_404(Membership, qr_code=qr_code)
-        
-        context = {
-            'membership': membership,
-            'is_valid': membership.is_active,
-            'member_name': membership.member.get_full_name() or membership.member.username,
-            'certificate_number': membership.certificate_number,
-            'membership_type': membership.get_membership_type_display(),
-            'valid_until': membership.end_date,
-            'partner_name': getattr(membership.member.profile, 'partner_name', 'N/A') if hasattr(membership.member, 'profile') else 'N/A'
-        }
-        
-        return render(request, 'dashboard/verify_membership.html', context)
-        
-    except Membership.DoesNotExist:
-        context = {
-            'is_valid': False,
-            'error_message': 'Invalid or expired membership verification code.'
-        }
-        return render(request, 'dashboard/verify_membership.html', context)
-
-
-# Membership Application and Payment Views
-@login_required
-def membership_subscription(request):
-    """Membership subscription page with payment options"""
-    from .paystack_service import MEMBERSHIP_PRICING
-    
-    try:
-        membership = request.user.membership
-    except Membership.DoesNotExist:
-        # Create individual membership if it doesn't exist
-        membership = Membership.objects.create(
-            member=request.user,
-            membership_type='individual',
-            status='pending'
-        )
-    
-    # Convert Decimal pricing to float for JavaScript
-    pricing_for_template = {
-        'individual': float(MEMBERSHIP_PRICING['individual']),
-        'organization': float(MEMBERSHIP_PRICING['organization']),
-    }
-    
-    context = {
-        'membership': membership,
-        'pricing': pricing_for_template,
-        'user_has_active_membership': membership.is_active if membership else False,
-    }
-    
-    return render(request, 'dashboard/membership_subscription.html', context)
-
-
-@login_required
-def initiate_payment(request):
-    """Initiate Paystack payment for membership"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    import json
-    from .paystack_service import PaystackService, get_membership_price, generate_payment_reference
-    
-    try:
-        data = json.loads(request.body)
-        membership_type = data.get('membership_type', 'individual')
-        
-        # Validate membership type
-        if membership_type not in ['individual', 'organization']:
-            return JsonResponse({'error': 'Invalid membership type'}, status=400)
-        
-        # Get or create membership
-        membership, created = Membership.objects.get_or_create(
-            member=request.user,
-            defaults={
-                'membership_type': membership_type,
-                'status': 'pending'
-            }
-        )
-        
-        # Update membership type if different
-        if membership.membership_type != membership_type:
-            membership.membership_type = membership_type
-            membership.save()
-        
-        # Get pricing
-        amount = get_membership_price(membership_type)
-        
-        # Generate unique reference
-        reference = generate_payment_reference(request.user.id, membership_type)
-        
-        # Create payment record
-        payment = Payment.objects.create(
-            membership=membership,
-            amount=amount,
-            currency='NGN',
-            payment_method='paystack',
-            description=f'ANA {membership.get_membership_type_display()} - 1 Year Subscription',
-            paystack_reference=reference
-        )
-        
-        # Initialize Paystack transaction
-        paystack = PaystackService()
-        callback_url = request.build_absolute_uri('/dashboard/payment/verify/')
-        
-        metadata = {
-            'payment_id': str(payment.payment_id),
-            'membership_type': membership_type,
-            'user_id': request.user.id,
-            'user_name': request.user.get_full_name() or request.user.username,
-        }
-        
-        # Debug information
-        logger.info(f"Initializing payment for user {request.user.email}, amount: {amount}, reference: {reference}")
-        
-        paystack_response = paystack.initialize_transaction(
-            email=request.user.email,
-            amount=amount,
-            reference=reference,
-            callback_url=callback_url,
-            metadata=metadata
-        )
-        
-        logger.info(f"Paystack response: {paystack_response}")
-        
-        if paystack_response.get('status'):
-            # Update payment with Paystack data
-            payment.paystack_access_code = paystack_response['data'].get('access_code')
-            payment.gateway_response = paystack_response
-            payment.save()
-            
-            return JsonResponse({
-                'success': True,
-                'payment_id': str(payment.payment_id),
-                'amount': float(amount),
-                'currency': 'NGN',
-                'description': payment.description,
-                'customer_email': request.user.email,
-                'reference': reference,
-                'authorization_url': paystack_response['data']['authorization_url'],
-                'access_code': paystack_response['data'].get('access_code'),
-            })
-        else:
-            # Payment initialization failed
-            payment.status = 'failed'
-            payment.gateway_response = paystack_response
-            payment.save()
-            
-            return JsonResponse({
-                'success': False,
-                'error': paystack_response.get('message', 'Payment initialization failed')
-            }, status=400)
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
-    except Exception as e:
-        logger.error(f"Payment initiation error: {str(e)}")
-        return JsonResponse({'error': 'Payment initiation failed'}, status=500)
-
-
-@login_required
-def payment_verification(request):
-    """Handle payment verification from Paystack"""
-    from .paystack_service import PaystackService
-    
-    reference = request.GET.get('reference')
-    
-    if not reference:
-        messages.error(request, "Invalid payment reference")
-        return redirect('dashboard:membership_subscription')
-    
-    try:
-        # Find payment by reference
-        payment = Payment.objects.get(paystack_reference=reference)
-        logger.info(f"Found payment: {payment.payment_id} for reference: {reference}")
-        
-        # Verify with Paystack API
-        paystack = PaystackService()
-        verification_response = paystack.verify_transaction(reference)
-        logger.info(f"Paystack verification response: {verification_response}")
-        
-        if verification_response.get('status') and verification_response.get('data'):
-            transaction_data = verification_response['data']
-            
-            # Check if payment was successful
-            if transaction_data.get('status') == 'success':
-                # Update payment status
-                payment.status = 'successful'
-                payment.paid_at = timezone.now()
-                payment.gateway_response = verification_response
-                payment.save()
-                
-                # Activate membership
-                membership = payment.membership
-                membership.status = 'active'
-                membership.start_date = timezone.now()
-                # end_date is set automatically in the save method (1 year from start)
-                membership.save()
-                
-                messages.success(
-                    request, 
-                    f"Payment successful! Your {membership.get_membership_type_display()} membership is now active for 1 year."
-                )
-                return redirect('dashboard:profile')
-            else:
-                # Payment failed
-                payment.status = 'failed'
-                payment.gateway_response = verification_response
-                payment.save()
-                
-                messages.error(request, f"Payment failed: {transaction_data.get('gateway_response', 'Unknown error')}")
-                return redirect('dashboard:membership_subscription')
-        else:
-            # Verification failed
-            payment.status = 'failed'
-            payment.gateway_response = verification_response
-            payment.save()
-            
-            error_msg = verification_response.get('message', 'Payment verification failed')
-            messages.error(request, f"Payment verification failed: {error_msg}. Please contact support if you were charged.")
-            return redirect('dashboard:membership_subscription')
-        
-    except Payment.DoesNotExist:
-        messages.error(request, "Payment verification failed. Invalid reference.")
-        return redirect('dashboard:membership_subscription')
-    except Exception as e:
-        logger.error(f"Payment verification error: {str(e)}")
-        messages.error(request, "Payment verification failed. Please contact support.")
-        return redirect('dashboard:membership_subscription')
-
-
-@login_required
-def mock_payment_page(request, payment_id):
-    """Mock payment page for testing (replace with actual Paystack integration)"""
-    try:
-        payment = get_object_or_404(Payment, payment_id=payment_id)
-        
-        if request.method == 'POST':
-            action = request.POST.get('action')
-            
-            if action == 'success':
-                payment.status = 'successful'
-                payment.paid_at = timezone.now()
-                payment.save()
-                
-                # Activate membership
-                membership = payment.membership
-                membership.status = 'active'
-                membership.start_date = timezone.now()
-                membership.save()
-                
-                return redirect(f'/dashboard/payment/verify/?reference={payment.paystack_reference}')
-            
-            elif action == 'failed':
-                payment.status = 'failed'
-                payment.save()
-                messages.error(request, "Payment failed. Please try again.")
-                return redirect('dashboard:membership_subscription')
-        
-        context = {
-            'payment': payment,
-            'membership': payment.membership
-        }
-        
-        return render(request, 'dashboard/mock_payment.html', context)
-        
-    except Payment.DoesNotExist:
-        messages.error(request, "Invalid payment.")
-        return redirect('dashboard:membership_subscription')
-
-
-@login_required
-def test_buttons(request):
-    """Test page for debugging buttons"""
-    try:
-        membership = request.user.membership
-    except Membership.DoesNotExist:
-        membership = None
-    
-    context = {
-        'membership': membership,
-    }
-    
-    return render(request, 'dashboard/test_buttons.html', context)
-
-
-def simple_test(request):
-    """Very basic test page"""
-    from django.http import HttpResponse
-    
-    with open('/Users/Apple/projects/ana_pro/templates/dashboard/simple_test.html', 'r') as f:
-        content = f.read()
-    
-    return HttpResponse(content)
