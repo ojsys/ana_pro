@@ -43,6 +43,10 @@
             --accent-green: #66BB6A;
             --surface-green: #E8F5E8;
             --success-green: #388E3C;
+            --primary-accent: #D2691E;
+            --light-accent: #FF8C42;
+            --dark-accent: #B8651B;
+            --surface-accent: #FFF2E6;
             --text-on-green: #FFFFFF;
             --text-primary: #212121;
             --text-secondary: #757575;
@@ -107,8 +111,8 @@
 
         .navbar-nav .nav-link:hover,
         .navbar-nav .nav-link.active {
-            color: var(--primary-green) !important;
-            background-color: var(--surface-green);
+            color: var(--primary-accent) !important;
+            background-color: var(--surface-accent);
         }
 
         /* User Dropdown Styling */
@@ -131,8 +135,8 @@
         }
 
         .navbar-nav .dropdown-item:hover {
-            background: var(--surface-green);
-            color: var(--primary-green);
+            background: var(--surface-accent);
+            color: var(--primary-accent);
         }
 
         .navbar-nav .dropdown-item.text-danger:hover {
@@ -152,7 +156,7 @@
         /* User avatar styling */
         .navbar-nav .nav-link .bi-person-circle {
             font-size: 1.2rem;
-            color: var(--primary-green);
+            color: var(--primary-accent);
         }
 
         /* Enhanced user dropdown trigger */
@@ -163,28 +167,31 @@
         }
 
         .navbar-nav .dropdown-toggle.nav-link:hover {
-            border-color: var(--primary-green);
-            background: var(--surface-green) !important;
+            border-color: var(--primary-accent);
+            background: var(--surface-accent) !important;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+            background: linear-gradient(135deg, var(--primary-accent), var(--light-accent));
             border: none;
             border-radius: 0.5rem;
             padding: 0.75rem 1.5rem;
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: var(--shadow);
+            color: white;
         }
 
         .btn-primary:hover {
+            background: linear-gradient(135deg, var(--dark-accent), var(--primary-accent));
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
+            color: white;
         }
 
         .btn-outline-primary {
-            border: 2px solid var(--primary-green);
-            color: var(--primary-green);
+            border: 2px solid var(--primary-accent);
+            color: var(--primary-accent);
             border-radius: 0.5rem;
             padding: 0.75rem 1.5rem;
             font-weight: 600;
@@ -192,9 +199,10 @@
         }
 
         .btn-outline-primary:hover {
-            background-color: var(--primary-green);
-            border-color: var(--primary-green);
+            background-color: var(--primary-accent);
+            border-color: var(--primary-accent);
             transform: translateY(-2px);
+            color: white;
         }
 
         /* Hero Section */
@@ -301,7 +309,7 @@
         .stat-number {
             font-size: 3rem;
             font-weight: 700;
-            color: var(--primary-green);
+            color: var(--primary-accent);
             margin-bottom: 0.5rem;
         }
 
@@ -326,7 +334,7 @@
             top: -1rem;
             left: 2rem;
             font-size: 5rem;
-            color: var(--primary-green);
+            color: var(--primary-accent);
             opacity: 0.3;
             font-family: serif;
         }
@@ -402,7 +410,7 @@
 
         /* Utility Classes */
         .text-gradient {
-            background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+            background: linear-gradient(135deg, var(--primary-accent), var(--light-accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -465,7 +473,7 @@
             right: 2rem;
             width: 50px;
             height: 50px;
-            background: var(--primary-green);
+            background: var(--primary-accent);
             color: white;
             border: none;
             border-radius: 50%;
@@ -480,7 +488,7 @@
         }
 
         .back-to-top:hover {
-            background: var(--dark-green);
+            background: var(--dark-accent);
             transform: translateY(-2px);
         }
 

@@ -12,7 +12,7 @@
             <div class="row align-items-center min-vh-50">
                 <div class="col-lg-6">
                     <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <span class="badge bg-light text-primary px-4 py-2 rounded-pill fs-6">
+                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--primary-accent);">
                             <i class="bi bi-handshake me-2"></i>Strategic Partnerships
                         </span>
                     </div>
@@ -38,7 +38,7 @@
                         <div class="bg-white rounded-4 p-4 shadow-lg">
                             <div class="row g-3 text-center">
                                 <div class="col-4">
-                                    <div class="bg-primary text-white rounded-3 p-3">
+                                    <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
                                         <i class="bi bi-building fs-3 mb-2"></i>
                                         <h6 class="mb-0 small">Research Institutes</h6>
                                     </div>
@@ -50,19 +50,19 @@
                                     </div>
                                 </div>
                                 <div class="col-4">
-                                    <div class="bg-warning text-dark rounded-3 p-3">
+                                    <div class="text-white rounded-3 p-3" style="background-color: var(--light-accent);">
                                         <i class="bi bi-mortarboard fs-3 mb-2"></i>
                                         <h6 class="mb-0 small">Universities</h6>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-info text-white rounded-3 p-3">
+                                    <div class="text-white rounded-3 p-3" style="background-color: var(--dark-accent);">
                                         <i class="bi bi-briefcase fs-3 mb-2"></i>
                                         <h6 class="mb-0 small">Private Sector</h6>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-secondary text-white rounded-3 p-3">
+                                    <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
                                         <i class="bi bi-shield-check fs-3 mb-2"></i>
                                         <h6 class="mb-0 small">Government</h6>
                                     </div>
@@ -72,7 +72,7 @@
                         
                         <!-- Partnership Stats -->
                         <div class="position-absolute top-0 end-0 translate-middle">
-                            <div class="bg-warning text-dark rounded-circle p-3 shadow">
+                            <div class="text-white rounded-circle p-3 shadow" style="background-color: var(--light-accent);">
                                 <span class="fw-bold">50+</span>
                             </div>
                         </div>
@@ -178,7 +178,7 @@
                 <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
                     <div class="card h-100 border-0 shadow-sm text-center">
                         <div class="card-body p-3">
-                            <div class="bg-warning text-dark rounded mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <div class="text-white rounded mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; background-color: var(--light-accent);">
                                 <i class="bi bi-book"></i>
                             </div>
                             <h6 class="card-title">Universities</h6>
@@ -190,7 +190,7 @@
                 <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
                     <div class="card h-100 border-0 shadow-sm text-center">
                         <div class="card-body p-3">
-                            <div class="bg-info text-white rounded mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <div class="text-white rounded mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; background-color: var(--dark-accent);">
                                 <i class="bi bi-building"></i>
                             </div>
                             <h6 class="card-title">HCA</h6>
@@ -221,7 +221,7 @@
                         </div>
                         {% endif %}
                         <div class="card-body p-4">
-                            <h5 class="card-title text-primary">{{ showcase.partner.name }}</h5>
+                            <h5 class="card-title style="color: var(--primary-accent);"">{{ showcase.partner.name }}</h5>
                             <p class="card-text">{{ showcase.description }}</p>
                             
                             {% if showcase.success_story %}
@@ -260,7 +260,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-handshake display-4 text-primary"></i>
+                                <i class="bi bi-handshake display-4 style="color: var(--primary-accent);""></i>
                             </div>
                             <h5 class="card-title">Strategic Partnerships</h5>
                             <p class="card-text">Long-term collaborations for sustainable agricultural development and innovation.</p>
@@ -272,7 +272,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-gear display-4 text-primary"></i>
+                                <i class="bi bi-gear display-4 style="color: var(--primary-accent);""></i>
                             </div>
                             <h5 class="card-title">Technology Integration</h5>
                             <p class="card-text">Collaborate on integrating AKILIMO tools with existing agricultural systems and platforms.</p>
@@ -284,7 +284,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-people display-4 text-primary"></i>
+                                <i class="bi bi-people display-4 style="color: var(--primary-accent);""></i>
                             </div>
                             <h5 class="card-title">Capacity Building</h5>
                             <p class="card-text">Joint training programs and knowledge sharing initiatives for farmers and extension agents.</p>
@@ -296,7 +296,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-graph-up display-4 text-primary"></i>
+                                <i class="bi bi-graph-up display-4 style="color: var(--primary-accent);""></i>
                             </div>
                             <h5 class="card-title">Research Collaboration</h5>
                             <p class="card-text">Joint research projects on cassava production, processing, and market development.</p>
@@ -308,7 +308,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-currency-dollar display-4 text-primary"></i>
+                                <i class="bi bi-currency-dollar display-4 style="color: var(--primary-accent);""></i>
                             </div>
                             <h5 class="card-title">Funding & Investment</h5>
                             <p class="card-text">Investment opportunities in agricultural technology and farmer empowerment programs.</p>
@@ -320,7 +320,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-shield-check display-4 text-primary"></i>
+                                <i class="bi bi-shield-check display-4 style="color: var(--primary-accent);""></i>
                             </div>
                             <h5 class="card-title">Policy Advocacy</h5>
                             <p class="card-text">Collaborative advocacy for agricultural policies that support smallholder farmers.</p>
@@ -342,8 +342,8 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
                     <div class="bg-light-green rounded-3 p-5 text-center">
-                        <i class="bi bi-star display-1 text-primary"></i>
-                        <h4 class="mt-3 text-primary">Partnership Excellence</h4>
+                        <i class="bi bi-star display-1 style="color: var(--primary-accent);""></i>
+                        <h4 class="mt-3 style="color: var(--primary-accent);"">Partnership Excellence</h4>
                         <p class="text-muted">Collaborative innovation for agricultural transformation</p>
                     </div>
                 </div>
@@ -392,7 +392,7 @@
     </section>
 
     <!-- Call to Action -->
-    <section class="section-padding bg-primary text-white">
+    <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
         <div class="container text-center">
             <div class="row justify-content-center">
                 <div class="col-lg-8">

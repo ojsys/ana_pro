@@ -12,7 +12,7 @@
             <div class="row align-items-center min-vh-40">
                 <div class="col-lg-8 mx-auto text-center">
                     <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <span class="badge bg-light text-primary px-4 py-2 rounded-pill fs-6">
+                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--primary-accent);">
                             <i class="bi bi-envelope me-2"></i>Get In Touch
                         </span>
                     </div>
@@ -59,7 +59,7 @@
                 <div class="col-lg-8 mb-4" data-aos="fade-up">
                     <div class="card border-0 shadow-lg h-100">
                         <div class="card-body p-5">
-                            <h3 class="card-title text-primary mb-4">Send Us a Message</h3>
+                            <h3 class="card-title text-success mb-4">Send Us a Message</h3>
                             <form id="contactForm">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
@@ -112,32 +112,32 @@
                 <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
                     <div class="card border-0 shadow-lg h-100">
                         <div class="card-body p-4">
-                            <h5 class="card-title text-primary mb-4">Contact Information</h5>
+                            <h5 class="card-title text-success mb-4">Contact Information</h5>
                             
                             {% if primary_contact %}
                             <div class="mb-4">
                                 <h6 class="text-secondary mb-2">{{ primary_contact.office_name }}</h6>
                                 <p class="mb-2">
-                                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                                    <i class="bi bi-geo-alt me-2" style="color: var(--primary-accent);"></i>
                                     {{ primary_contact.address }}<br>
                                     {{ primary_contact.city }}, {{ primary_contact.state }}
                                     {% if primary_contact.postal_code %}, {{ primary_contact.postal_code }}{% endif %}
                                 </p>
                                 {% if primary_contact.phone %}
                                 <p class="mb-2">
-                                    <i class="bi bi-telephone text-primary me-2"></i>
+                                    <i class="bi bi-telephone me-2" style="color: var(--primary-accent);"></i>
                                     <a href="tel:{{ primary_contact.phone }}" class="text-decoration-none">{{ primary_contact.phone }}</a>
                                 </p>
                                 {% endif %}
                                 {% if primary_contact.email %}
                                 <p class="mb-2">
-                                    <i class="bi bi-envelope text-primary me-2"></i>
+                                    <i class="bi bi-envelope me-2" style="color: var(--primary-accent);"></i>
                                     <a href="mailto:{{ primary_contact.email }}" class="text-decoration-none">{{ primary_contact.email }}</a>
                                 </p>
                                 {% endif %}
                                 {% if primary_contact.hours %}
                                 <p class="mb-0">
-                                    <i class="bi bi-clock text-primary me-2"></i>
+                                    <i class="bi bi-clock me-2" style="color: var(--primary-accent);"></i>
                                     {{ primary_contact.hours }}
                                 </p>
                                 {% endif %}
@@ -206,9 +206,9 @@
                 <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <h5 class="card-title text-primary">{{ office.office_name }}</h5>
+                            <h5 class="card-title" style="color: var(--primary-accent);">{{ office.office_name }}</h5>
                             {% if office.is_primary %}
-                                <span class="badge bg-primary mb-2">Primary Office</span>
+                                <span class="badge mb-2" style="background-color: var(--primary-accent);">Primary Office</span>
                             {% endif %}
                             <p class="card-text">
                                 <i class="bi bi-geo-alt text-muted me-2"></i>
