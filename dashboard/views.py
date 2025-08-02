@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 import logging
 
 from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
-                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization)
+                    DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization, Membership, MembershipPricing)
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
 from .services import AkilimoDataService
 
@@ -139,9 +139,21 @@ class DashboardHomeView(TemplateView):
                 partner__isnull=True
             ).exclude(partner='').values('partner').distinct().count()
             
+            # Count unique states
+            unique_states = AkilimoParticipant.objects.exclude(
+                admin_level1__isnull=True
+            ).exclude(admin_level1='').values('admin_level1').distinct().count()
+            
+            # Count unique cities
+            unique_cities = AkilimoParticipant.objects.exclude(
+                event_city__isnull=True
+            ).exclude(event_city='').values('event_city').distinct().count()
+            
             # Rename for template compatibility
             gender_stats = [{'gender': item['farmer_gender'], 'count': item['count']} for item in gender_stats]
             state_stats = [{'state': item['admin_level1'], 'count': item['count']} for item in state_stats]
+            city_stats = [{'event_city': item['event_city'], 'count': item['count']} for item in city_stats]
+            partner_stats = [{'partner': item['partner'], 'count': item['count']} for item in partner_stats]
             
             # No yield data in current model, so set to empty
             yield_improvement = {'avg_previous': None, 'avg_expected': None}
@@ -194,6 +206,10 @@ class DashboardHomeView(TemplateView):
             'unique_events': unique_events,
             'extension_agents': locals().get('extension_agents', 0),
             'unique_partners': locals().get('unique_partners', 0),
+            # Template expects these specific variable names
+            'total_states_count': locals().get('unique_states', 0),
+            'total_cities_count': locals().get('unique_cities', 0), 
+            'total_partner_organizations': locals().get('unique_partners', 0),
             'gender_stats': list(gender_stats),
             'state_stats': list(state_stats),
             'city_stats': list(city_stats),
@@ -567,15 +583,19 @@ class ProfileView(LoginRequiredMixin, TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['profile'] = self.request.user.profile
-        context['form'] = UserProfileForm(instance=self.request.user.profile, user=self.request.user)
+        # Get or create profile for current user
+        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
+        context['profile'] = profile
+        context['form'] = UserProfileForm(instance=profile, user=self.request.user)
         return context
     
     def post(self, request, *args, **kwargs):
         """Handle profile update"""
+        # Get or create profile for current user
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
         form = UserProfileForm(
             request.POST,
-            instance=request.user.profile,
+            instance=profile,
             user=request.user
         )
         
@@ -1026,3 +1046,68 @@ def api_partner_metrics(request):
             'days': days_filter
         }
     })
+
+
+@login_required
+def membership_subscription(request):
+    """Membership subscription view"""
+    # Get or create membership for current user
+    membership, created = Membership.objects.get_or_create(
+        member=request.user,
+        defaults={
+            'membership_type': 'individual',
+            'status': 'pending'
+        }
+    )
+    
+    # Get pricing information
+    pricing_data = {}
+    try:
+        individual_pricing = MembershipPricing.objects.get(membership_type='individual', is_active=True)
+        pricing_data['individual'] = individual_pricing.price
+    except MembershipPricing.DoesNotExist:
+        pricing_data['individual'] = 10000  # Default fallback price
+    
+    try:
+        organization_pricing = MembershipPricing.objects.get(membership_type='organization', is_active=True)
+        pricing_data['organization'] = organization_pricing.price
+    except MembershipPricing.DoesNotExist:
+        pricing_data['organization'] = 50000  # Default fallback price
+    
+    context = {
+        'membership': membership,
+        'created': created,
+        'pricing': pricing_data
+    }
+    
+    return render(request, 'dashboard/membership_subscription.html', context)
+
+
+@login_required
+@csrf_exempt
+def initiate_payment(request):
+    """Initiate payment for membership subscription"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        # Get or create membership for current user
+        membership, created = Membership.objects.get_or_create(
+            member=request.user,
+            defaults={
+                'membership_type': 'individual',
+                'status': 'pending'
+            }
+        )
+        
+        # For now, return a mock response
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Payment initiation successful',
+            'membership_id': str(membership.membership_id),
+            'redirect_url': f'/dashboard/payment/mock/{membership.membership_id}/'
+        })
+        
+    except Exception as e:
+        logger.error(f"Payment initiation error: {e}")
+        return JsonResponse({'error': 'Payment initiation failed'}, status=500)

@@ -430,6 +430,27 @@ class ParticipantRecord(models.Model):
         return f"Legacy Participant {self.external_id} - {self.location}"
 
 
+class MembershipPricing(models.Model):
+    """Membership pricing configuration"""
+    MEMBERSHIP_TYPES = [
+        ('individual', 'Individual Membership'),
+        ('organization', 'Partner Organization Membership'),
+    ]
+    
+    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_TYPES, unique=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price in Naira")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Membership Pricing"
+        verbose_name_plural = "Membership Pricing"
+    
+    def __str__(self):
+        return f"{self.get_membership_type_display()} - ₦{self.price}"
+
+
 class Membership(models.Model):
     """Membership subscription model for AKILIMO Nigeria Association"""
     MEMBERSHIP_TYPES = [

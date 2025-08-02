@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
-    DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment
+    DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing
 )
 
 @admin.register(APIConfiguration)
@@ -316,3 +316,21 @@ class PaymentAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('membership__member')
+
+
+@admin.register(MembershipPricing)
+class MembershipPricingAdmin(admin.ModelAdmin):
+    list_display = ['membership_type', 'price', 'is_active', 'created_at', 'updated_at']
+    list_filter = ['membership_type', 'is_active', 'created_at']
+    search_fields = ['membership_type']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Pricing Information', {
+            'fields': ('membership_type', 'price', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
