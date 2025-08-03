@@ -621,7 +621,8 @@ class RegisterView(FormView):
     def form_valid(self, form):
         """Create user and log them in"""
         user = form.save()
-        login(self.request, user)
+        # Specify the backend when logging in with multiple backends configured
+        login(self.request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(
             self.request, 
             f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created successfully.'
