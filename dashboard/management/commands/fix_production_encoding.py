@@ -22,13 +22,16 @@ class Command(BaseCommand):
         if not options['skip_migration']:
             self.stdout.write("📦 Running database migrations...")
             try:
-                call_command('migrate', verbosity=0)
+                call_command('migrate', verbosity=1)
                 self.stdout.write(
                     self.style.SUCCESS('✅ Migrations completed successfully')
                 )
             except Exception as e:
                 self.stdout.write(
-                    self.style.WARNING(f'⚠️  Migration warning: {e}')
+                    self.style.ERROR(f'❌ Migration failed: {e}')
+                )
+                self.stdout.write(
+                    self.style.WARNING('🔧 Continuing with direct database fix...')
                 )
         
         # Step 2: Fix database encoding

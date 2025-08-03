@@ -15,6 +15,15 @@ def fix_admin_log_encoding(apps, schema_editor):
                     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
                 """)
                 print("Successfully updated django_admin_log.object_repr column encoding to utf8mb4")
+                
+                # Also fix change_message column
+                cursor.execute("""
+                    ALTER TABLE django_admin_log 
+                    MODIFY COLUMN change_message LONGTEXT 
+                    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                """)
+                print("Successfully updated django_admin_log.change_message column encoding to utf8mb4")
+                
             except Exception as e:
                 print(f"Warning: Could not update django_admin_log encoding: {e}")
                 # Don't fail the migration if this doesn't work
@@ -30,7 +39,7 @@ def reverse_admin_log_encoding(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0002_membershippricing'),
+        ('dashboard', '0009_membershippricing'),
     ]
 
     operations = [
