@@ -32,57 +32,73 @@ class DashboardHomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Get selected country from query parameters (default to Nigeria for AKILIMO Nigeria Association)
+        selected_country = self.request.GET.get('country', 'nigeria').lower()
+        
+        # Get list of available countries
+        available_countries = AkilimoParticipant.objects.exclude(
+            country__isnull=True
+        ).exclude(country='').values('country').annotate(
+            count=Count('id')
+        ).order_by('country')
+        
         # Use the new AkilimoParticipant model with fallback to legacy
         if AkilimoParticipant.objects.exists():
-            # Get basic metrics from new model
-            total_participants = AkilimoParticipant.objects.count()
+            # Filter queryset by selected country (or show all if 'all' is selected)
+            if selected_country == 'all':
+                country_queryset = AkilimoParticipant.objects.all()
+            else:
+                country_queryset = AkilimoParticipant.objects.filter(country__iexact=selected_country)
+            
+            # Get basic metrics from new model (filtered by country)
+            total_participants = country_queryset.count()
             
             # Gender distribution
-            gender_stats = AkilimoParticipant.objects.values('farmer_gender').annotate(
+            gender_stats = country_queryset.values('farmer_gender').annotate(
                 count=Count('id')
             ).order_by('-count')
             
             # Calculate male/female counts
-            male_count = AkilimoParticipant.objects.filter(farmer_gender__icontains='male').exclude(farmer_gender__icontains='female').count()
-            female_count = AkilimoParticipant.objects.filter(farmer_gender__icontains='female').count()
+            male_count = country_queryset.filter(farmer_gender__icontains='male').exclude(farmer_gender__icontains='female').count()
+            female_count = country_queryset.filter(farmer_gender__icontains='female').count()
             
             # Geographic distribution (admin_level1 = state)
-            state_stats = AkilimoParticipant.objects.exclude(
+            state_stats = country_queryset.exclude(
                 admin_level1__isnull=True
             ).exclude(admin_level1='').values('admin_level1').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
             # City distribution
-            city_stats = AkilimoParticipant.objects.exclude(
+            city_stats = country_queryset.exclude(
                 event_city__isnull=True
             ).exclude(event_city='').values('event_city').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
             # Crop distribution
-            crop_stats = AkilimoParticipant.objects.exclude(
+            crop_stats = country_queryset.exclude(
                 crop__isnull=True
             ).exclude(crop='').values('crop').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
             # Partner distribution
-            partner_stats = AkilimoParticipant.objects.exclude(
+            partner_stats = country_queryset.exclude(
                 partner__isnull=True
             ).exclude(partner='').values('partner').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
             # Event types distribution
-            event_type_stats = AkilimoParticipant.objects.exclude(
+            event_type_stats = country_queryset.exclude(
                 event_type__isnull=True
             ).exclude(event_type='').values('event_type').annotate(
                 count=Count('id')
             ).order_by('-count')[:5]
             
             # Age category distribution
-            age_category_stats = AkilimoParticipant.objects.exclude(
+            age_category_stats = country_queryset.exclude(
                 age_category__isnull=True
             ).exclude(age_category='').values('age_category').annotate(
                 count=Count('id')
@@ -100,7 +116,7 @@ class DashboardHomeView(TemplateView):
                 month_start = target_date.replace(day=1)
                 month_end = target_date.replace(day=monthrange(target_date.year, target_date.month)[1])
                 
-                count = AkilimoParticipant.objects.filter(
+                count = country_queryset.filter(
                     event_date__gte=month_start,
                     event_date__lte=month_end
                 ).count()
@@ -113,39 +129,39 @@ class DashboardHomeView(TemplateView):
             monthly_trend.reverse()
             
             # Recent training sessions
-            recent_trainings = AkilimoParticipant.objects.filter(
+            recent_trainings = country_queryset.filter(
                 event_date__isnull=False
             ).order_by('-event_date')[:10]
             
             # Count farmers with phone numbers
-            farmers_with_phones = AkilimoParticipant.objects.exclude(
+            farmers_with_phones = country_queryset.exclude(
                 farmer_phone_no__isnull=True
             ).exclude(farmer_phone_no='').count()
             
             # Count unique events
-            unique_events = AkilimoParticipant.objects.values(
+            unique_events = country_queryset.values(
                 'event_date', 'event_venue', 'event_type'
             ).distinct().count()
             
             # Count extension agents (organizational contacts)
-            extension_agents = AkilimoParticipant.objects.exclude(
+            extension_agents = country_queryset.exclude(
                 org_first_name__isnull=True
             ).exclude(org_first_name='').values(
                 'org_first_name', 'org_surname', 'org_phone_no', 'partner'
             ).distinct().count()
             
             # Count unique partners
-            unique_partners = AkilimoParticipant.objects.exclude(
+            unique_partners = country_queryset.exclude(
                 partner__isnull=True
             ).exclude(partner='').values('partner').distinct().count()
             
             # Count unique states
-            unique_states = AkilimoParticipant.objects.exclude(
+            unique_states = country_queryset.exclude(
                 admin_level1__isnull=True
             ).exclude(admin_level1='').values('admin_level1').distinct().count()
             
             # Count unique cities
-            unique_cities = AkilimoParticipant.objects.exclude(
+            unique_cities = country_queryset.exclude(
                 event_city__isnull=True
             ).exclude(event_city='').values('event_city').distinct().count()
             
@@ -220,6 +236,9 @@ class DashboardHomeView(TemplateView):
             'monthly_trend': monthly_trend,
             'recent_trainings': recent_trainings,
             'yield_improvement': yield_improvement,
+            # Country filtering
+            'selected_country': selected_country,
+            'available_countries': list(available_countries),
         })
         
         return context

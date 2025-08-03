@@ -5,13 +5,31 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">
-        <span class="material-icons">dashboard</span>
-        Dashboard Overview
-    </h1>
-    <p class="page-subtitle">
-        Welcome to the Akilimo Nigeria Association dashboard.
-    </p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons">dashboard</span>
+                Dashboard Overview
+            </h1>
+            <p class="page-subtitle">
+                Welcome to the Akilimo Nigeria Association dashboard.
+            </p>
+        </div>
+        <!-- Country Selector -->
+        <div class="country-selector">
+            <label for="countrySelect" class="form-label mb-1">Select Country:</label>
+            <select id="countrySelect" class="form-select" onchange="changeCountry(this.value)">
+                <option value="all" {% if selected_country == 'all' %}selected{% endif %}>
+                    All Countries ({{ total_participants|intcomma }} participants)
+                </option>
+                {% for country in available_countries %}
+                <option value="{{ country.country }}" {% if country.country == selected_country %}selected{% endif %}>
+                    {{ country.country|title }} ({{ country.count|intcomma }} participants)
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
 </div>
 
 <!-- Enhanced Key Metrics Cards -->
@@ -592,9 +610,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 }); // End DOMContentLoaded
+
+// Country selector function
+function changeCountry(selectedCountry) {
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('country', selectedCountry);
+    window.location.href = currentUrl.toString();
+}
 </script>
 
 <style>
+.country-selector {
+    min-width: 300px;
+}
+
+.country-selector .form-select {
+    font-size: 0.9rem;
+    border: 1px solid #28a745;
+    border-radius: 8px;
+}
+
+.country-selector .form-select:focus {
+    border-color: #20a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.country-selector .form-label {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 0.85rem;
+}
+
 .metric-detail {
     font-size: 0.75rem;
     color: var(--text-secondary);
