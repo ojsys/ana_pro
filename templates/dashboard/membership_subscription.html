@@ -704,11 +704,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const membershipType = this.getAttribute('data-membership');
             const amountStr = this.getAttribute('data-amount');
             
-            // Parse amount more safely
-            let amount = parseFloat(amountStr);
+            // Parse amount more safely - remove commas first
+            let cleanAmountStr = amountStr ? amountStr.toString().replace(/,/g, '') : '0';
+            let amount = parseFloat(cleanAmountStr);
             
             // Debug logging
             console.log('Raw amount string:', amountStr);
+            console.log('Cleaned amount string:', cleanAmountStr);
             console.log('Parsed amount:', amount);
             console.log('Pricing data:', pricingData);
             
@@ -716,12 +718,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Fallback to default pricing
                 amount = membershipType === 'individual' ? pricingData.individual : pricingData.organization;
                 console.log('Using fallback amount:', amount);
-            }
-            
-            // Ensure minimum reasonable amount (in case database has wrong values)
-            if (amount < 1000) {
-                amount = membershipType === 'individual' ? 10000 : 50000;
-                console.log('Amount too small, using default:', amount);
             }
             
             // Store payment data
