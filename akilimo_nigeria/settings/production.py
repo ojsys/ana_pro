@@ -89,9 +89,13 @@ CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
 CSRF_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='',
+    default='https://akilimonigeria.org,https://www.akilimonigeria.org',
     cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
 )
+
+# Additional CSRF settings for production
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF tokens
 
 # CORS Configuration for production
 CORS_ALLOWED_ORIGINS = config(

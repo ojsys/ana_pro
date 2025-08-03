@@ -544,9 +544,32 @@ class CustomLoginView(LoginView):
 
 
 def debug_logout_view(request):
-    """Ultra-simple debug logout view"""
+    """Production-ready logout view"""
+    from django.contrib.auth import logout
     from django.http import HttpResponse
-    return HttpResponse('Debug logout view reached successfully! This means the URL is working.', content_type='text/plain')
+    from django.conf import settings
+    
+    try:
+        # Log user out if authenticated
+        if request.user.is_authenticated:
+            user_info = f'Logging out user: {request.user.username}'
+            logout(request)
+            messages.success(request, 'You have been successfully logged out.')
+        else:
+            user_info = 'No user was logged in.'
+        
+        # In production, redirect to login page
+        if not settings.DEBUG:
+            return redirect('dashboard:login')
+        
+        # In debug mode, show information
+        return HttpResponse(f'{user_info}<br><a href="/dashboard/login/">Go to Login</a>', content_type='text/html')
+        
+    except Exception as e:
+        if not settings.DEBUG:
+            # In production, always redirect to login even on error
+            return redirect('dashboard:login')
+        return HttpResponse(f'Logout error: {str(e)}<br>Type: {type(e).__name__}', status=500)
 
 
 @csrf_exempt
