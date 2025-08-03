@@ -448,7 +448,7 @@ class MembershipPricing(models.Model):
         verbose_name_plural = "Membership Pricing"
     
     def __str__(self):
-        return f"{self.get_membership_type_display()} - ₦{self.price}"
+        return f"{self.get_membership_type_display()} - NGN {self.price}"
 
 
 class Membership(models.Model):

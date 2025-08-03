@@ -93,6 +93,14 @@ if DATABASE_URL:
     try:
         import dj_database_url
         DATABASES['default'] = dj_database_url.parse(DATABASE_URL)
+        
+        # Ensure UTF-8 encoding for MySQL databases
+        if DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
+            DATABASES['default']['OPTIONS'] = {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES',character_set_connection=utf8mb4,collation_connection=utf8mb4_unicode_ci",
+            }
+            
     except ImportError:
         # dj_database_url not installed, fall back to SQLite
         pass
