@@ -543,16 +543,27 @@ class CustomLoginView(LoginView):
         return super().form_valid(form)
 
 
+def debug_logout_view(request):
+    """Ultra-simple debug logout view"""
+    from django.http import HttpResponse
+    return HttpResponse('Debug logout view reached successfully! This means the URL is working.', content_type='text/plain')
+
+
 @csrf_exempt
 def custom_logout_view(request):
     """Custom logout view that handles both GET and POST"""
     from django.contrib.auth import logout
+    from django.http import HttpResponse
     
-    if request.user.is_authenticated:
-        messages.info(request, 'You have been successfully logged out.')
-        logout(request)
-    
-    return redirect('dashboard:login')
+    try:
+        if request.user.is_authenticated:
+            messages.info(request, 'You have been successfully logged out.')
+            logout(request)
+        
+        return redirect('dashboard:login')
+    except Exception as e:
+        # Debug: Return the error as text
+        return HttpResponse(f'Logout error: {str(e)}', status=500)
 
 
 # Keep the class-based view as backup

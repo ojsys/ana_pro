@@ -29,6 +29,11 @@ class Command(BaseCommand):
             self.stdout.write(f'📝 GET logout response: {response.status_code}')
             if response.status_code == 302:
                 self.stdout.write(f'↪️  Redirects to: {response.url}')
+            elif response.status_code == 200:
+                self.stdout.write('✅ 200 OK - Debug response:')
+                if hasattr(response, 'content'):
+                    content = response.content.decode('utf-8')[:500]
+                    self.stdout.write(f'📄 Response content: {content}...')
             elif response.status_code == 400:
                 self.stdout.write('⚠️  400 Bad Request - checking response content...')
                 if hasattr(response, 'content'):
