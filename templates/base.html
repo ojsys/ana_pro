@@ -510,24 +510,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--dark-green);
         }
-        
-        /* Logout button styling */
-        .logout-btn {
-            background: none !important;
-            border: none !important;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            font-family: inherit;
-            font-size: inherit;
-            font-weight: inherit;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.08) !important;
-            color: var(--text-on-green) !important;
-            transform: translateX(4px);
-        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -608,13 +590,10 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <form method="post" action="{% url 'dashboard:logout' %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="nav-link logout-btn">
-                            <span class="material-icons">logout</span>
-                            Logout
-                        </button>
-                    </form>
+                    <a class="nav-link" href="{% url 'dashboard:logout' %}">
+                        <span class="material-icons">logout</span>
+                        Logout
+                    </a>
                 </div>
             {% else %}
                 <div class="nav-item">

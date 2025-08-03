@@ -543,6 +543,20 @@ class CustomLoginView(LoginView):
         return super().form_valid(form)
 
 
+@csrf_exempt
+def custom_logout_view(request):
+    """Custom logout view that handles both GET and POST"""
+    from django.contrib.auth import logout
+    
+    if request.user.is_authenticated:
+        messages.info(request, 'You have been successfully logged out.')
+        logout(request)
+    
+    return redirect('dashboard:login')
+
+
+# Keep the class-based view as backup
+@method_decorator(csrf_exempt, name='dispatch')
 class CustomLogoutView(LogoutView):
     """Custom logout view"""
     next_page = reverse_lazy('dashboard:login')
@@ -553,7 +567,8 @@ class CustomLogoutView(LogoutView):
         return self.post(request, *args, **kwargs)
     
     def dispatch(self, request, *args, **kwargs):
-        messages.info(request, 'You have been successfully logged out.')
+        if request.user.is_authenticated:
+            messages.info(request, 'You have been successfully logged out.')
         return super().dispatch(request, *args, **kwargs)
 
 
