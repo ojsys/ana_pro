@@ -3,6 +3,11 @@
 
 {% block title %}Membership Subscription - AKILIMO Dashboard{% endblock %}
 
+{% block extra_head %}
+<!-- Paystack JavaScript SDK -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="page-header mb-5">
     <h1 class="page-title">
@@ -162,26 +167,276 @@
     </div>
 </div>
 
-<!-- Payment Processing Modal -->
+<!-- Payment Confirmation Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Processing Payment</h5>
+                <h5 class="modal-title">
+                    <span class="material-icons me-2">payment</span>
+                    Confirm Payment
+                </h5>
+                <button type="button" class="btn-close" id="modalCloseBtn" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-center">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading...</span>
+            <div class="modal-body p-0">
+                <!-- Payment Summary Section -->
+                <div class="payment-summary-header p-4 bg-light">
+                    <h6 class="mb-3 text-success">
+                        <span class="material-icons me-2" style="font-size: 20px;">receipt_long</span>
+                        Payment Summary
+                    </h6>
+                    <div class="summary-row">
+                        <span class="summary-label">Membership Type:</span>
+                        <span id="modalMembershipType" class="summary-value"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Amount:</span>
+                        <span id="modalAmount" class="summary-value text-success fw-bold"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Email:</span>
+                        <span class="summary-value text-muted">{{ user.email }}</span>
+                    </div>
                 </div>
-                <p>Please wait while we process your payment...</p>
+                
+                <!-- Payment Method Section -->
+                <div class="payment-method-section p-4">
+                    <h6 class="mb-3 text-dark">
+                        <span class="material-icons me-2" style="font-size: 20px;">payment</span>
+                        Payment Method
+                    </h6>
+                    
+                    <div class="paystack-card">
+                        <div class="paystack-header">
+                            <div class="paystack-logo me-3">
+                                <span class="material-icons">credit_card</span>
+                            </div>
+                            <div class="paystack-info">
+                                <div class="paystack-title">Paystack</div>
+                                <div class="paystack-subtitle">Secure Payment Gateway</div>
+                            </div>
+                        </div>
+                        
+                        <div class="security-info">
+                            <span class="material-icons me-2">security</span>
+                            <span>256-bit SSL encryption • PCI DSS compliant</span>
+                        </div>
+                        
+                        <div class="accepted-methods">
+                            <small class="text-muted">Accepts: Cards, Bank Transfer, USSD, Mobile Money</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-success" id="proceedPaymentBtn">
+                    <span class="material-icons me-1">credit_card</span>
+                    Pay Now
+                </button>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_css %}
 <style>
+/* Payment Modal Styling */
+.payment-summary-header {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.payment-summary-header h6 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.summary-value {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.payment-method-section h6 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.paystack-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    transition: all 0.3s ease;
+}
+
+.paystack-card:hover {
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+}
+
+.paystack-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.paystack-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #0fa958, #15c96b);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.paystack-info {
+    flex: 1;
+}
+
+.paystack-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.paystack-subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.security-info {
+    display: flex;
+    align-items: center;
+    background: #e8f5e9;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #2e7d32;
+}
+
+.security-info .material-icons {
+    font-size: 18px;
+    color: #4caf50;
+}
+
+.accepted-methods {
+    text-align: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.modal-header .btn-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1.25rem 1.5rem;
+    background: #f8f9fa;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #2bb544);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+#processingModal .modal-content {
+    border-radius: 15px;
+}
+
+#processingModal .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Pricing Card Styles */
 .pricing-card {
     background: white;
     border-radius: 16px;
@@ -412,99 +667,232 @@
 
 {% block extra_js %}
 <script>
-// Add some debug info first
-console.log('Script starting...');
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, looking for buttons...');
-    
-    const subscribeButtons = document.querySelectorAll('.btn-subscribe');
-    console.log('Found', subscribeButtons.length, 'subscribe buttons');
-    
-    if (subscribeButtons.length === 0) {
-        console.error('No buttons found! Check HTML structure.');
+    // Check if MDB (Material Design Bootstrap) is loaded
+    if (typeof mdb === 'undefined') {
         return;
     }
     
-    // Skip modal for now to simplify testing
-    // const paymentModalElement = document.getElementById('paymentModal');
-    // let paymentModal = null;
-    // if (paymentModalElement) {
-    //     paymentModal = new bootstrap.Modal(paymentModalElement);
-    // }
+    // Check if Paystack is loaded, load if needed
+    if (typeof PaystackPop === 'undefined') {
+        const paystackScript = document.createElement('script');
+        paystackScript.src = 'https://js.paystack.co/v1/inline.js';
+        document.head.appendChild(paystackScript);
+    }
     
-    subscribeButtons.forEach((button, index) => {
-        console.log('Button', index, ':', {
-            membership: button.getAttribute('data-membership'),
-            amount: button.getAttribute('data-amount'),
-            disabled: button.disabled,
-            text: button.textContent.trim()
-        });
-        
-        // Add hover effect for testing
-        button.addEventListener('mouseenter', function() {
-            console.log('Mouse entered button:', this.getAttribute('data-membership'));
-            this.style.opacity = '0.8';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.opacity = '1';
-        });
-        
+    const subscribeButtons = document.querySelectorAll('.btn-subscribe');
+    
+    // Check if modal elements exist
+    const paymentModalElement = document.getElementById('paymentModal');
+    
+    if (!paymentModalElement) {
+        return;
+    }
+    
+    const paymentModal = new mdb.Modal(paymentModalElement);
+    
+    let currentPaymentData = {};
+    
+    // Handle subscription button clicks
+    subscribeButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Button clicked:', this.getAttribute('data-membership'));
             
             const membershipType = this.getAttribute('data-membership');
             const amount = this.getAttribute('data-amount');
             
-            console.log('Processing payment for:', membershipType, 'Amount:', amount);
+            // Store payment data
+            currentPaymentData = {
+                membershipType: membershipType,
+                amount: parseFloat(amount),
+                email: '{{ user.email }}',
+                memberDisplayName: membershipType === 'individual' ? 'Individual Membership' : 'Partner Organization Membership'
+            };
             
-            // Simple alert test first
-            alert(`Button clicked! Type: ${membershipType}, Amount: ₦${amount}`);
+            // Update modal content
+            const modalMembershipType = document.getElementById('modalMembershipType');
+            const modalAmount = document.getElementById('modalAmount');
             
-            // Skip modal for now
-            // if (paymentModal) {
-            //     paymentModal.show();
-            // } else {
-            //     console.log('Payment modal not available, continuing without modal');
-            // }
+            if (modalMembershipType && modalAmount) {
+                modalMembershipType.textContent = currentPaymentData.memberDisplayName;
+                modalAmount.textContent = '₦' + Number(amount).toLocaleString();
+            }
             
-            // API call to initiate payment
-            console.log('Initiating payment for:', membershipType);
-            
-            fetch('{% url "dashboard:initiate_payment" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    membership_type: membershipType
-                })
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Payment response:', data);
-                
-                if (data.success) {
-                    console.log('Redirecting to Paystack:', data.authorization_url);
-                    // Redirect to Paystack payment page
-                    window.location.href = data.authorization_url;
-                } else {
-                    console.error('Payment failed:', data.error);
-                    alert('Payment initiation failed: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-                alert('Payment initiation failed. Please check your connection and try again.');
-            });
+            // Show payment modal
+            paymentModal.show();
         });
     });
+    
+    // Handle payment confirmation
+    document.getElementById('proceedPaymentBtn').addEventListener('click', function() {
+        paymentModal.hide();
+        
+        // Initialize payment with backend directly (no processing modal)
+        initiatePayment(currentPaymentData);
+    });
+    
+    // Handle modal close button (X)
+    document.getElementById('modalCloseBtn').addEventListener('click', function() {
+        paymentModal.hide();
+        showPaymentCancelled();
+    });
+    
+    // Handle cancel button
+    document.getElementById('modalCancelBtn').addEventListener('click', function() {
+        paymentModal.hide();
+        showPaymentCancelled();
+    });
+    
+    // Handle modal backdrop click and escape key
+    paymentModalElement.addEventListener('hidden.mdb.modal', function() {
+        // Clear payment data when modal is fully closed
+        currentPaymentData = {};
+    });
+    
+    // Handle backdrop click to close modal
+    paymentModalElement.addEventListener('click', function(e) {
+        if (e.target === paymentModalElement) {
+            paymentModal.hide();
+            showPaymentCancelled();
+        }
+    });
+    
+    // Handle escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && paymentModalElement.classList.contains('show')) {
+            paymentModal.hide();
+            showPaymentCancelled();
+        }
+    });
+    
+    function waitForPaystack(callback, maxAttempts = 10, currentAttempt = 0) {
+        if (typeof PaystackPop !== 'undefined') {
+            callback();
+        } else if (currentAttempt < maxAttempts) {
+            setTimeout(() => {
+                waitForPaystack(callback, maxAttempts, currentAttempt + 1);
+            }, 500);
+        } else {
+            showPaymentError('Payment system failed to load. Please refresh the page and try again.');
+        }
+    }
+    
+    function initiatePayment(paymentData) {
+        
+        fetch('{% url "dashboard:initiate_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                membership_type: paymentData.membershipType,
+                amount: paymentData.amount
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.public_key && data.reference) {
+                waitForPaystack(() => {
+                    let handler = PaystackPop.setup({
+                    key: data.public_key,
+                    email: paymentData.email,
+                    amount: paymentData.amount * 100, // Convert to kobo
+                    currency: 'NGN',
+                    ref: data.reference,
+                    metadata: {
+                        membership_id: data.membership_id,
+                        membership_type: paymentData.membershipType
+                    },
+                    callback: function(response) {
+                        showPaymentSuccess(response);
+                        setTimeout(() => {
+                            window.location.href = '/dashboard/';
+                        }, 3000);
+                    },
+                    onClose: function() {
+                        showPaymentCancelled();
+                    }
+                });
+                handler.openIframe();
+                });
+            } else {
+                showPaymentError(data.error || 'Payment initialization failed');
+            }
+        })
+        .catch(error => {
+            showPaymentError('Payment request failed. Please try again.');
+        });
+    }
+    
+    function showPaymentSuccess(response) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        successDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        successDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-2">check_circle</span>
+                <div>
+                    <strong>Payment Successful!</strong><br>
+                    <small>Reference: ${response.reference}</small>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(successDiv);
+        
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    function showPaymentCancelled() {
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+        warningDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        warningDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-2">info</span>
+                <div>
+                    <strong>Payment Cancelled</strong><br>
+                    <small>You can try again anytime.</small>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(warningDiv);
+        
+        setTimeout(() => {
+            if (warningDiv.parentNode) {
+                warningDiv.remove();
+            }
+        }, 4000);
+    }
+    
+    function showPaymentError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        errorDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-2">error</span>
+                <div>
+                    <strong>Payment Failed</strong><br>
+                    <small>${message}</small>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(errorDiv);
+        
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 6000);
+    }
     
     function getCookie(name) {
         let cookieValue = null;

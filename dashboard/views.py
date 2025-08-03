@@ -1110,23 +1110,59 @@ def initiate_payment(request):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
+        import json
+        from django.conf import settings
+        from .paystack_service import PaystackService
+        from decimal import Decimal
+        import uuid
+        
+        # Parse request data
+        data = json.loads(request.body)
+        membership_type = data.get('membership_type', 'individual')
+        amount = Decimal(str(data.get('amount', 10000)))
+        
         # Get or create membership for current user
         membership, created = Membership.objects.get_or_create(
             member=request.user,
             defaults={
-                'membership_type': 'individual',
+                'membership_type': membership_type,
                 'status': 'pending'
             }
         )
         
-        # For now, return a mock response
+        # Update membership type if needed
+        if membership.membership_type != membership_type:
+            membership.membership_type = membership_type
+            membership.save()
+        
+        # Generate unique payment reference
+        payment_reference = f"ANA-{membership_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
+        
+        # Get Paystack public key from settings
+        paystack_public_key = getattr(settings, 'PAYSTACK_PUBLIC_KEY', 'pk_test_96b9995fbf552beec8da11acbb821aa5c1d06341')
+        
+        # Create payment record
+        from .models import Payment
+        payment = Payment.objects.create(
+            membership=membership,
+            amount=amount,
+            currency='NGN',
+            payment_method='paystack',
+            status='pending',
+            paystack_reference=payment_reference,
+            description=f'{membership_type.title()} Membership Payment'
+        )
+        
         return JsonResponse({
             'status': 'success',
-            'message': 'Payment initiation successful',
+            'public_key': paystack_public_key,
+            'reference': payment_reference,
             'membership_id': str(membership.membership_id),
-            'redirect_url': f'/dashboard/payment/mock/{membership.membership_id}/'
+            'payment_id': str(payment.payment_id),
+            'amount': float(amount),
+            'email': request.user.email
         })
         
     except Exception as e:
         logger.error(f"Payment initiation error: {e}")
-        return JsonResponse({'error': 'Payment initiation failed'}, status=500)
+        return JsonResponse({'error': f'Payment initiation failed: {str(e)}'}, status=500)
