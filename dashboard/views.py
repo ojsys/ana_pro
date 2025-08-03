@@ -546,6 +546,11 @@ class CustomLoginView(LoginView):
 class CustomLogoutView(LogoutView):
     """Custom logout view"""
     next_page = reverse_lazy('dashboard:login')
+    http_method_names = ['get', 'post']  # Allow both GET and POST
+    
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests for logout"""
+        return self.post(request, *args, **kwargs)
     
     def dispatch(self, request, *args, **kwargs):
         messages.info(request, 'You have been successfully logged out.')

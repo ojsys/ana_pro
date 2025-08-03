@@ -130,6 +130,11 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Default username authentication (fallback)
 ]
 
+# Login/Logout URLs
+LOGIN_URL = '/dashboard/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/dashboard/login/'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
