@@ -706,9 +706,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Parse amount more safely
             let amount = parseFloat(amountStr);
+            
+            // Debug logging
+            console.log('Raw amount string:', amountStr);
+            console.log('Parsed amount:', amount);
+            console.log('Pricing data:', pricingData);
+            
             if (isNaN(amount) || amount <= 0) {
                 // Fallback to default pricing
                 amount = membershipType === 'individual' ? pricingData.individual : pricingData.organization;
+                console.log('Using fallback amount:', amount);
+            }
+            
+            // Ensure minimum reasonable amount (in case database has wrong values)
+            if (amount < 1000) {
+                amount = membershipType === 'individual' ? 10000 : 50000;
+                console.log('Amount too small, using default:', amount);
             }
             
             // Store payment data
@@ -725,10 +738,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (modalMembershipType && modalAmount) {
                 modalMembershipType.textContent = currentPaymentData.memberDisplayName;
-                modalAmount.textContent = '₦' + amount.toLocaleString('en-NG', {
+                
+                // Format amount properly with Nigerian locale
+                const formattedAmount = new Intl.NumberFormat('en-NG', {
+                    style: 'currency',
+                    currency: 'NGN',
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0
-                });
+                }).format(amount);
+                
+                modalAmount.textContent = formattedAmount;
+                
+                console.log('Final formatted amount:', formattedAmount);
             }
             
             // Show payment modal
