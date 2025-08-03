@@ -673,7 +673,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Debug: Log pricing data
     const pricingData = {{ pricing_json|safe }};
     
     // Check if Paystack is loaded, load if needed
@@ -708,16 +707,9 @@ document.addEventListener('DOMContentLoaded', function() {
             let cleanAmountStr = amountStr ? amountStr.toString().replace(/,/g, '') : '0';
             let amount = parseFloat(cleanAmountStr);
             
-            // Debug logging
-            console.log('Raw amount string:', amountStr);
-            console.log('Cleaned amount string:', cleanAmountStr);
-            console.log('Parsed amount:', amount);
-            console.log('Pricing data:', pricingData);
-            
             if (isNaN(amount) || amount <= 0) {
                 // Fallback to default pricing
                 amount = membershipType === 'individual' ? pricingData.individual : pricingData.organization;
-                console.log('Using fallback amount:', amount);
             }
             
             // Store payment data
@@ -744,8 +736,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }).format(amount);
                 
                 modalAmount.textContent = formattedAmount;
-                
-                console.log('Final formatted amount:', formattedAmount);
             }
             
             // Show payment modal
