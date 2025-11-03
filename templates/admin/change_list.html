@@ -784,24 +784,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 {% endif %}
 
-                {% if action_form and actions_on_top and cl.show_admin_actions %}
-                    <div class="actions-top">
-                        <form method="post" class="d-flex gap-2 align-items-center">
-                            {% csrf_token %}
-                            <select name="action" class="form-select" style="width: auto;">
-                                <option value="">---------</option>
-                                {% for choice in action_form.action.field.choices %}
-                                    <option value="{{ choice.0 }}">{{ choice.1|capfirst }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-outline-primary" name="index" value="{{ action_form.action.field.choices.0.0 }}">
-                                Go
-                            </button>
-                            {{ action_form.select_across }}
-                        </form>
-                    </div>
-                {% endif %}
-
                 {% if cl.result_count %}
                     <div class="results-info">
                         <span class="text-muted">
@@ -816,9 +798,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 {% endif %}
 
-                {% if cl.formset %}
-                    <form method="post">
+                {% if cl.formset or action_form and actions_on_top and cl.show_admin_actions %}
+                    <form method="post" id="changelist-form">
                         {% csrf_token %}
+                        {% if action_form and actions_on_top and cl.show_admin_actions %}
+                            <div class="actions-top">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select name="action" class="form-select" style="width: auto;">
+                                        <option value="">---------</option>
+                                        {% for choice in action_form.action.field.choices %}
+                                            <option value="{{ choice.0 }}">{{ choice.1|capfirst }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-outline-primary" name="index" value="0">
+                                        Go
+                                    </button>
+                                    {{ action_form.select_across }}
+                                </div>
+                            </div>
+                        {% endif %}
                 {% endif %}
 
                 {% if cl.result_count > 0 %}
@@ -845,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 {% endif %}
 
-                {% if cl.formset %}
+                {% if cl.formset or action_form and actions_on_top and cl.show_admin_actions %}
                     </form>
                 {% endif %}
 

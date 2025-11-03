@@ -216,6 +216,9 @@ class UserProfileInline(admin.StackedInline):
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
 
+    # Ensure list_display includes all necessary fields
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+
     def get_inline_instances(self, request, obj=None):
         if not obj:
             return list()

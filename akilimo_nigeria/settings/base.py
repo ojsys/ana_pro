@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Application definition
 INSTALLED_APPS = [
+    'jazzmin',  # Must come before django.contrib.admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -187,6 +188,79 @@ CKEDITOR_CONFIGS = {
             'dialogui',
             'elementspath'
         ]),
+    }
+}
+
+# Jazzmin Configuration
+JAZZMIN_SETTINGS = {
+    "site_title": "AKILIMO Nigeria",
+    "site_header": "AKILIMO Nigeria Administration",
+    "site_brand": "AKILIMO Nigeria",
+    "welcome_sign": "Welcome to AKILIMO Nigeria Admin",
+    "copyright": "AKILIMO Nigeria Association",
+    "show_ui_builder": False,
+
+    # Actions configuration - ensure checkboxes and actions work properly
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "vertical_tabs",
+    },
+
+    # Enable action checkboxes
+    "show_sidebar": True,
+
+    # Custom CSS/JS (if needed for action fixes)
+    "custom_css": None,
+    "custom_js": None,
+
+    # Icons for apps and models
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "dashboard.UserProfile": "fas fa-user-circle",
+        "dashboard.PartnerOrganization": "fas fa-building",
+        "dashboard.Membership": "fas fa-id-card",
+        "dashboard.Payment": "fas fa-credit-card",
+    },
+
+    # Related modal active - set to False to use standard Django behavior
+    "related_modal_active": False,
+
+    # Use Django's default actions
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-success",
+    "accent": "accent-primary",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": False,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
     }
 }
 
