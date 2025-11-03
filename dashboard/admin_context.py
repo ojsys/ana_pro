@@ -1,18 +1,18 @@
-from django.contrib.auth.models import User
-from django.contrib.admin.models import LogEntry
-from .models import (
-    UserProfile, PartnerOrganization, Membership, 
-    Payment, AkilimoParticipant, DataSyncLog
-)
-
-
 def admin_context_processor(request):
     """Add dashboard statistics to admin templates"""
-    
+
     if not request.path.startswith('/admin/'):
         return {}
-    
+
     try:
+        # Import models inside function to avoid premature Django setup
+        from django.contrib.auth.models import User
+        from django.contrib.admin.models import LogEntry
+        from .models import (
+            UserProfile, PartnerOrganization, Membership,
+            Payment, AkilimoParticipant, DataSyncLog
+        )
+
         # Get basic statistics
         total_users = User.objects.count()
         total_partners = PartnerOrganization.objects.filter(is_active=True).count()
