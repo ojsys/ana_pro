@@ -65,8 +65,11 @@ else:
     }
 
 # cPanel MySQL configuration - use PyMySQL as MySQL adapter
-import pymysql
-pymysql.install_as_MySQLdb()
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass  # pymysql not available, database might not be configured yet
 
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True
