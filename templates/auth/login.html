@@ -12,9 +12,9 @@
         <p class="auth-subtitle">Sign in to your AKILIMO Nigeria Association dashboard to access your partner data and analytics</p>
     </div>
 
-    <form method="post" class="auth-form">
+    <form method="post" class="auth-form" id="loginForm">
         {% csrf_token %}
-        
+
         {% if form.non_field_errors %}
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -48,11 +48,32 @@
             {% endif %}
         </div>
 
-        <button type="submit" class="btn btn-primary btn-auth w-100 mb-3">
-            <i class="bi bi-box-arrow-in-right"></i>
-            Sign In to Dashboard
+        <button type="submit" class="btn btn-primary btn-auth w-100 mb-3" id="loginButton">
+            <span class="button-text">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Sign In to Dashboard
+            </span>
+            <span class="button-spinner" style="display: none;">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Signing in...
+            </span>
         </button>
     </form>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const button = document.getElementById('loginButton');
+            const buttonText = button.querySelector('.button-text');
+            const buttonSpinner = button.querySelector('.button-spinner');
+
+            // Disable the button
+            button.disabled = true;
+
+            // Hide text, show spinner
+            buttonText.style.display = 'none';
+            buttonSpinner.style.display = 'inline-block';
+        });
+    </script>
 
     <div class="auth-links">
         <p class="mb-0">

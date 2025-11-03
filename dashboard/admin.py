@@ -185,8 +185,10 @@ class AkilimoParticipantAdmin(admin.ModelAdmin):
 # Inline admin for UserProfile
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
-    can_delete = False
+    can_delete = True  # Allow deletion when user is deleted
     verbose_name_plural = 'Profile'
+    max_num = 1  # Only one profile per user
+    extra = 0  # Don't show extra empty forms
     
     fieldsets = (
         ('Partner Information', {
@@ -213,11 +215,20 @@ class UserProfileInline(admin.StackedInline):
 # Extend User Admin
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
-    
+
     def get_inline_instances(self, request, obj=None):
         if not obj:
             return list()
         return super().get_inline_instances(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        # Ensure delete permission is properly checked
+        return super().has_delete_permission(request, obj)
+
+    def get_actions(self, request):
+        # Ensure actions are properly inherited
+        actions = super().get_actions(request)
+        return actions
 
 
 # Re-register UserAdmin

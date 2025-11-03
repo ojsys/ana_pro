@@ -112,7 +112,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" id="profileForm">
                     {% csrf_token %}
                     
                     <div class="row mb-4">
@@ -243,12 +243,33 @@
                             <span class="material-icons me-2">arrow_back</span>
                             Back to Dashboard
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <span class="material-icons me-2">save</span>
-                            Update Profile
+                        <button type="submit" class="btn btn-primary" id="profileButton">
+                            <span class="button-text">
+                                <span class="material-icons me-2">save</span>
+                                Update Profile
+                            </span>
+                            <span class="button-spinner" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Updating...
+                            </span>
                         </button>
                     </div>
                 </form>
+
+                <script>
+                    document.getElementById('profileForm').addEventListener('submit', function(e) {
+                        const button = document.getElementById('profileButton');
+                        const buttonText = button.querySelector('.button-text');
+                        const buttonSpinner = button.querySelector('.button-spinner');
+
+                        // Disable the button
+                        button.disabled = true;
+
+                        // Hide text, show spinner
+                        buttonText.style.display = 'none';
+                        buttonSpinner.style.display = 'inline-block';
+                    });
+                </script>
             </div>
         </div>
 

@@ -12,9 +12,9 @@
         <p class="auth-subtitle">Create your partner account to access dashboard analytics and participate in cassava production programs</p>
     </div>
 
-    <form method="post" class="auth-form">
+    <form method="post" class="auth-form" id="registerForm">
         {% csrf_token %}
-        
+
         {% if form.non_field_errors %}
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -177,15 +177,36 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-auth w-100 mb-3">
-            <i class="bi bi-person-plus"></i>
-            Create Account
+        <button type="submit" class="btn btn-primary btn-auth w-100 mb-3" id="registerButton">
+            <span class="button-text">
+                <i class="bi bi-person-plus"></i>
+                Create Account
+            </span>
+            <span class="button-spinner" style="display: none;">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Creating account...
+            </span>
         </button>
     </form>
 
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const button = document.getElementById('registerButton');
+            const buttonText = button.querySelector('.button-text');
+            const buttonSpinner = button.querySelector('.button-spinner');
+
+            // Disable the button
+            button.disabled = true;
+
+            // Hide text, show spinner
+            buttonText.style.display = 'none';
+            buttonSpinner.style.display = 'inline-block';
+        });
+    </script>
+
     <div class="auth-links">
         <p class="mb-0">
-            Already have an account? 
+            Already have an account?
             <a href="{% url 'dashboard:login' %}" class="auth-link">Sign in here</a>
         </p>
     </div>
