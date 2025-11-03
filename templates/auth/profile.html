@@ -332,6 +332,11 @@
                         <div class="membership-downloads">
                             <h6>Download Documents</h6>
                             {% if user.membership.is_active %}
+                                <div class="alert alert-info">
+                                    <span class="material-icons me-2">info</span>
+                                    <strong>Coming Soon:</strong> Certificate and ID card downloads will be available once your membership is processed.
+                                </div>
+                                {# Uncomment when download views are implemented
                                 <div class="d-grid gap-2">
                                     <a href="{% url 'dashboard:download_certificate' %}" class="btn btn-primary">
                                         <span class="material-icons me-2">workspace_premium</span>
@@ -354,6 +359,7 @@
                                         Documents include QR codes for verification
                                     </small>
                                 </div>
+                                #}
                             {% else %}
                                 <div class="alert alert-warning">
                                     {% if user.membership.status == 'pending' %}
@@ -381,15 +387,14 @@
                     </div>
                 </div>
 
-                {% if user.membership.qr_code %}
+                {% if user.membership.is_active and user.membership.qr_code %}
                 <div class="row">
                     <div class="col-12">
                         <div class="qr-verification bg-light rounded p-3">
                             <h6>Verification QR Code</h6>
-                            <p class="mb-2">Others can verify your membership by scanning the QR code on your certificate or visiting:</p>
-                            <code>{% url 'dashboard:verify_membership' user.membership.qr_code %}</code>
+                            <p class="mb-2">Others can verify your membership by scanning the QR code on your certificate.</p>
                             <div class="mt-2">
-                                <small class="text-muted">This link is included in all downloaded documents</small>
+                                <small class="text-muted">QR verification link is included in all downloaded documents</small>
                             </div>
                         </div>
                     </div>
