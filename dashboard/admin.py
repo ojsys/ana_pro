@@ -221,15 +221,6 @@ class UserAdmin(BaseUserAdmin):
             return list()
         return super().get_inline_instances(request, obj)
 
-    def has_delete_permission(self, request, obj=None):
-        # Ensure delete permission is properly checked
-        return super().has_delete_permission(request, obj)
-
-    def get_actions(self, request):
-        # Ensure actions are properly inherited
-        actions = super().get_actions(request)
-        return actions
-
 
 # Re-register UserAdmin
 admin.site.unregister(User)
