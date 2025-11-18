@@ -32,7 +32,7 @@ urlpatterns = [
     path('payment/selection/', views.payment_selection, name='payment_selection'),
     path('payment/renewal/', views.renewal, name='renewal'),
     path('payment/initiate/', views.initiate_payment, name='initiate_payment'),
-    # path('payment/verify/', views.payment_verification, name='payment_verification'),
+    path('payment/verify/', views.verify_payment, name='verify_payment'),
     # path('payment/mock/<uuid:payment_id>/', views.mock_payment_page, name='mock_payment'),
     
     # Debug URLs (commented out - functions need to be implemented)

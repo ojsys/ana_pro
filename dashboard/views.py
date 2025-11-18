@@ -1216,21 +1216,114 @@ def initiate_payment(request):
             description=f'{payment_purpose.replace("_", " ").title()} - {membership_type.title()} Membership'
         )
 
-        return JsonResponse({
-            'status': 'success',
-            'public_key': paystack_public_key,
-            'reference': payment_reference,
+        # Initialize Paystack transaction for checkout redirect
+        from .paystack_service import PaystackService
+        paystack = PaystackService()
+        callback_url = request.build_absolute_uri('/dashboard/payment/verify/')
+
+        metadata = {
             'membership_id': str(membership.membership_id),
             'payment_id': str(payment.payment_id),
-            'amount': float(amount),
-            'email': request.user.email,
             'payment_purpose': payment_purpose,
-            'subscription_year': subscription_year
-        })
+            'subscription_year': subscription_year,
+            'membership_type': membership_type
+        }
+
+        paystack_response = paystack.initialize_transaction(
+            email=request.user.email,
+            amount=amount,
+            reference=payment_reference,
+            callback_url=callback_url,
+            metadata=metadata
+        )
+
+        if paystack_response.get('status'):
+            # Get checkout URL from Paystack response
+            checkout_url = paystack_response['data']['authorization_url']
+            logger.info(f"Payment initialized successfully. Checkout URL: {checkout_url}")
+
+            return JsonResponse({
+                'status': 'success',
+                'checkout_url': checkout_url,
+                'reference': payment_reference,
+                'payment_id': str(payment.payment_id)
+            })
+        else:
+            logger.error(f"Paystack initialization failed: {paystack_response.get('message')}")
+            return JsonResponse({
+                'error': paystack_response.get('message', 'Payment initialization failed')
+            }, status=500)
 
     except Exception as e:
         logger.error(f"Payment initiation error: {e}")
         return JsonResponse({'error': f'Payment initiation failed: {str(e)}'}, status=500)
+
+
+@login_required
+def verify_payment(request):
+    """Verify payment after Paystack checkout redirect"""
+    from .paystack_service import PaystackService
+    from .models import Payment, Membership
+    from django.contrib import messages
+    from datetime import date, timedelta
+
+    reference = request.GET.get('reference')
+
+    if not reference:
+        messages.error(request, 'Payment reference not provided.')
+        return redirect('dashboard:index')
+
+    try:
+        # Get payment record
+        payment = Payment.objects.get(paystack_reference=reference)
+
+        # Verify with Paystack
+        paystack = PaystackService()
+        verification_response = paystack.verify_transaction(reference)
+
+        if verification_response.get('status') and verification_response['data']['status'] == 'success':
+            # Payment successful
+            payment.status = 'completed'
+            payment.paid_at = timezone.now()
+            payment.save()
+
+            # Update membership
+            membership = payment.membership
+
+            if payment.payment_purpose == 'registration':
+                membership.registration_paid = True
+                membership.registration_date = date.today()
+                membership.status = 'active'
+            elif payment.payment_purpose == 'annual_dues':
+                membership.annual_dues_paid_for_year = payment.subscription_year
+                membership.subscription_start_date = date(payment.subscription_year, 1, 1)
+                membership.subscription_end_date = date(payment.subscription_year, 12, 31)
+                membership.last_annual_dues_payment_date = timezone.now()
+                membership.status = 'active'
+                membership.access_suspended = False
+
+            membership.save()
+
+            logger.info(f"Payment verified successfully: {reference}")
+            messages.success(request, 'Payment successful! Your membership has been updated.')
+            return redirect('dashboard:index')
+        else:
+            # Payment failed
+            payment.status = 'failed'
+            payment.save()
+
+            logger.error(f"Payment verification failed: {reference}")
+            messages.error(request, 'Payment verification failed. Please try again or contact support.')
+            return redirect('dashboard:payment_selection')
+
+    except Payment.DoesNotExist:
+        logger.error(f"Payment not found for reference: {reference}")
+        messages.error(request, 'Payment record not found.')
+        return redirect('dashboard:index')
+    except Exception as e:
+        logger.error(f"Payment verification error: {e}")
+        messages.error(request, 'An error occurred while verifying payment.')
+        return redirect('dashboard:index')
 
 
 @login_required
