@@ -1,5 +1,6 @@
 {% extends "admin/base.html" %}
 {% load i18n admin_urls static admin_list humanize %}
+{% load import_export_tags %}
 
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
@@ -777,12 +778,36 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="badge bg-primary ms-2">{{ cl.result_count|intcomma }}</span>
                     {% endif %}
                 </h5>
-                {% if has_add_permission %}
-                    <a href="{% url cl.opts|admin_urlname:'add' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>
-                        Add {{ cl.opts.verbose_name }}
-                    </a>
-                {% endif %}
+                <div class="d-flex gap-2 align-items-center">
+                    {# Export buttons - simple and reliable approach #}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-download me-1"></i>
+                            Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?{{ cl.get_query_string }}&format=csv">
+                                <i class="bi bi-file-earmark-text me-2"></i>CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="?{{ cl.get_query_string }}&format=xlsx">
+                                <i class="bi bi-file-earmark-excel me-2"></i>Excel (XLSX)
+                            </a></li>
+                            <li><a class="dropdown-item" href="?{{ cl.get_query_string }}&format=json">
+                                <i class="bi bi-file-earmark-code me-2"></i>JSON
+                            </a></li>
+                        </ul>
+                    </div>
+
+                    {% block object-tools-items %}
+                        {# Add button #}
+                        {% if has_add_permission %}
+                            <a href="{% url cl.opts|admin_urlname:'add' %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add {{ cl.opts.verbose_name }}
+                            </a>
+                        {% endif %}
+                    {% endblock %}
+                </div>
             </div>
 
             <div class="card-body">
