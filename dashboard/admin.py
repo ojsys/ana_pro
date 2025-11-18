@@ -432,9 +432,11 @@ class MembershipAdmin(ImportExportModelAdmin):
     registration_status.short_description = 'Registration'
 
     def subscription_year_display(self, obj):
-        """Display subscription year"""
+        """Display subscription year without thousand separator"""
         if obj.subscription_year:
-            return format_html('<strong>{}</strong>', obj.subscription_year)
+            # Format as string to prevent comma formatting from USE_THOUSAND_SEPARATOR
+            year_str = str(obj.subscription_year).replace(',', '')
+            return format_html('<strong>{}</strong>', year_str)
         return '-'
     subscription_year_display.short_description = 'Year'
 

@@ -629,7 +629,7 @@ class Membership(models.Model):
         """Check if user has active annual dues subscription for current year"""
         from datetime import date
 
-        if not self.subscription_end_date or not self.annual_dues_paid_for_year:
+        if not self.subscription_end_date or not self.subscription_start_date or not self.annual_dues_paid_for_year:
             return False
 
         current_year = timezone.now().year

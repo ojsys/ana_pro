@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load humanize l10n %}
 
 {% block title %}Payment Selection - AKILIMO Dashboard{% endblock %}
 
@@ -26,7 +26,7 @@
                 <span class="material-icons me-3" style="font-size: 2rem;">verified</span>
                 <div>
                     <h5 class="alert-heading mb-1">Active Subscription</h5>
-                    <p class="mb-0">Your annual membership dues for {{ current_year }} have been paid. Your subscription is active until December 31, {{ current_year }}.</p>
+                    <p class="mb-0">Your annual membership dues for {{ current_year|unlocalize }} have been paid. Your subscription is active until December 31, {{ current_year|unlocalize }}.</p>
                 </div>
             </div>
         </div>
@@ -94,7 +94,7 @@
     <div class="col-12 {% if show_registration %}mt-5 pt-5 border-top{% endif %}">
         <h3 class="text-center mb-4">
             <span class="material-icons me-2">autorenew</span>
-            Annual Membership Dues ({{ current_year }})
+            Annual Membership Dues ({{ current_year|unlocalize }})
         </h3>
         <p class="text-center text-muted mb-4">Pay your annual dues to maintain full platform access</p>
     </div>
@@ -105,7 +105,7 @@
                 <div class="pricing-icon">
                     <span class="material-icons">card_membership</span>
                 </div>
-                <h3>Annual Dues - {{ current_year }}</h3>
+                <h3>Annual Dues - {{ current_year|unlocalize }}</h3>
                 <p class="text-muted">Flat rate for all members</p>
             </div>
             <div class="pricing-price">
@@ -135,7 +135,7 @@
                     data-subscription-year="{{ current_year }}"
                     {% if already_paid_current_year %}disabled{% endif %}>
                 {% if already_paid_current_year %}
-                Already Paid for {{ current_year }}
+                Already Paid for {{ current_year|unlocalize }}
                 {% else %}
                 Pay Annual Dues - ₦{{ annual_dues_pricing.price|floatformat:0|intcomma }}
                 {% endif %}

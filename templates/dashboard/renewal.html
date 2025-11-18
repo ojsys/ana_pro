@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load humanize l10n %}
 
 {% block title %}Membership Renewal - AKILIMO Dashboard{% endblock %}
 
@@ -26,8 +26,8 @@
                 <span class="material-icons me-3" style="font-size: 2.5rem;">verified</span>
                 <div>
                     <h4 class="alert-heading mb-2">Active Subscription</h4>
-                    <p class="mb-1">Your annual membership dues for {{ current_year }} are paid and active.</p>
-                    <p class="mb-0"><strong>Valid until:</strong> December 31, {{ current_year }}</p>
+                    <p class="mb-1">Your annual membership dues for {{ current_year|unlocalize }} are paid and active.</p>
+                    <p class="mb-0"><strong>Valid until:</strong> December 31, {{ current_year|unlocalize }}</p>
                 </div>
             </div>
         </div>
@@ -106,7 +106,7 @@
 <div class="row g-4 justify-content-center">
     <div class="col-md-6 col-lg-5">
         <div class="renewal-card">
-            <div class="renewal-badge">Annual Dues {{ current_year }}</div>
+            <div class="renewal-badge">Annual Dues {{ current_year|unlocalize }}</div>
             <div class="renewal-header">
                 <div class="renewal-icon">
                     <span class="material-icons">card_membership</span>
@@ -129,7 +129,7 @@
                     <div class="period-label">Validity Period</div>
                     <div class="period-dates">
                         <span class="material-icons">calendar_today</span>
-                        January 1, {{ current_year }} - December 31, {{ current_year }}
+                        January 1, {{ current_year|unlocalize }} - December 31, {{ current_year|unlocalize }}
                     </div>
                 </div>
             </div>
@@ -149,7 +149,7 @@
                     {% if already_paid %}disabled{% endif %}>
                 {% if already_paid %}
                 <span class="material-icons me-2">check_circle</span>
-                Already Paid for {{ current_year }}
+                Already Paid for {{ current_year|unlocalize }}
                 {% else %}
                 <span class="material-icons me-2">autorenew</span>
                 Renew Now - ₦{{ annual_dues_pricing.price|floatformat:0|intcomma }}
