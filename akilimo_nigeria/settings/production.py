@@ -162,52 +162,104 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'detailed': {
+            'format': '[{asctime}] {levelname} [{name}:{lineno}] {message}\n'
+                      'Process: {process:d} | Thread: {thread:d} | Module: {module}\n'
+                      '{pathname}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
         'simple': {
             'format': '{levelname} {message}',
             'style': '{',
         },
     },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
     'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
         'file': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': config('LOG_FILE', default=str(BASE_DIR / 'logs' / 'akilimo_nigeria.log')),
-            'maxBytes': 1024*1024*10,  # 10MB
-            'backupCount': 5,
+            'filename': config('LOG_FILE', default='/home/akilimon/ana_pro/logs/akilimo_nigeria.log'),
+            'maxBytes': 1024*1024*15,  # 15MB
+            'backupCount': 10,
             'formatter': 'verbose',
         },
         'error_file': {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': config('ERROR_LOG_FILE', default=str(BASE_DIR / 'logs' / 'akilimo_nigeria_error.log')),
+            'filename': config('ERROR_LOG_FILE', default='/home/akilimon/ana_pro/logs/akilimo_nigeria_error.log'),
+            'maxBytes': 1024*1024*15,  # 15MB
+            'backupCount': 10,
+            'formatter': 'detailed',
+        },
+        'debug_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': config('DEBUG_LOG_FILE', default='/home/akilimon/ana_pro/logs/akilimo_nigeria_debug.log'),
+            'maxBytes': 1024*1024*20,  # 20MB
+            'backupCount': 5,
+            'formatter': 'detailed',
+        },
+        'db_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': config('DB_LOG_FILE', default='/home/akilimon/ana_pro/logs/akilimo_nigeria_db.log'),
             'maxBytes': 1024*1024*10,  # 10MB
             'backupCount': 5,
             'formatter': 'verbose',
         },
         'mail_admins': {
             'level': 'ERROR',
+            'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler',
             'include_html': True,
         },
     },
     'root': {
-        'handlers': ['file'],
+        'handlers': ['file', 'console'],
         'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'error_file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'dashboard': {
-            'handlers': ['file', 'error_file'],
+            'handlers': ['file', 'error_file', 'console'],
             'level': 'INFO',
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['error_file', 'mail_admins'],
+            'handlers': ['error_file', 'mail_admins', 'console'],
             'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['db_file'],
+            'level': config('DB_LOG_LEVEL', default='INFO'),
+            'propagate': False,
+        },
+        'dashboard': {
+            'handlers': ['file', 'error_file', 'debug_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'website': {
+            'handlers': ['file', 'error_file', 'console'],
+            'level': 'INFO',
             'propagate': False,
         },
     },

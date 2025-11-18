@@ -38,6 +38,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'dashboard.middleware.ErrorLoggingMiddleware',  # Custom error logging
+    'dashboard.middleware.RequestLoggingMiddleware',  # Optional request logging
 ]
 
 ROOT_URLCONF = 'akilimo_nigeria.urls'
