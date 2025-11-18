@@ -153,6 +153,17 @@ else:
 MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = config('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
 
+# Ensure logs directory exists before configuring logging
+LOG_DIR = os.path.dirname(config('LOG_FILE', default='/home/akilimon/ana_pro/logs/akilimo_nigeria.log'))
+if not os.path.exists(LOG_DIR):
+    try:
+        os.makedirs(LOG_DIR, mode=0o755, exist_ok=True)
+    except OSError as e:
+        # If we can't create the directory, log to console instead
+        import sys
+        print(f"Warning: Could not create logs directory {LOG_DIR}: {e}", file=sys.stderr)
+        print("Logging will be directed to console only.", file=sys.stderr)
+
 # Logging Configuration for production
 LOGGING = {
     'version': 1,
