@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
