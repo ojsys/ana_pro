@@ -20,40 +20,78 @@ class APIConfiguration(models.Model):
 
 class PartnerOrganization(models.Model):
     """Partner organizations that participate in AKILIMO program"""
+
+    # Status choices for approval workflow
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending Approval'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
     name = models.CharField(max_length=200, unique=True, help_text="Organization name")
     code = models.CharField(max_length=50, unique=True, help_text="Organization code/abbreviation")
     description = models.TextField(blank=True, help_text="Organization description")
-    
+
+    # Approval workflow fields
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_APPROVED,
+        help_text="Approval status of the organization"
+    )
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='requested_organizations',
+        help_text="User who requested this organization"
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_organizations',
+        help_text="Admin who approved/rejected this organization"
+    )
+    approved_at = models.DateTimeField(null=True, blank=True, help_text="When the organization was approved/rejected")
+    rejection_reason = models.TextField(blank=True, help_text="Reason for rejection (if applicable)")
+
     # Contact information
     contact_person = models.CharField(max_length=100, blank=True)
     email = models.EmailField(blank=True)
     phone_number = models.CharField(max_length=20, blank=True)
     website = models.URLField(blank=True)
-    
+
     # Visual branding
     logo = models.ImageField(upload_to='partner_logos/', blank=True, null=True, help_text="Partner organization logo")
-    
+
     # Featured status
     is_featured = models.BooleanField(default=False, help_text="Display on homepage as featured partner")
     feature_order = models.PositiveIntegerField(default=0, help_text="Order in featured partners section (0=not featured)")
-    
+
     # Success story
     success_story = models.TextField(blank=True, help_text="Success story or achievement highlight")
-    
+
     # Location information
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, default="Nigeria")
-    
+
     # Organization metadata
     organization_type = models.CharField(max_length=100, blank=True, help_text="NGO, Government, Private, etc.")
     established_date = models.DateField(null=True, blank=True)
-    
+
     # Program participation
     is_active = models.BooleanField(default=True)
     joined_program_date = models.DateTimeField(auto_now_add=True)
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -65,7 +103,28 @@ class PartnerOrganization(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.code})"
-    
+
+    @property
+    def is_approved(self):
+        """Check if organization is approved"""
+        return self.status == self.STATUS_APPROVED
+
+    @property
+    def is_pending(self):
+        """Check if organization is pending approval"""
+        return self.status == self.STATUS_PENDING
+
+    @property
+    def status_badge(self):
+        """Get HTML badge for status display in admin"""
+        colors = {
+            self.STATUS_PENDING: 'warning',
+            self.STATUS_APPROVED: 'success',
+            self.STATUS_REJECTED: 'danger',
+        }
+        color = colors.get(self.status, 'secondary')
+        return f'<span class="badge bg-{color}">{self.get_status_display()}</span>'
+
     @property
     def total_farmers(self):
         """Get total number of farmers associated with this partner"""

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'ckeditor',
     'ckeditor_uploader',
+    'import_export',  # Django import-export for CSV/Excel export
     'website',
     'dashboard',
 ]

@@ -2,14 +2,20 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.db import models
 from django.forms import Textarea
+from import_export.admin import ImportExportModelAdmin
 from .models import (
     Page, NewsArticle, HomePageSection, TeamMember, PartnerShowcase,
     Testimonial, FAQ, ContactInfo, SiteSettings, Statistic
 )
+from .resources import (
+    PageResource, NewsArticleResource, HomePageSectionResource,
+    TeamMemberResource, PartnerShowcaseResource, TestimonialResource,
+    FAQResource, ContactInfoResource, StatisticResource, SiteSettingsResource
+)
 
 
-class RichTextAdmin(admin.ModelAdmin):
-    """Base admin class with rich text editing"""
+class RichTextAdmin(ImportExportModelAdmin):
+    """Base admin class with rich text editing and export functionality"""
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 6, 'cols': 80})},
     }
@@ -17,6 +23,7 @@ class RichTextAdmin(admin.ModelAdmin):
 
 @admin.register(Page)
 class PageAdmin(RichTextAdmin):
+    resource_class = PageResource
     list_display = ['title', 'slug', 'is_published', 'show_in_menu', 'menu_order', 'created_at']
     list_filter = ['is_published', 'show_in_menu', 'created_at']
     search_fields = ['title', 'content', 'meta_description']
@@ -50,7 +57,8 @@ class PageAdmin(RichTextAdmin):
 
 
 @admin.register(NewsArticle)
-class NewsArticleAdmin(admin.ModelAdmin):
+class NewsArticleAdmin(ImportExportModelAdmin):
+    resource_class = NewsArticleResource
     list_display = ['title', 'category', 'author', 'published_date', 'is_published', 'is_featured', 'views_count']
     list_filter = ['category', 'is_published', 'is_featured', 'published_date', 'author']
     search_fields = ['title', 'excerpt', 'content']
@@ -89,7 +97,8 @@ class NewsArticleAdmin(admin.ModelAdmin):
 
 
 @admin.register(HomePageSection)
-class HomePageSectionAdmin(admin.ModelAdmin):
+class HomePageSectionAdmin(ImportExportModelAdmin):
+    resource_class = HomePageSectionResource
     list_display = ['section_type', 'title', 'order', 'is_active', 'created_at']
     list_filter = ['section_type', 'is_active', 'created_at']
     search_fields = ['title', 'content']
@@ -119,7 +128,8 @@ class HomePageSectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(TeamMember)
-class TeamMemberAdmin(admin.ModelAdmin):
+class TeamMemberAdmin(ImportExportModelAdmin):
+    resource_class = TeamMemberResource
     list_display = ['name', 'position', 'category', 'order', 'is_active', 'photo_preview']
     list_filter = ['category', 'is_active', 'created_at']
     search_fields = ['name', 'position', 'bio']
@@ -158,7 +168,8 @@ class TeamMemberAdmin(admin.ModelAdmin):
 
 
 @admin.register(PartnerShowcase)
-class PartnerShowcaseAdmin(admin.ModelAdmin):
+class PartnerShowcaseAdmin(ImportExportModelAdmin):
+    resource_class = PartnerShowcaseResource
     list_display = ['partner', 'is_featured', 'is_active', 'display_order', 'logo_preview']
     list_filter = ['is_featured', 'is_active', 'partner', 'created_at']
     search_fields = ['partner__name', 'description', 'success_story']
@@ -194,7 +205,8 @@ class PartnerShowcaseAdmin(admin.ModelAdmin):
 
 
 @admin.register(Testimonial)
-class TestimonialAdmin(admin.ModelAdmin):
+class TestimonialAdmin(ImportExportModelAdmin):
+    resource_class = TestimonialResource
     list_display = ['name', 'organization', 'testimonial_type', 'rating', 'is_featured', 'is_active']
     list_filter = ['testimonial_type', 'rating', 'is_featured', 'is_active', 'created_at']
     search_fields = ['name', 'organization', 'content']
@@ -220,7 +232,8 @@ class TestimonialAdmin(admin.ModelAdmin):
 
 
 @admin.register(FAQ)
-class FAQAdmin(admin.ModelAdmin):
+class FAQAdmin(ImportExportModelAdmin):
+    resource_class = FAQResource
     list_display = ['question_preview', 'category', 'order', 'is_active', 'helpful_count']
     list_filter = ['category', 'is_active', 'created_at']
     search_fields = ['question', 'answer']
@@ -251,7 +264,8 @@ class FAQAdmin(admin.ModelAdmin):
 
 
 @admin.register(ContactInfo)
-class ContactInfoAdmin(admin.ModelAdmin):
+class ContactInfoAdmin(ImportExportModelAdmin):
+    resource_class = ContactInfoResource
     list_display = ['office_name', 'city', 'state', 'is_primary', 'is_active', 'phone', 'email']
     list_filter = ['is_primary', 'is_active', 'state', 'country']
     search_fields = ['office_name', 'city', 'address', 'phone', 'email']
@@ -281,7 +295,8 @@ class ContactInfoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Statistic)
-class StatisticAdmin(admin.ModelAdmin):
+class StatisticAdmin(ImportExportModelAdmin):
+    resource_class = StatisticResource
     list_display = ['label', 'value', 'icon', 'order', 'show_on_homepage', 'is_active']
     list_filter = ['show_on_homepage', 'is_active', 'created_at']
     search_fields = ['label', 'value', 'description']
@@ -304,7 +319,8 @@ class StatisticAdmin(admin.ModelAdmin):
 
 
 @admin.register(SiteSettings)
-class SiteSettingsAdmin(admin.ModelAdmin):
+class SiteSettingsAdmin(ImportExportModelAdmin):
+    resource_class = SiteSettingsResource
     list_display = ['site_title', 'site_tagline', 'primary_email', 'primary_phone']
     
     fieldsets = (

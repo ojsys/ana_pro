@@ -1,13 +1,21 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from import_export.admin import ImportExportModelAdmin
 from .models import (
-    APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
+    APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
     DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing
+)
+from .resources import (
+    APIConfigurationResource, PartnerOrganizationResource, UserProfileResource,
+    AkilimoParticipantResource, ParticipantRecordResource, DataSyncLogResource,
+    DashboardMetricsResource, MembershipResource, PaymentResource,
+    MembershipPricingResource, UserResource
 )
 
 @admin.register(APIConfiguration)
-class APIConfigurationAdmin(admin.ModelAdmin):
+class APIConfigurationAdmin(ImportExportModelAdmin):
+    resource_class = APIConfigurationResource
     list_display = ['name', 'is_active', 'created_at', 'updated_at']
     list_filter = ['is_active', 'created_at']
     search_fields = ['name']
@@ -27,7 +35,8 @@ class APIConfigurationAdmin(admin.ModelAdmin):
     )
 
 @admin.register(ParticipantRecord)
-class ParticipantRecordAdmin(admin.ModelAdmin):
+class ParticipantRecordAdmin(ImportExportModelAdmin):
+    resource_class = ParticipantRecordResource
     list_display = ['external_id', 'gender', 'state', 'location', 'training_date', 'created_at']
     list_filter = ['gender', 'state', 'usecase', 'event_type', 'training_date', 'created_at']
     search_fields = ['external_id', 'location', 'facilitator', 'state', 'lga']
@@ -57,7 +66,8 @@ class ParticipantRecordAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related()
 
 @admin.register(DashboardMetrics)
-class DashboardMetricsAdmin(admin.ModelAdmin):
+class DashboardMetricsAdmin(ImportExportModelAdmin):
+    resource_class = DashboardMetricsResource
     list_display = ['metric_type', 'metric_name', 'period_start', 'period_end', 'is_current', 'computed_at']
     list_filter = ['metric_type', 'is_current', 'computed_at']
     search_fields = ['metric_name', 'metric_type']
@@ -77,7 +87,8 @@ class DashboardMetricsAdmin(admin.ModelAdmin):
     )
 
 @admin.register(DataSyncLog)
-class DataSyncLogAdmin(admin.ModelAdmin):
+class DataSyncLogAdmin(ImportExportModelAdmin):
+    resource_class = DataSyncLogResource
     list_display = ['sync_type', 'status', 'records_processed', 'records_created', 'records_updated', 'started_at', 'duration_seconds']
     list_filter = ['sync_type', 'status', 'started_at']
     search_fields = ['sync_type', 'error_message']
@@ -105,16 +116,22 @@ class DataSyncLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(PartnerOrganization)
-class PartnerOrganizationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'organization_type', 'city', 'state', 'is_featured', 'feature_order', 'is_active', 'total_farmers', 'created_at']
-    list_filter = ['organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
+class PartnerOrganizationAdmin(ImportExportModelAdmin):
+    resource_class = PartnerOrganizationResource
+    list_display = ['name', 'code', 'status_display', 'organization_type', 'city', 'state', 'requested_by', 'is_featured', 'feature_order', 'is_active', 'total_farmers', 'created_at']
+    list_filter = ['status', 'organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
     search_fields = ['name', 'code', 'contact_person', 'email', 'city']
-    readonly_fields = ['created_at', 'updated_at', 'joined_program_date']
+    readonly_fields = ['created_at', 'updated_at', 'joined_program_date', 'requested_by', 'approved_by', 'approved_at']
     list_editable = ['is_featured', 'feature_order']
-    
+    actions = ['approve_organizations', 'reject_organizations']
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'code', 'description', 'organization_type', 'is_active')
+        }),
+        ('Approval Status', {
+            'fields': ('status', 'requested_by', 'approved_by', 'approved_at', 'rejection_reason'),
+            'classes': ('collapse',)
         }),
         ('Contact Information', {
             'fields': ('contact_person', 'email', 'phone_number', 'website')
@@ -133,14 +150,79 @@ class PartnerOrganizationAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
+    def status_display(self, obj):
+        """Display status as a colored badge"""
+        return obj.status_badge
+    status_display.short_description = 'Status'
+    status_display.allow_tags = True
+
     def total_farmers(self, obj):
         return obj.total_farmers
     total_farmers.short_description = 'Total Farmers'
 
+    @admin.action(description='Approve selected organizations')
+    def approve_organizations(self, request, queryset):
+        """Approve selected pending organizations"""
+        from django.utils import timezone
+        from django.contrib import messages
+
+        pending_orgs = queryset.filter(status=PartnerOrganization.STATUS_PENDING)
+        count = pending_orgs.count()
+
+        if count == 0:
+            messages.warning(request, 'No pending organizations selected.')
+            return
+
+        # Update organizations
+        pending_orgs.update(
+            status=PartnerOrganization.STATUS_APPROVED,
+            approved_by=request.user,
+            approved_at=timezone.now(),
+            is_active=True
+        )
+
+        # Send notifications to requesting users
+        for org in pending_orgs:
+            if org.requested_by and org.requested_by.email:
+                # You can implement email notification here
+                pass
+
+        messages.success(request, f'Successfully approved {count} organization(s).')
+
+    @admin.action(description='Reject selected organizations')
+    def reject_organizations(self, request, queryset):
+        """Reject selected pending organizations"""
+        from django.utils import timezone
+        from django.contrib import messages
+
+        pending_orgs = queryset.filter(status=PartnerOrganization.STATUS_PENDING)
+        count = pending_orgs.count()
+
+        if count == 0:
+            messages.warning(request, 'No pending organizations selected.')
+            return
+
+        # Update organizations
+        pending_orgs.update(
+            status=PartnerOrganization.STATUS_REJECTED,
+            approved_by=request.user,
+            approved_at=timezone.now(),
+            is_active=False
+        )
+
+        # Send notifications to requesting users
+        for org in pending_orgs:
+            if org.requested_by and org.requested_by.email:
+                # You can implement email notification here
+                pass
+
+        messages.warning(request, f'Rejected {count} organization(s). You can add rejection reasons in the individual organization details.')
+
 
 @admin.register(AkilimoParticipant)
-class AkilimoParticipantAdmin(admin.ModelAdmin):
+class AkilimoParticipantAdmin(ImportExportModelAdmin):
+    resource_class = AkilimoParticipantResource
     list_display = ['external_id', 'full_name', 'farmer_gender', 'admin_level1', 'partner', 'event_date', 'crop']
     list_filter = ['farmer_gender', 'admin_level1', 'partner', 'crop', 'event_type', 'age_category', 'country']
     search_fields = ['external_id', 'farmer_first_name', 'farmer_surname', 'event_city', 'partner']
@@ -212,8 +294,9 @@ class UserProfileInline(admin.StackedInline):
     readonly_fields = ('profile_completion_date', 'created_at', 'updated_at')
 
 
-# Extend User Admin
-class UserAdmin(BaseUserAdmin):
+# Extend User Admin with Import/Export functionality
+class UserAdmin(ImportExportModelAdmin, BaseUserAdmin):
+    resource_class = UserResource
     inlines = (UserProfileInline,)
 
     # Ensure list_display includes all necessary fields
@@ -231,7 +314,8 @@ admin.site.register(User, UserAdmin)
 
 
 @admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
+class UserProfileAdmin(ImportExportModelAdmin):
+    resource_class = UserProfileResource
     list_display = ['user', 'partner_name', 'partner_organization', 'position', 'is_partner_verified', 'profile_completed', 'created_at']
     list_filter = ['partner_organization', 'is_partner_verified', 'profile_completed', 'email_notifications', 'created_at']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'phone_number', 'position']
@@ -265,7 +349,8 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 @admin.register(Membership)
-class MembershipAdmin(admin.ModelAdmin):
+class MembershipAdmin(ImportExportModelAdmin):
+    resource_class = MembershipResource
     list_display = ['certificate_number', 'member', 'membership_type', 'status', 'start_date', 'end_date', 'is_active']
     list_filter = ['membership_type', 'status', 'start_date', 'end_date', 'created_at']
     search_fields = ['certificate_number', 'member__username', 'member__first_name', 'member__last_name', 'member__email']
@@ -296,7 +381,8 @@ class MembershipAdmin(admin.ModelAdmin):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(ImportExportModelAdmin):
+    resource_class = PaymentResource
     list_display = ['payment_id', 'membership', 'amount', 'currency', 'payment_method', 'status', 'paid_at', 'created_at']
     list_filter = ['payment_method', 'status', 'currency', 'paid_at', 'created_at']
     search_fields = ['payment_id', 'paystack_reference', 'membership__member__username', 'membership__member__email']
@@ -324,7 +410,8 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 @admin.register(MembershipPricing)
-class MembershipPricingAdmin(admin.ModelAdmin):
+class MembershipPricingAdmin(ImportExportModelAdmin):
+    resource_class = MembershipPricingResource
     list_display = ['membership_type', 'price', 'is_active', 'created_at', 'updated_at']
     list_filter = ['membership_type', 'is_active', 'created_at']
     search_fields = ['membership_type']

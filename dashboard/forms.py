@@ -87,20 +87,40 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Confirm your password'
         })
         
-        # Set up partner organization choices from AkilimoParticipant data
+        # Set up partner organization choices from PartnerOrganization model and AkilimoParticipant data
         from dashboard.models import AkilimoParticipant
-        
+
         partner_choices = [('', 'Select your organization')]
-        
-        # Get unique partner names from AkilimoParticipant
+
+        # Get approved partner organizations from PartnerOrganization model
+        approved_orgs = PartnerOrganization.objects.filter(
+            status=PartnerOrganization.STATUS_APPROVED,
+            is_active=True
+        ).order_by('name')
+
+        for org in approved_orgs:
+            partner_choices.append((f'org_{org.id}', org.name))
+
+        # Get pending partner organizations (show with indicator)
+        pending_orgs = PartnerOrganization.objects.filter(
+            status=PartnerOrganization.STATUS_PENDING
+        ).order_by('name')
+
+        for org in pending_orgs:
+            partner_choices.append((f'org_{org.id}', f'{org.name} (Pending Approval)'))
+
+        # Also include legacy partners from AkilimoParticipant (for backward compatibility)
         partners = AkilimoParticipant.objects.values_list('partner', flat=True).distinct().exclude(partner__isnull=True).exclude(partner='')
         unique_partners = sorted(set([p for p in partners if p and p.strip()]))
-        
+
+        # Only add AkilimoParticipant partners that are not already in PartnerOrganization
+        existing_org_names = set(PartnerOrganization.objects.values_list('name', flat=True))
         for partner in unique_partners:
-            partner_choices.append((partner, partner))
-        
+            if partner not in existing_org_names:
+                partner_choices.append((f'legacy_{partner}', partner))
+
         partner_choices.append(('other', 'Other (please specify)'))
-        
+
         self.fields['partner_organization'].choices = partner_choices
     
     def clean_email(self):
@@ -134,27 +154,64 @@ class CustomUserCreationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
-        
+
         if commit:
             user.save()
             # Update the automatically created profile
             profile = user.profile
             profile.phone_number = self.cleaned_data['phone_number']
             profile.position = self.cleaned_data['position']
-            
+
             # Handle partner organization assignment
-            partner_name = self.cleaned_data.get('partner_organization')
+            partner_choice = self.cleaned_data.get('partner_organization')
             other_org = self.cleaned_data.get('other_organization')
-            
-            if partner_name == 'other' and other_org:
-                # Use the custom organization name provided
-                profile.partner_name = other_org
-            elif partner_name and partner_name != 'other':
-                # Use the selected partner name from AkilimoParticipant data
-                profile.partner_name = partner_name
-            
+
+            if partner_choice == 'other' and other_org:
+                # User entered a custom organization name
+                # Check if it already exists (case-insensitive)
+                existing_org = PartnerOrganization.objects.filter(
+                    name__iexact=other_org.strip()
+                ).first()
+
+                if existing_org:
+                    # Link to existing organization
+                    profile.partner_organization = existing_org
+                    profile.partner_name = existing_org.name
+                else:
+                    # Create new pending organization
+                    # Generate a unique code from the organization name
+                    import re
+                    base_code = re.sub(r'[^A-Z0-9]', '', other_org.upper()[:10])
+                    code = base_code
+                    counter = 1
+                    while PartnerOrganization.objects.filter(code=code).exists():
+                        code = f"{base_code}{counter}"
+                        counter += 1
+
+                    new_org = PartnerOrganization.objects.create(
+                        name=other_org.strip(),
+                        code=code,
+                        status=PartnerOrganization.STATUS_PENDING,
+                        requested_by=user
+                    )
+                    profile.partner_organization = new_org
+                    profile.partner_name = new_org.name
+
+            elif partner_choice and partner_choice.startswith('org_'):
+                # User selected from PartnerOrganization dropdown
+                org_id = int(partner_choice.split('_')[1])
+                partner_org = PartnerOrganization.objects.get(id=org_id)
+                profile.partner_organization = partner_org
+                profile.partner_name = partner_org.name
+
+            elif partner_choice and partner_choice.startswith('legacy_'):
+                # User selected from AkilimoParticipant legacy data
+                # Extract the partner name (everything after 'legacy_')
+                legacy_name = partner_choice[7:]  # Remove 'legacy_' prefix
+                profile.partner_name = legacy_name
+
             profile.save()
-        
+
         return user
 
 

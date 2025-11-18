@@ -700,36 +700,66 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Simple filter enhancement for Django's default structure
     console.log('🔍 Initializing Django admin filters...');
-    
+
     // Handle both custom and Django default filter links
     const allFilterLinks = document.querySelectorAll('#changelist-filter a, .filter-link');
     console.log(`Found ${allFilterLinks.length} filter links`);
-    
+
     allFilterLinks.forEach(link => {
         // Add visual feedback on click
         link.addEventListener('click', function() {
             console.log(`Filter clicked: ${this.textContent.trim()}`);
-            
+
             // Add subtle loading effect
             this.style.opacity = '0.8';
             setTimeout(() => {
                 this.style.opacity = '';
             }, 500);
         });
-        
+
         // Keyboard accessibility
         if (!link.hasAttribute('tabindex')) {
             link.setAttribute('tabindex', '0');
         }
     });
-    
+
     // Count active filters
     const activeFilters = document.querySelectorAll('#changelist-filter li.selected, .filter-link.active');
     if (activeFilters.length > 0) {
         console.log(`Active filters: ${activeFilters.length}`);
     }
-    
+
     console.log('✅ Filter system ready');
+
+    // Select all checkbox functionality with indeterminate state support
+    const selectAllCheckbox = document.getElementById('action-toggle');
+    const actionCheckboxes = document.querySelectorAll('input[name="_selected_action"]');
+
+    if (selectAllCheckbox && actionCheckboxes.length > 0) {
+        // Handle select all checkbox change
+        selectAllCheckbox.addEventListener('change', function() {
+            actionCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            console.log(`Select all: ${this.checked}`);
+        });
+
+        // Update select all when individual checkboxes change
+        actionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedCount = document.querySelectorAll('input[name="_selected_action"]:checked').length;
+                const allChecked = checkedCount === actionCheckboxes.length;
+                const anyChecked = checkedCount > 0;
+
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+                }
+            });
+        });
+
+        console.log(`✅ Select all functionality initialized for ${actionCheckboxes.length} items`);
+    }
 });
 </script>
 {% endblock %}
