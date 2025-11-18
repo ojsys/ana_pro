@@ -144,8 +144,8 @@
                 <li><span class="material-icons">check_circle</span>Event participation</li>
             </ul>
             <button class="btn btn-lg btn-success btn-renew w-100"
-                    data-amount="{{ annual_dues_pricing.price }}"
-                    data-year="{{ current_year }}"
+                    data-amount="{{ annual_dues_pricing.price|unlocalize }}"
+                    data-year="{{ current_year|unlocalize }}"
                     {% if already_paid %}disabled{% endif %}>
                 {% if already_paid %}
                 <span class="material-icons me-2">check_circle</span>

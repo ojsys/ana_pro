@@ -81,7 +81,7 @@
             <button class="btn btn-primary btn-subscribe"
                     data-payment-purpose="registration"
                     data-membership="{{  pricing.membership_type }}"
-                    data-amount="{{ pricing.price }}">
+                    data-amount="{{ pricing.price|unlocalize }}">
                 Pay Registration Fee - ₦{{ pricing.price|floatformat:0|intcomma }}
             </button>
         </div>
@@ -131,8 +131,8 @@
             <button class="btn btn-success btn-subscribe"
                     data-payment-purpose="annual_dues"
                     data-membership="{{ membership.membership_type }}"
-                    data-amount="{{ annual_dues_pricing.price }}"
-                    data-subscription-year="{{ current_year }}"
+                    data-amount="{{ annual_dues_pricing.price|unlocalize }}"
+                    data-subscription-year="{{ current_year|unlocalize }}"
                     {% if already_paid_current_year %}disabled{% endif %}>
                 {% if already_paid_current_year %}
                 Already Paid for {{ current_year|unlocalize }}

@@ -1155,9 +1155,21 @@ def initiate_payment(request):
         # Parse request data
         data = json.loads(request.body)
         membership_type = data.get('membership_type', 'individual')
-        amount = Decimal(str(data.get('amount', 10000)))
+
+        # Clean amount - remove commas if present (from thousand separator formatting)
+        amount_str = str(data.get('amount', 10000)).replace(',', '')
+        amount = Decimal(amount_str)
+
         payment_purpose = data.get('payment_purpose', 'registration')  # 'registration' or 'annual_dues'
-        subscription_year = data.get('subscription_year')
+
+        # Clean subscription_year - remove commas and convert to int
+        subscription_year_raw = data.get('subscription_year')
+        subscription_year = None
+        if subscription_year_raw:
+            try:
+                subscription_year = int(str(subscription_year_raw).replace(',', ''))
+            except (ValueError, TypeError):
+                subscription_year = None
 
         # Get or create membership for current user
         membership, created = Membership.objects.get_or_create(
