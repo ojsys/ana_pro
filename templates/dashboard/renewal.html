@@ -665,32 +665,45 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success' && typeof PaystackPop !== 'undefined') {
-                let handler = PaystackPop.setup({
-                    key: data.public_key,
-                    email: paymentData.email,
-                    amount: paymentData.amount * 100,
-                    currency: 'NGN',
-                    ref: data.reference,
-                    metadata: {
-                        membership_id: data.membership_id,
-                        payment_purpose: 'annual_dues',
-                        subscription_year: paymentData.subscriptionYear
-                    },
-                    callback: function(response) {
-                        showAlert('success', 'Renewal Successful!', `Your membership has been renewed for ${paymentData.subscriptionYear}.`);
-                        setTimeout(() => window.location.reload(), 2000);
-                    },
-                    onClose: function() {
-                        showAlert('warning', 'Payment Cancelled', 'You can try again anytime.');
-                    }
-                });
-                handler.openIframe();
+            console.log('Renewal payment response:', data);
+
+            if (data.status === 'success') {
+                if (typeof PaystackPop !== 'undefined') {
+                    console.log('Opening Paystack popup for renewal with amount:', paymentData.amount);
+
+                    let handler = PaystackPop.setup({
+                        key: data.public_key,
+                        email: paymentData.email,
+                        amount: paymentData.amount * 100,
+                        currency: 'NGN',
+                        ref: data.reference,
+                        metadata: {
+                            membership_id: data.membership_id,
+                            payment_purpose: 'annual_dues',
+                            subscription_year: paymentData.subscriptionYear
+                        },
+                        callback: function(response) {
+                            console.log('Renewal payment successful:', response);
+                            showAlert('success', 'Renewal Successful!', `Your membership has been renewed for ${paymentData.subscriptionYear}.`);
+                            setTimeout(() => window.location.reload(), 2000);
+                        },
+                        onClose: function() {
+                            console.log('Renewal payment popup closed');
+                            showAlert('warning', 'Payment Cancelled', 'You can try again anytime.');
+                        }
+                    });
+                    handler.openIframe();
+                } else {
+                    console.error('PaystackPop is not defined for renewal. SDK may not be loaded.');
+                    showAlert('danger', 'Payment Error', 'Paystack payment system is not available. Please refresh the page and try again.');
+                }
             } else {
+                console.error('Renewal payment initiation failed:', data.error);
                 showAlert('danger', 'Payment Failed', data.error || 'Please try again.');
             }
         })
         .catch(error => {
+            console.error('Renewal payment request error:', error);
             showAlert('danger', 'Payment Error', 'Request failed. Please try again.');
         });
     }

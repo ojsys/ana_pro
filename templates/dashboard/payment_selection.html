@@ -610,8 +610,12 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Payment initiation response:', data);
+
             if (data.status === 'success') {
                 if (typeof PaystackPop !== 'undefined') {
+                    console.log('Opening Paystack popup with amount:', paymentData.amount);
+
                     let handler = PaystackPop.setup({
                         key: data.public_key,
                         email: paymentData.email,
@@ -624,20 +628,27 @@ document.addEventListener('DOMContentLoaded', function() {
                             subscription_year: paymentData.subscriptionYear
                         },
                         callback: function(response) {
+                            console.log('Payment successful:', response);
                             showAlert('success', 'Payment Successful!', `Reference: ${response.reference}`);
                             setTimeout(() => window.location.href = '/dashboard/', 2000);
                         },
                         onClose: function() {
+                            console.log('Payment popup closed');
                             showAlert('warning', 'Payment Cancelled', 'You can try again anytime.');
                         }
                     });
                     handler.openIframe();
+                } else {
+                    console.error('PaystackPop is not defined. SDK may not be loaded.');
+                    showAlert('danger', 'Payment Error', 'Paystack payment system is not available. Please refresh the page and try again.');
                 }
             } else {
+                console.error('Payment initiation failed:', data.error);
                 showAlert('danger', 'Payment Failed', data.error || 'Please try again.');
             }
         })
         .catch(error => {
+            console.error('Payment request error:', error);
             showAlert('danger', 'Payment Error', 'Request failed. Please try again.');
         });
     }
