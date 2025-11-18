@@ -14,6 +14,46 @@ from .resources import (
     MembershipPricingResource, UserResource
 )
 
+
+# Customize Admin Site
+class AkilimoAdminSite(admin.AdminSite):
+    site_header = 'AKILIMO Nigeria Administration'
+    site_title = 'AKILIMO Admin'
+    index_title = 'Welcome to AKILIMO Nigeria Administration'
+
+    def get_app_list(self, request):
+        """
+        Return a sorted list of all the installed apps with custom ordering.
+        """
+        app_list = super().get_app_list(request)
+
+        # Define custom ordering for models within the Dashboard app
+        model_order = {
+            'Membership Pricing': 1,  # Put pricing first for easy access
+            'Memberships': 2,
+            'Payments': 3,
+            'Partner Organizations': 4,
+            'User Profiles': 5,
+            'AKILIMO Participants': 6,
+            'Participant Records': 7,
+            'Dashboard Metrics': 8,
+            'Data Sync Logs': 9,
+            'API Configurations': 10,
+        }
+
+        # Sort models within each app
+        for app in app_list:
+            if app['app_label'] == 'dashboard':
+                app['models'].sort(
+                    key=lambda x: model_order.get(x['name'], 999)
+                )
+
+        return app_list
+
+
+# Use custom admin site (comment out if you want to use default)
+# admin_site = AkilimoAdminSite(name='akilimo_admin')
+
 @admin.register(APIConfiguration)
 class APIConfigurationAdmin(ImportExportModelAdmin):
     resource_class = APIConfigurationResource
