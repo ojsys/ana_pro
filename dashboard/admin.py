@@ -568,21 +568,27 @@ class PaymentAdmin(ImportExportModelAdmin):
 @admin.register(MembershipPricing)
 class MembershipPricingAdmin(ImportExportModelAdmin):
     resource_class = MembershipPricingResource
-    list_display = ['payment_type_display', 'membership_type_display', 'price_display', 'is_active', 'created_at']
+    list_display = ['payment_type_display', 'membership_type_display', 'price_display', 'price', 'is_active', 'created_at']
     list_filter = ['payment_type', 'membership_type', 'is_active', 'created_at']
     search_fields = ['description']
     readonly_fields = ['created_at', 'updated_at']
-    list_editable = ['is_active']
+    list_editable = ['price', 'is_active']
+    ordering = ['payment_type', 'membership_type']
 
     fieldsets = (
         ('Pricing Configuration', {
-            'fields': ('payment_type', 'membership_type', 'price', 'description', 'is_active')
+            'fields': ('payment_type', 'membership_type', 'price', 'description', 'is_active'),
+            'description': 'Configure membership pricing. Prices are in Nigerian Naira (₦).'
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
+
+    def get_list_display_links(self, request, list_display):
+        """Make payment_type_display and membership_type_display clickable"""
+        return ['payment_type_display', 'membership_type_display']
 
     def payment_type_display(self, obj):
         """Display payment type with color coding"""
@@ -607,3 +613,17 @@ class MembershipPricingAdmin(ImportExportModelAdmin):
         """Display price with currency formatting"""
         return format_html('<strong>₦{:,.2f}</strong>', obj.price)
     price_display.short_description = 'Price'
+
+    actions = ['activate_pricing', 'deactivate_pricing']
+
+    def activate_pricing(self, request, queryset):
+        """Activate selected pricing items"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} pricing item(s) activated successfully.')
+    activate_pricing.short_description = 'Activate selected pricing'
+
+    def deactivate_pricing(self, request, queryset):
+        """Deactivate selected pricing items"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} pricing item(s) deactivated successfully.')
+    deactivate_pricing.short_description = 'Deactivate selected pricing'
