@@ -630,7 +630,8 @@ document.addEventListener('DOMContentLoaded', function() {
             membershipType: '{{ membership.membership_type }}'
         };
 
-        document.getElementById('modalYear').textContent = year;
+        // Ensure year is displayed without comma formatting
+        document.getElementById('modalYear').textContent = String(year);
         document.getElementById('modalAmount').textContent = new Intl.NumberFormat('en-NG', {
             style: 'currency',
             currency: 'NGN',

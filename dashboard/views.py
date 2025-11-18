@@ -1133,46 +1133,9 @@ def api_partner_metrics(request):
 
 @login_required
 def membership_subscription(request):
-    """Membership subscription view"""
-    # Get or create membership for current user
-    membership, created = Membership.objects.get_or_create(
-        member=request.user,
-        defaults={
-            'membership_type': 'individual',
-            'status': 'pending'
-        }
-    )
-    
-    # Get pricing information
-    pricing_data = {}
-    try:
-        individual_pricing = MembershipPricing.objects.get(membership_type='individual', is_active=True)
-        pricing_data['individual'] = float(individual_pricing.price)
-    except MembershipPricing.DoesNotExist:
-        pricing_data['individual'] = 10000.0  # Default fallback price
-    
-    try:
-        organization_pricing = MembershipPricing.objects.get(membership_type='organization', is_active=True)
-        pricing_data['organization'] = float(organization_pricing.price)
-    except MembershipPricing.DoesNotExist:
-        pricing_data['organization'] = 50000.0  # Default fallback price
-    
-    # Check if user has active membership
-    user_has_active_membership = membership and membership.is_active
-    
-    # Prepare pricing data for JavaScript
-    import json
-    pricing_json = json.dumps(pricing_data)
-    
-    context = {
-        'membership': membership,
-        'created': created,
-        'pricing': pricing_data,
-        'pricing_json': pricing_json,
-        'user_has_active_membership': user_has_active_membership
-    }
-    
-    return render(request, 'dashboard/membership_subscription.html', context)
+    """Membership subscription view - redirects to new payment selection"""
+    # Redirect to the new payment selection page
+    return redirect('dashboard:payment_selection')
 
 
 @login_required
