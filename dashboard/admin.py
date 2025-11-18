@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
+from decimal import Decimal
 from import_export.admin import ImportExportModelAdmin
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
@@ -608,7 +609,7 @@ class PaymentAdmin(ImportExportModelAdmin):
 @admin.register(MembershipPricing)
 class MembershipPricingAdmin(ImportExportModelAdmin):
     resource_class = MembershipPricingResource
-    list_display = ['payment_type_display', 'membership_type_display', 'price_display', 'price', 'is_active', 'created_at']
+    list_display = ['payment_type_display', 'membership_type_display', 'price', 'is_active', 'description', 'created_at']
     list_filter = ['payment_type', 'membership_type', 'is_active', 'created_at']
     search_fields = ['description']
     readonly_fields = ['created_at', 'updated_at']
@@ -651,7 +652,7 @@ class MembershipPricingAdmin(ImportExportModelAdmin):
 
     def price_display(self, obj):
         """Display price with currency formatting"""
-        return format_html('<strong>₦{:,.2f}</strong>', obj.price)
+        return format_html('<strong>₦{:,.2f}</strong>', Decimal(obj.price))
     price_display.short_description = 'Price'
 
     actions = ['activate_pricing', 'deactivate_pricing']
