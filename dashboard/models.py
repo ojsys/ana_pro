@@ -495,19 +495,33 @@ class MembershipPricing(models.Model):
         ('individual', 'Individual Membership'),
         ('organization', 'Partner Organization Membership'),
     ]
-    
-    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_TYPES, unique=True)
+
+    PAYMENT_TYPE_CHOICES = [
+        ('registration', 'New Registration Fee'),
+        ('annual_dues', 'Annual Membership Dues'),
+    ]
+
+    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_TYPES)
+    payment_type = models.CharField(
+        max_length=20,
+        choices=PAYMENT_TYPE_CHOICES,
+        default='registration',
+        help_text="Type of payment: registration fee or annual dues"
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price in Naira")
-    is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, help_text="Additional information about this pricing tier")
+    is_active = models.BooleanField(default=True, help_text="Is this pricing tier currently active?")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Membership Pricing"
         verbose_name_plural = "Membership Pricing"
-    
+        unique_together = ['membership_type', 'payment_type']
+        ordering = ['payment_type', 'membership_type']
+
     def __str__(self):
-        return f"{self.get_membership_type_display()} - NGN {self.price}"
+        return f"{self.get_payment_type_display()} - {self.get_membership_type_display()} - NGN {self.price:,.2f}"
 
 
 class Membership(models.Model):
@@ -516,34 +530,52 @@ class Membership(models.Model):
         ('individual', 'Individual Membership'),
         ('organization', 'Partner Organization Membership'),
     ]
-    
+
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('expired', 'Expired'),
         ('cancelled', 'Cancelled'),
         ('pending', 'Pending Payment'),
     ]
-    
+
     # Membership identification
     membership_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     member = models.OneToOneField(User, on_delete=models.CASCADE, related_name='membership')
-    
+
     # Membership details
-    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_TYPES, default='basic')
+    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_TYPES, default='individual')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Subscription period
+
+    # Registration payment tracking
+    registration_paid = models.BooleanField(default=False, help_text="Has the registration fee been paid?")
+    registration_payment_date = models.DateTimeField(null=True, blank=True)
+
+    # Annual dues subscription tracking
+    subscription_start_date = models.DateField(null=True, blank=True, help_text="Start of current subscription period (Jan 1)")
+    subscription_end_date = models.DateField(null=True, blank=True, help_text="End of current subscription period (Dec 31)")
+    subscription_year = models.IntegerField(null=True, blank=True, help_text="Current subscription year (e.g., 2025)")
+    last_annual_dues_payment_date = models.DateTimeField(null=True, blank=True)
+    annual_dues_paid_for_year = models.IntegerField(null=True, blank=True, help_text="Year for which annual dues were last paid")
+
+    # Subscription period (legacy fields - kept for backward compatibility)
     start_date = models.DateTimeField(default=timezone.now)
-    end_date = models.DateTimeField()
-    
+    end_date = models.DateTimeField(null=True, blank=True)
+
+    # Access control
+    has_platform_access = models.BooleanField(default=False, help_text="Can access dashboard and platform features")
+    can_download_certificate = models.BooleanField(default=False, help_text="Can download membership certificate")
+    can_download_id_card = models.BooleanField(default=False, help_text="Can download membership ID card")
+    access_suspended = models.BooleanField(default=False, help_text="Is access temporarily suspended?")
+    access_suspended_reason = models.TextField(blank=True, help_text="Reason for access suspension")
+
     # Certificate and ID card
     certificate_generated = models.BooleanField(default=False)
     id_card_generated = models.BooleanField(default=False)
     certificate_number = models.CharField(max_length=20, unique=True, blank=True)
-    
+
     # QR Code for verification
     qr_code = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -560,31 +592,109 @@ class Membership(models.Model):
         # Generate certificate number if not exists
         if not self.certificate_number:
             self.certificate_number = f"ANA-{timezone.now().year}-{str(self.membership_id)[:8].upper()}"
-        
-        # Set end date to 1 year from start date for all memberships
+
+        # Set end date to 1 year from start date for all memberships (legacy support)
         if not self.end_date:
-            self.end_date = self.start_date + timedelta(days=365)  # 1 year for all types
-        
+            self.end_date = self.start_date + timedelta(days=365)
+
+        # Update access permissions based on subscription status
+        self.update_access_permissions()
+
         super().save(*args, **kwargs)
-    
+
+    def update_access_permissions(self):
+        """Update access permissions based on payment status"""
+        from datetime import date
+
+        current_year = timezone.now().year
+        current_date = date.today()
+
+        # Check if annual dues are paid for current year and subscription is active
+        if (self.annual_dues_paid_for_year == current_year and
+            self.subscription_start_date and
+            self.subscription_end_date and
+            self.subscription_start_date <= current_date <= self.subscription_end_date and
+            not self.access_suspended):
+
+            self.has_platform_access = True
+            self.can_download_certificate = True
+            self.can_download_id_card = True
+        else:
+            self.has_platform_access = False
+            self.can_download_certificate = False
+            self.can_download_id_card = False
+
+    @property
+    def has_active_subscription(self):
+        """Check if user has active annual dues subscription for current year"""
+        from datetime import date
+
+        if not self.subscription_end_date or not self.annual_dues_paid_for_year:
+            return False
+
+        current_year = timezone.now().year
+        current_date = date.today()
+
+        # Check if paid for current year and within subscription period
+        return (self.annual_dues_paid_for_year == current_year and
+                self.subscription_start_date <= current_date <= self.subscription_end_date and
+                not self.access_suspended)
+
+    @property
+    def subscription_status_text(self):
+        """Get human-readable subscription status"""
+        if self.access_suspended:
+            return "Suspended"
+        elif self.has_active_subscription:
+            return "Active"
+        elif self.annual_dues_paid_for_year:
+            return "Expired"
+        else:
+            return "No Active Subscription"
+
+    @property
+    def days_until_expiry(self):
+        """Calculate days until subscription expires"""
+        from datetime import date
+
+        if not self.subscription_end_date:
+            return None
+
+        current_date = date.today()
+        if current_date > self.subscription_end_date:
+            return 0
+
+        return (self.subscription_end_date - current_date).days
+
+    @property
+    def needs_renewal(self):
+        """Check if membership needs renewal (expires in 60 days or less)"""
+        if not self.subscription_end_date:
+            return True
+
+        days_left = self.days_until_expiry
+        return days_left is not None and days_left <= 60
+
     @property
     def is_active(self):
-        """Check if membership is currently active"""
-        return (self.status == 'active' and 
-                self.start_date <= timezone.now() <= self.end_date)
-    
+        """Check if membership is currently active (legacy compatibility)"""
+        return self.has_active_subscription
+
     @property
     def is_expired(self):
-        """Check if membership has expired"""
-        return timezone.now() > self.end_date
-    
+        """Check if membership has expired (legacy compatibility)"""
+        from datetime import date
+
+        if not self.subscription_end_date:
+            return True
+
+        return date.today() > self.subscription_end_date
+
     @property
     def days_remaining(self):
-        """Calculate days remaining in membership"""
-        if self.is_expired:
-            return 0
-        return (self.end_date - timezone.now()).days
-    
+        """Calculate days remaining in membership (legacy compatibility)"""
+        return self.days_until_expiry or 0
+
     @property
     def verification_url(self):
         """Generate verification URL for QR code"""
@@ -602,7 +712,7 @@ class Payment(models.Model):
         ('cancelled', 'Cancelled'),
         ('refunded', 'Refunded'),
     ]
-    
+
     PAYMENT_METHODS = [
         ('paystack', 'Paystack'),
         ('bank_transfer', 'Bank Transfer'),
@@ -610,26 +720,44 @@ class Payment(models.Model):
         ('ussd', 'USSD'),
         ('mobile_money', 'Mobile Money'),
     ]
-    
+
+    PAYMENT_PURPOSE_CHOICES = [
+        ('registration', 'New Registration Fee'),
+        ('annual_dues', 'Annual Membership Dues'),
+    ]
+
     # Payment identification
     payment_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     membership = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name='payments')
-    
+
     # Payment details
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default='NGN')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='paystack')
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
-    
+
+    # Payment purpose tracking
+    payment_purpose = models.CharField(
+        max_length=20,
+        choices=PAYMENT_PURPOSE_CHOICES,
+        default='registration',
+        help_text="Purpose of this payment"
+    )
+    subscription_year = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Year for which annual dues are being paid (for annual_dues payments)"
+    )
+
     # Gateway integration
     paystack_reference = models.CharField(max_length=100, blank=True, null=True)
     paystack_access_code = models.CharField(max_length=100, blank=True, null=True)
     gateway_response = models.JSONField(default=dict, blank=True)
-    
+
     # Transaction details
     description = models.CharField(max_length=255, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

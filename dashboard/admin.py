@@ -351,18 +351,53 @@ class UserProfileAdmin(ImportExportModelAdmin):
 @admin.register(Membership)
 class MembershipAdmin(ImportExportModelAdmin):
     resource_class = MembershipResource
-    list_display = ['certificate_number', 'member', 'membership_type', 'status', 'start_date', 'end_date', 'is_active']
-    list_filter = ['membership_type', 'status', 'start_date', 'end_date', 'created_at']
+    list_display = [
+        'certificate_number', 'member', 'membership_type', 'subscription_status_display',
+        'registration_status', 'subscription_year_display', 'access_status', 'created_at'
+    ]
+    list_filter = [
+        'membership_type', 'status', 'registration_paid', 'has_platform_access',
+        'access_suspended', 'subscription_year', 'created_at'
+    ]
     search_fields = ['certificate_number', 'member__username', 'member__first_name', 'member__last_name', 'member__email']
-    readonly_fields = ['membership_id', 'certificate_number', 'qr_code', 'created_at', 'updated_at']
-    date_hierarchy = 'start_date'
-    
+    readonly_fields = [
+        'membership_id', 'certificate_number', 'qr_code', 'created_at', 'updated_at',
+        'subscription_status_text', 'has_active_subscription', 'days_until_expiry', 'needs_renewal'
+    ]
+    date_hierarchy = 'created_at'
+    actions = ['activate_subscription', 'suspend_access', 'restore_access']
+
     fieldsets = (
         ('Member Information', {
             'fields': ('member', 'membership_type', 'status')
         }),
-        ('Subscription Period', {
-            'fields': ('start_date', 'end_date')
+        ('Registration Payment', {
+            'fields': ('registration_paid', 'registration_payment_date'),
+            'description': 'One-time registration fee tracking'
+        }),
+        ('Annual Dues Subscription', {
+            'fields': (
+                'subscription_year', 'annual_dues_paid_for_year',
+                'subscription_start_date', 'subscription_end_date',
+                'last_annual_dues_payment_date'
+            ),
+            'description': 'Annual membership dues tracking (Jan 1 - Dec 31)'
+        }),
+        ('Access Control', {
+            'fields': (
+                'has_platform_access', 'can_download_certificate', 'can_download_id_card',
+                'access_suspended', 'access_suspended_reason'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Subscription Status (Read-Only)', {
+            'fields': ('subscription_status_text', 'has_active_subscription', 'days_until_expiry', 'needs_renewal'),
+            'classes': ('collapse',)
+        }),
+        ('Legacy Fields', {
+            'fields': ('start_date', 'end_date'),
+            'classes': ('collapse',),
+            'description': 'Kept for backward compatibility'
         }),
         ('Certificate & ID Card', {
             'fields': ('certificate_generated', 'id_card_generated', 'certificate_number')
@@ -375,7 +410,84 @@ class MembershipAdmin(ImportExportModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
+    def subscription_status_display(self, obj):
+        """Display subscription status with color coding"""
+        status_colors = {
+            'Active': 'success',
+            'Expired': 'danger',
+            'Suspended': 'warning',
+            'No Active Subscription': 'secondary',
+        }
+        status_text = obj.subscription_status_text
+        color = status_colors.get(status_text, 'secondary')
+        return format_html('<span class="badge bg-{}">{}</span>', color, status_text)
+    subscription_status_display.short_description = 'Subscription Status'
+
+    def registration_status(self, obj):
+        """Display registration payment status"""
+        if obj.registration_paid:
+            return format_html('<span class="badge bg-success">✓ Paid</span>')
+        return format_html('<span class="badge bg-warning">Pending</span>')
+    registration_status.short_description = 'Registration'
+
+    def subscription_year_display(self, obj):
+        """Display subscription year"""
+        if obj.subscription_year:
+            return format_html('<strong>{}</strong>', obj.subscription_year)
+        return '-'
+    subscription_year_display.short_description = 'Year'
+
+    def access_status(self, obj):
+        """Display access status"""
+        if obj.access_suspended:
+            return format_html('<span class="badge bg-danger">Suspended</span>')
+        elif obj.has_platform_access:
+            return format_html('<span class="badge bg-success">✓ Active</span>')
+        return format_html('<span class="badge bg-secondary">No Access</span>')
+    access_status.short_description = 'Access'
+
+    @admin.action(description='Activate subscription for selected memberships')
+    def activate_subscription(self, request, queryset):
+        """Manually activate subscription for current year"""
+        from datetime import date
+        from django.contrib import messages
+
+        current_year = date.today().year
+        count = 0
+
+        for membership in queryset:
+            membership.subscription_year = current_year
+            membership.annual_dues_paid_for_year = current_year
+            membership.subscription_start_date = date(current_year, 1, 1)
+            membership.subscription_end_date = date(current_year, 12, 31)
+            membership.access_suspended = False
+            membership.save()
+            count += 1
+
+        messages.success(request, f'Activated subscription for {count} membership(s) for year {current_year}.')
+
+    @admin.action(description='Suspend access for selected memberships')
+    def suspend_access(self, request, queryset):
+        """Suspend access for selected memberships"""
+        from django.contrib import messages
+
+        count = queryset.update(access_suspended=True, has_platform_access=False)
+        messages.warning(request, f'Suspended access for {count} membership(s).')
+
+    @admin.action(description='Restore access for selected memberships')
+    def restore_access(self, request, queryset):
+        """Restore access for selected memberships"""
+        from django.contrib import messages
+
+        count = 0
+        for membership in queryset:
+            membership.access_suspended = False
+            membership.save()  # This will trigger update_access_permissions
+            count += 1
+
+        messages.success(request, f'Restored access for {count} membership(s).')
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('member')
 
@@ -383,15 +495,18 @@ class MembershipAdmin(ImportExportModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(ImportExportModelAdmin):
     resource_class = PaymentResource
-    list_display = ['payment_id', 'membership', 'amount', 'currency', 'payment_method', 'status', 'paid_at', 'created_at']
-    list_filter = ['payment_method', 'status', 'currency', 'paid_at', 'created_at']
+    list_display = [
+        'payment_id_short', 'membership', 'payment_purpose_display', 'amount_display',
+        'payment_method', 'status_display', 'subscription_year', 'paid_at', 'created_at'
+    ]
+    list_filter = ['payment_purpose', 'payment_method', 'status', 'currency', 'subscription_year', 'paid_at', 'created_at']
     search_fields = ['payment_id', 'paystack_reference', 'membership__member__username', 'membership__member__email']
     readonly_fields = ['payment_id', 'created_at', 'updated_at', 'paid_at']
     date_hierarchy = 'created_at'
-    
+
     fieldsets = (
         ('Payment Information', {
-            'fields': ('membership', 'amount', 'currency', 'payment_method', 'status')
+            'fields': ('membership', 'payment_purpose', 'subscription_year', 'amount', 'currency', 'payment_method', 'status')
         }),
         ('Payment Gateway', {
             'fields': ('paystack_reference', 'paystack_access_code', 'gateway_response')
@@ -404,7 +519,45 @@ class PaymentAdmin(ImportExportModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
+    def payment_id_short(self, obj):
+        """Display shortened payment ID"""
+        return str(obj.payment_id)[:8].upper()
+    payment_id_short.short_description = 'Payment ID'
+
+    def payment_purpose_display(self, obj):
+        """Display payment purpose with color coding"""
+        colors = {
+            'registration': 'primary',
+            'annual_dues': 'success',
+        }
+        color = colors.get(obj.payment_purpose, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color,
+            obj.get_payment_purpose_display()
+        )
+    payment_purpose_display.short_description = 'Purpose'
+
+    def amount_display(self, obj):
+        """Display amount with currency"""
+        return format_html('<strong>₦{:,.2f}</strong>', obj.amount)
+    amount_display.short_description = 'Amount'
+
+    def status_display(self, obj):
+        """Display status with color coding"""
+        status_colors = {
+            'successful': 'success',
+            'pending': 'warning',
+            'processing': 'info',
+            'failed': 'danger',
+            'cancelled': 'secondary',
+            'refunded': 'warning',
+        }
+        color = status_colors.get(obj.status, 'secondary')
+        return format_html('<span class="badge bg-{}">{}</span>', color, obj.get_status_display())
+    status_display.short_description = 'Status'
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('membership__member')
 
@@ -412,17 +565,42 @@ class PaymentAdmin(ImportExportModelAdmin):
 @admin.register(MembershipPricing)
 class MembershipPricingAdmin(ImportExportModelAdmin):
     resource_class = MembershipPricingResource
-    list_display = ['membership_type', 'price', 'is_active', 'created_at', 'updated_at']
-    list_filter = ['membership_type', 'is_active', 'created_at']
-    search_fields = ['membership_type']
+    list_display = ['payment_type_display', 'membership_type_display', 'price_display', 'is_active', 'created_at']
+    list_filter = ['payment_type', 'membership_type', 'is_active', 'created_at']
+    search_fields = ['description']
     readonly_fields = ['created_at', 'updated_at']
-    
+    list_editable = ['is_active']
+
     fieldsets = (
-        ('Pricing Information', {
-            'fields': ('membership_type', 'price', 'is_active')
+        ('Pricing Configuration', {
+            'fields': ('payment_type', 'membership_type', 'price', 'description', 'is_active')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
+
+    def payment_type_display(self, obj):
+        """Display payment type with color coding"""
+        colors = {
+            'registration': 'primary',
+            'annual_dues': 'success',
+        }
+        color = colors.get(obj.payment_type, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color,
+            obj.get_payment_type_display()
+        )
+    payment_type_display.short_description = 'Payment Type'
+
+    def membership_type_display(self, obj):
+        """Display membership type"""
+        return obj.get_membership_type_display()
+    membership_type_display.short_description = 'Membership Type'
+
+    def price_display(self, obj):
+        """Display price with currency formatting"""
+        return format_html('<strong>₦{:,.2f}</strong>', obj.price)
+    price_display.short_description = 'Price'

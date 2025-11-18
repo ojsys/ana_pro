@@ -1,0 +1,351 @@
+{% load humanize %}
+
+<!-- Subscription Status Widget -->
+<div class="subscription-widget">
+    {% if user.is_authenticated and user.membership %}
+        {% with membership=user.membership %}
+            {% if not membership.registration_paid %}
+                <!-- Registration Not Paid -->
+                <div class="subscription-card warning">
+                    <div class="subscription-header">
+                        <div class="subscription-icon">
+                            <span class="material-icons">priority_high</span>
+                        </div>
+                        <div class="subscription-title">
+                            <h5>Registration Required</h5>
+                            <p class="subscription-subtitle">Complete your membership registration</p>
+                        </div>
+                    </div>
+                    <div class="subscription-body">
+                        <div class="status-message">
+                            <p>Please complete your registration payment to activate your membership.</p>
+                        </div>
+                        <a href="{% url 'dashboard:payment_selection' %}" class="btn btn-warning w-100">
+                            <span class="material-icons me-2">payment</span>
+                            Complete Registration
+                        </a>
+                    </div>
+                </div>
+            {% elif membership.access_suspended %}
+                <!-- Access Suspended -->
+                <div class="subscription-card danger">
+                    <div class="subscription-header">
+                        <div class="subscription-icon">
+                            <span class="material-icons">block</span>
+                        </div>
+                        <div class="subscription-title">
+                            <h5>Access Suspended</h5>
+                            <p class="subscription-subtitle">Contact administrator</p>
+                        </div>
+                    </div>
+                    <div class="subscription-body">
+                        <div class="status-message">
+                            <p><strong>Reason:</strong> {{ membership.access_suspended_reason|default:"Please contact admin for details." }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% elif membership.has_active_subscription %}
+                <!-- Active Subscription -->
+                <div class="subscription-card success">
+                    <div class="subscription-header">
+                        <div class="subscription-icon">
+                            <span class="material-icons">verified</span>
+                        </div>
+                        <div class="subscription-title">
+                            <h5>Active Subscription</h5>
+                            <p class="subscription-subtitle">Full access enabled</p>
+                        </div>
+                    </div>
+                    <div class="subscription-body">
+                        <div class="subscription-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Valid Until:</span>
+                                <span class="detail-value">{{ membership.subscription_end_date|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Days Remaining:</span>
+                                <span class="detail-value">
+                                    {% if membership.subscription_end_date %}
+                                        {{ membership.subscription_end_date|timeuntil }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% if membership.subscription_end_date %}
+                            {% now "Y-m-d" as today %}
+                            {% if membership.subscription_end_date|date:"Y-m-d" <= today|add:"30 days" %}
+                                <a href="{% url 'dashboard:renewal' %}" class="btn btn-outline-success w-100 mt-3">
+                                    <span class="material-icons me-2">autorenew</span>
+                                    Renew Now
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- Expired Subscription -->
+                <div class="subscription-card expired">
+                    <div class="subscription-header">
+                        <div class="subscription-icon">
+                            <span class="material-icons">event_busy</span>
+                        </div>
+                        <div class="subscription-title">
+                            <h5>Subscription Expired</h5>
+                            <p class="subscription-subtitle">Renew to regain access</p>
+                        </div>
+                    </div>
+                    <div class="subscription-body">
+                        <div class="status-message">
+                            <p>Your annual membership has expired. Renew now to access:</p>
+                            <ul class="feature-list">
+                                <li><span class="material-icons">check</span> Dashboard & Analytics</li>
+                                <li><span class="material-icons">check</span> Certificates & ID Cards</li>
+                                <li><span class="material-icons">check</span> Partner Organization Data</li>
+                            </ul>
+                        </div>
+                        <a href="{% url 'dashboard:renewal' %}" class="btn btn-warning w-100">
+                            <span class="material-icons me-2">autorenew</span>
+                            Renew Membership
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% else %}
+        <!-- Not Logged In or No Membership -->
+        <div class="subscription-card info">
+            <div class="subscription-header">
+                <div class="subscription-icon">
+                    <span class="material-icons">person_add</span>
+                </div>
+                <div class="subscription-title">
+                    <h5>Join ANA</h5>
+                    <p class="subscription-subtitle">Become a member today</p>
+                </div>
+            </div>
+            <div class="subscription-body">
+                <div class="status-message">
+                    <p>Join the AKILIMO Nigeria Association to access exclusive benefits.</p>
+                </div>
+                <a href="{% url 'dashboard:register' %}" class="btn btn-primary w-100">
+                    <span class="material-icons me-2">person_add</span>
+                    Register Now
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.subscription-widget {
+    margin-bottom: 1.5rem;
+}
+
+.subscription-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.subscription-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.subscription-card.success {
+    border-left: 4px solid #28a745;
+}
+
+.subscription-card.warning {
+    border-left: 4px solid #ffc107;
+}
+
+.subscription-card.expired {
+    border-left: 4px solid #ff9800;
+}
+
+.subscription-card.danger {
+    border-left: 4px solid #dc3545;
+}
+
+.subscription-card.info {
+    border-left: 4px solid #17a2b8;
+}
+
+.subscription-header {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+}
+
+.subscription-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.subscription-card.success .subscription-icon {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+}
+
+.subscription-card.warning .subscription-icon {
+    background: linear-gradient(135deg, #ffc107, #ffca2c);
+}
+
+.subscription-card.expired .subscription-icon {
+    background: linear-gradient(135deg, #ff9800, #ffa726);
+}
+
+.subscription-card.danger .subscription-icon {
+    background: linear-gradient(135deg, #dc3545, #e4606d);
+}
+
+.subscription-card.info .subscription-icon {
+    background: linear-gradient(135deg, #17a2b8, #20c1db);
+}
+
+.subscription-icon .material-icons {
+    font-size: 24px;
+    color: white;
+}
+
+.subscription-title {
+    flex: 1;
+}
+
+.subscription-title h5 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.subscription-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.subscription-body {
+    padding: 1.25rem;
+}
+
+.status-message {
+    margin-bottom: 1rem;
+}
+
+.status-message p {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.status-message ul {
+    margin-bottom: 0;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.feature-list .material-icons {
+    font-size: 18px;
+    margin-right: 0.5rem;
+    color: #28a745;
+}
+
+.subscription-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.detail-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.subscription-card .btn {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.subscription-card .btn .material-icons {
+    font-size: 20px;
+}
+
+.subscription-card .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 768px) {
+    .subscription-header {
+        padding: 1rem;
+    }
+
+    .subscription-body {
+        padding: 1rem;
+    }
+
+    .subscription-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .subscription-icon .material-icons {
+        font-size: 20px;
+    }
+
+    .subscription-title h5 {
+        font-size: 1rem;
+    }
+
+    .subscription-subtitle {
+        font-size: 0.8rem;
+    }
+}
+</style>

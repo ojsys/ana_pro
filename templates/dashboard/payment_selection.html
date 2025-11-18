@@ -1,0 +1,679 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payment Selection - AKILIMO Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Paystack JavaScript SDK -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-5">
+    <h1 class="page-title">
+        <span class="material-icons">payment</span>
+        Payment Selection
+    </h1>
+    <p class="page-subtitle">Choose your payment option to complete your membership</p>
+</div>
+
+{% if already_paid_current_year %}
+<!-- Already Paid Message -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2rem;">verified</span>
+                <div>
+                    <h5 class="alert-heading mb-1">Active Subscription</h5>
+                    <p class="mb-0">Your annual membership dues for {{ current_year }} have been paid. Your subscription is active until December 31, {{ current_year }}.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Payment Options -->
+<div class="row g-4 mt-5 mb-5 justify-content-center">
+    {% if show_registration %}
+    <!-- Registration Payment Section -->
+    <div class="col-12 mb-4">
+        <h3 class="text-center mb-4">
+            <span class="material-icons me-2">person_add</span>
+            New Registration Fee
+        </h3>
+        <p class="text-center text-muted mb-4">One-time payment to register as an ANA member</p>
+    </div>
+
+    {% for pricing in registration_pricing %}
+    <div class="col-md-4">
+        <div class="pricing-card {% if pricing.membership_type == 'individual' %}{% if membership.membership_type == 'individual' %}active{% endif %}{% else %}premium{% endif %}">
+            {% if pricing.membership_type == 'organization' %}
+            <div class="pricing-badge">For Organizations</div>
+            {% endif %}
+            <div class="pricing-header">
+                <div class="pricing-icon">
+                    <span class="material-icons">{% if pricing.membership_type == 'individual' %}person{% else %}business{% endif %}</span>
+                </div>
+                <h3>{{ pricing.get_membership_type_display }}</h3>
+                <p class="text-muted">{% if pricing.membership_type == 'individual' %}Perfect for individual farmers and professionals{% else %}For partner organizations and cooperatives{% endif %}</p>
+            </div>
+            <div class="pricing-price">
+                <span class="currency">₦</span>
+                <span class="amount">{{ pricing.price|floatformat:0|intcomma }}</span>
+                <span class="period">/one-time</span>
+            </div>
+            {% if pricing.description %}
+            <div class="pricing-description mb-3">
+                <p class="text-muted">{{ pricing.description }}</p>
+            </div>
+            {% endif %}
+            <ul class="pricing-features">
+                <li><span class="material-icons">check</span>Membership registration</li>
+                <li><span class="material-icons">check</span>Certificate issuance</li>
+                <li><span class="material-icons">check</span>ID card eligibility</li>
+                {% if pricing.membership_type == 'organization' %}
+                <li><span class="material-icons">check</span>Organization profile</li>
+                <li><span class="material-icons">check</span>Multiple member access</li>
+                {% endif %}
+            </ul>
+            <button class="btn btn-primary btn-subscribe"
+                    data-payment-purpose="registration"
+                    data-membership="{{  pricing.membership_type }}"
+                    data-amount="{{ pricing.price }}">
+                Pay Registration Fee - ₦{{ pricing.price|floatformat:0|intcomma }}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if show_annual_dues and annual_dues_pricing %}
+    <!-- Annual Dues Section -->
+    <div class="col-12 {% if show_registration %}mt-5 pt-5 border-top{% endif %}">
+        <h3 class="text-center mb-4">
+            <span class="material-icons me-2">autorenew</span>
+            Annual Membership Dues ({{ current_year }})
+        </h3>
+        <p class="text-center text-muted mb-4">Pay your annual dues to maintain full platform access</p>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="pricing-card active">
+            <div class="pricing-header">
+                <div class="pricing-icon">
+                    <span class="material-icons">card_membership</span>
+                </div>
+                <h3>Annual Dues - {{ current_year }}</h3>
+                <p class="text-muted">Flat rate for all members</p>
+            </div>
+            <div class="pricing-price">
+                <span class="currency">₦</span>
+                <span class="amount">{{ annual_dues_pricing.price|floatformat:0|intcomma }}</span>
+                <span class="period">/year</span>
+            </div>
+            {% if annual_dues_pricing.description %}
+            <div class="pricing-description mb-3">
+                <p class="text-muted">{{ annual_dues_pricing.description }}</p>
+            </div>
+            {% endif %}
+            <ul class="pricing-features">
+                <li><span class="material-icons">check</span>Full dashboard access</li>
+                <li><span class="material-icons">check</span>Certificate downloads</li>
+                <li><span class="material-icons">check</span>ID card downloads</li>
+                <li><span class="material-icons">check</span>Partner organization data</li>
+                <li><span class="material-icons">check</span>Analytics and insights</li>
+                <li><span class="material-icons">check</span>Training materials</li>
+                <li><span class="material-icons">check</span>Email support</li>
+                <li><span class="material-icons">check</span>Access to events</li>
+            </ul>
+            <button class="btn btn-success btn-subscribe"
+                    data-payment-purpose="annual_dues"
+                    data-membership="{{ membership.membership_type }}"
+                    data-amount="{{ annual_dues_pricing.price }}"
+                    data-subscription-year="{{ current_year }}"
+                    {% if already_paid_current_year %}disabled{% endif %}>
+                {% if already_paid_current_year %}
+                Already Paid for {{ current_year }}
+                {% else %}
+                Pay Annual Dues - ₦{{ annual_dues_pricing.price|floatformat:0|intcomma }}
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Important Notice -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <div class="d-flex align-items-start">
+                <span class="material-icons me-3" style="font-size: 2rem;">info</span>
+                <div>
+                    <h5 class="alert-heading">Important Information</h5>
+                    <ul class="mb-0">
+                        <li><strong>Registration Fee:</strong> One-time payment when you first join ANA</li>
+                        <li><strong>Annual Dues:</strong> Yearly payment (Jan 1 - Dec 31) required for full platform access</li>
+                        <li><strong>Access Control:</strong> Dashboard features, certificates, and ID cards require active annual dues</li>
+                        <li><strong>Payment Methods:</strong> Cards, Bank Transfer, USSD, Mobile Money via Paystack</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <span class="material-icons me-2">payment</span>
+                    Confirm Payment
+                </h5>
+                <button type="button" class="btn-close" id="modalCloseBtn" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Payment Summary Section -->
+                <div class="payment-summary-header p-4 bg-light">
+                    <h6 class="mb-3 text-success">
+                        <span class="material-icons me-2" style="font-size: 20px;">receipt_long</span>
+                        Payment Summary
+                    </h6>
+                    <div class="summary-row">
+                        <span class="summary-label">Payment Type:</span>
+                        <span id="modalPaymentType" class="summary-value"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Membership Type:</span>
+                        <span id="modalMembershipType" class="summary-value"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Amount:</span>
+                        <span id="modalAmount" class="summary-value text-success fw-bold"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Email:</span>
+                        <span class="summary-value text-muted">{{ user.email }}</span>
+                    </div>
+                </div>
+
+                <!-- Payment Method Section -->
+                <div class="payment-method-section p-4">
+                    <h6 class="mb-3 text-dark">
+                        <span class="material-icons me-2" style="font-size: 20px;">payment</span>
+                        Payment Method
+                    </h6>
+
+                    <div class="paystack-card">
+                        <div class="paystack-header">
+                            <div class="paystack-logo me-3">
+                                <span class="material-icons">credit_card</span>
+                            </div>
+                            <div class="paystack-info">
+                                <div class="paystack-title">Paystack</div>
+                                <div class="paystack-subtitle">Secure Payment Gateway</div>
+                            </div>
+                        </div>
+
+                        <div class="security-info">
+                            <span class="material-icons me-2">security</span>
+                            <span>256-bit SSL encryption • PCI DSS compliant</span>
+                        </div>
+
+                        <div class="accepted-methods">
+                            <small class="text-muted">Accepts: Cards, Bank Transfer, USSD, Mobile Money</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-success" id="proceedPaymentBtn">
+                    <span class="material-icons me-1">credit_card</span>
+                    Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Reuse styles from membership_subscription.html */
+.payment-summary-header {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.payment-summary-header h6 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.summary-value {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.payment-method-section h6 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.paystack-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    transition: all 0.3s ease;
+}
+
+.paystack-card:hover {
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+}
+
+.paystack-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.paystack-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #0fa958, #15c96b);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.paystack-info {
+    flex: 1;
+}
+
+.paystack-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.paystack-subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.security-info {
+    display: flex;
+    align-items: center;
+    background: #e8f5e9;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #2e7d32;
+}
+
+.security-info .material-icons {
+    font-size: 18px;
+    color: #4caf50;
+}
+
+.accepted-methods {
+    text-align: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1.25rem 1.5rem;
+    background: #f8f9fa;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+/* Pricing Card Styles */
+.pricing-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+.pricing-card.premium {
+    border: 2px solid var(--light-green);
+}
+
+.pricing-card.active {
+    border: 2px solid var(--primary-green);
+    background: linear-gradient(135deg, #E8F5E8 0%, white 100%);
+}
+
+.pricing-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--light-green), var(--primary-green));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.pricing-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.pricing-icon .material-icons {
+    font-size: 32px;
+    color: white;
+}
+
+.pricing-header h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.pricing-price {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.pricing-price .currency {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    vertical-align: top;
+}
+
+.pricing-price .amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+.pricing-price .period {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.pricing-description {
+    text-align: center;
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+    flex-grow: 1;
+}
+
+.pricing-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.pricing-features .material-icons {
+    font-size: 18px;
+    margin-right: 0.75rem;
+    width: 18px;
+    color: var(--success-green);
+}
+
+.btn-subscribe {
+    width: 100%;
+    padding: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    margin-top: auto;
+}
+
+.btn-subscribe:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if MDB is loaded
+    if (typeof mdb === 'undefined') {
+        console.error('MDB not loaded');
+        return;
+    }
+
+    const paymentModalElement = document.getElementById('paymentModal');
+    if (!paymentModalElement) {
+        return;
+    }
+
+    const paymentModal = new mdb.Modal(paymentModalElement);
+    let currentPaymentData = {};
+
+    // Handle subscription button clicks
+    document.querySelectorAll('.btn-subscribe').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            if (this.disabled) return;
+
+            const paymentPurpose = this.getAttribute('data-payment-purpose');
+            const membershipType = this.getAttribute('data-membership');
+            const amount = parseFloat(this.getAttribute('data-amount'));
+            const subscriptionYear = this.getAttribute('data-subscription-year') || null;
+
+            const paymentTypeLabels = {
+                'registration': 'New Registration Fee',
+                'annual_dues': 'Annual Membership Dues'
+            };
+
+            const membershipTypeLabels = {
+                'individual': 'Individual Membership',
+                'organization': 'Partner Organization Membership'
+            };
+
+            // Store payment data
+            currentPaymentData = {
+                paymentPurpose: paymentPurpose,
+                membershipType: membershipType,
+                amount: amount,
+                subscriptionYear: subscriptionYear,
+                email: '{{ user.email }}'
+            };
+
+            // Update modal content
+            document.getElementById('modalPaymentType').textContent = paymentTypeLabels[paymentPurpose];
+            document.getElementById('modalMembershipType').textContent = membershipTypeLabels[membershipType];
+            document.getElementById('modalAmount').textContent = new Intl.NumberFormat('en-NG', {
+                style: 'currency',
+                currency: 'NGN',
+                minimumFractionDigits: 0
+            }).format(amount);
+
+            paymentModal.show();
+        });
+    });
+
+    // Handle payment confirmation
+    document.getElementById('proceedPaymentBtn').addEventListener('click', function() {
+        paymentModal.hide();
+        initiatePayment(currentPaymentData);
+    });
+
+    // Handle cancel buttons
+    document.getElementById('modalCloseBtn').addEventListener('click', () => paymentModal.hide());
+    document.getElementById('modalCancelBtn').addEventListener('click', () => paymentModal.hide());
+
+    function initiatePayment(paymentData) {
+        fetch('{% url "dashboard:initiate_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                membership_type: paymentData.membershipType,
+                amount: paymentData.amount,
+                payment_purpose: paymentData.paymentPurpose,
+                subscription_year: paymentData.subscriptionYear
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (typeof PaystackPop !== 'undefined') {
+                    let handler = PaystackPop.setup({
+                        key: data.public_key,
+                        email: paymentData.email,
+                        amount: paymentData.amount * 100,
+                        currency: 'NGN',
+                        ref: data.reference,
+                        metadata: {
+                            membership_id: data.membership_id,
+                            payment_purpose: paymentData.paymentPurpose,
+                            subscription_year: paymentData.subscriptionYear
+                        },
+                        callback: function(response) {
+                            showAlert('success', 'Payment Successful!', `Reference: ${response.reference}`);
+                            setTimeout(() => window.location.href = '/dashboard/', 2000);
+                        },
+                        onClose: function() {
+                            showAlert('warning', 'Payment Cancelled', 'You can try again anytime.');
+                        }
+                    });
+                    handler.openIframe();
+                }
+            } else {
+                showAlert('danger', 'Payment Failed', data.error || 'Please try again.');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Payment Error', 'Request failed. Please try again.');
+        });
+    }
+
+    function showAlert(type, title, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-2">${type === 'success' ? 'check_circle' : type === 'warning' ? 'info' : 'error'}</span>
+                <div>
+                    <strong>${title}</strong><br>
+                    <small>${message}</small>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 5000);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

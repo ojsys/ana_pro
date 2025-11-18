@@ -18,17 +18,19 @@ from django.db.models import Count, Q, Avg, F, Case, When, IntegerField
 from datetime import datetime, timedelta
 import logging
 
-from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics, 
+from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics,
                     DataSyncLog, APIConfiguration, UserProfile, PartnerOrganization, Membership, MembershipPricing)
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
 from .services import AkilimoDataService
+from .decorators import require_active_subscription
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(require_active_subscription, name='dispatch')
 class DashboardHomeView(TemplateView):
-    """Main dashboard view"""
+    """Main dashboard view - requires active subscription"""
     template_name = 'dashboard/home.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
@@ -445,10 +447,11 @@ def api_sync_data(request):
             'error': 'Internal server error'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@method_decorator(require_active_subscription, name='dispatch')
 class ParticipantsListView(TemplateView):
-    """View for participants list page"""
+    """View for participants list page - requires active subscription"""
     template_name = 'dashboard/participants.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
@@ -684,15 +687,18 @@ class ProfileView(LoginRequiredMixin, TemplateView):
             return self.render_to_response(context)
 
 
+@method_decorator(require_active_subscription, name='dispatch')
 class PartnerDashboardView(LoginRequiredMixin, TemplateView):
-    """Partner-specific dashboard view"""
+    """Partner-specific dashboard view - requires active subscription"""
     template_name = 'dashboard/partner_dashboard.html'
-    
+
     def dispatch(self, request, *args, **kwargs):
         """Check if user can access partner dashboard"""
+        # Additional partner-specific check (subscription check happens via decorator)
         if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
             messages.error(request, 'You do not have access to partner-specific data. Please ensure you have a partner organization assigned.')
             return redirect('dashboard:home')
+
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
@@ -774,10 +780,11 @@ class PartnerDashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+@method_decorator(require_active_subscription, name='dispatch')
 class PartnerDataView(LoginRequiredMixin, TemplateView):
-    """Partner-specific data overview"""
+    """Partner-specific data overview - requires active subscription"""
     template_name = 'dashboard/partner_data.html'
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
             messages.error(request, 'You do not have access to partner-specific data.')
@@ -863,10 +870,11 @@ class PartnerDataView(LoginRequiredMixin, TemplateView):
         return context
 
 
+@method_decorator(require_active_subscription, name='dispatch')
 class PartnerFarmersView(LoginRequiredMixin, TemplateView):
-    """Partner-specific farmer demographics and details"""
+    """Partner-specific farmer demographics and details - requires active subscription"""
     template_name = 'dashboard/partner_farmers.html'
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
             messages.error(request, 'You do not have access to partner-specific data.')
@@ -976,11 +984,12 @@ class PartnerFarmersView(LoginRequiredMixin, TemplateView):
         return context
 
 
+@method_decorator(require_active_subscription, name='dispatch')
 class PartnerExtensionAgentsView(LoginRequiredMixin, TemplateView):
-    """Partner-specific extension agents data"""
-    
+    """Partner-specific extension agents data - requires active subscription"""
+
     template_name = 'dashboard/partner_extension_agents.html'
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not hasattr(request.user, 'profile') or not request.user.profile.partner_name:
             messages.error(request, 'You do not have access to partner-specific data.')
@@ -1169,22 +1178,24 @@ def membership_subscription(request):
 @login_required
 @csrf_exempt
 def initiate_payment(request):
-    """Initiate payment for membership subscription"""
+    """Initiate payment for membership subscription or annual dues"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
+
     try:
         import json
         from django.conf import settings
-        from .paystack_service import PaystackService
         from decimal import Decimal
         import uuid
-        
+        from datetime import date
+
         # Parse request data
         data = json.loads(request.body)
         membership_type = data.get('membership_type', 'individual')
         amount = Decimal(str(data.get('amount', 10000)))
-        
+        payment_purpose = data.get('payment_purpose', 'registration')  # 'registration' or 'annual_dues'
+        subscription_year = data.get('subscription_year')
+
         # Get or create membership for current user
         membership, created = Membership.objects.get_or_create(
             member=request.user,
@@ -1193,18 +1204,23 @@ def initiate_payment(request):
                 'status': 'pending'
             }
         )
-        
+
         # Update membership type if needed
         if membership.membership_type != membership_type:
             membership.membership_type = membership_type
             membership.save()
-        
+
+        # Set subscription year for annual dues
+        if payment_purpose == 'annual_dues' and not subscription_year:
+            subscription_year = date.today().year
+
         # Generate unique payment reference
-        payment_reference = f"ANA-{membership_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
-        
+        purpose_code = 'REG' if payment_purpose == 'registration' else 'DUES'
+        payment_reference = f"ANA-{purpose_code}-{membership_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
+
         # Get Paystack public key from settings
         paystack_public_key = getattr(settings, 'PAYSTACK_PUBLIC_KEY', 'pk_test_96b9995fbf552beec8da11acbb821aa5c1d06341')
-        
+
         # Create payment record
         from .models import Payment
         payment = Payment.objects.create(
@@ -1214,9 +1230,11 @@ def initiate_payment(request):
             payment_method='paystack',
             status='pending',
             paystack_reference=payment_reference,
-            description=f'{membership_type.title()} Membership Payment'
+            payment_purpose=payment_purpose,
+            subscription_year=subscription_year if payment_purpose == 'annual_dues' else None,
+            description=f'{payment_purpose.replace("_", " ").title()} - {membership_type.title()} Membership'
         )
-        
+
         return JsonResponse({
             'status': 'success',
             'public_key': paystack_public_key,
@@ -1224,9 +1242,118 @@ def initiate_payment(request):
             'membership_id': str(membership.membership_id),
             'payment_id': str(payment.payment_id),
             'amount': float(amount),
-            'email': request.user.email
+            'email': request.user.email,
+            'payment_purpose': payment_purpose,
+            'subscription_year': subscription_year
         })
-        
+
     except Exception as e:
         logger.error(f"Payment initiation error: {e}")
         return JsonResponse({'error': f'Payment initiation failed: {str(e)}'}, status=500)
+
+
+@login_required
+def payment_selection(request):
+    """
+    Payment selection view for new registration or annual dues renewal.
+    Shows appropriate pricing and allows user to choose payment type.
+    """
+    from datetime import date
+    from .models import Membership, MembershipPricing, Payment
+
+    # Get or create membership for current user
+    membership, created = Membership.objects.get_or_create(
+        member=request.user,
+        defaults={'status': 'pending'}
+    )
+
+    # Determine what payment options to show
+    show_registration = not membership.registration_paid
+    show_annual_dues = membership.registration_paid or not created
+
+    # Get current year for annual dues
+    current_year = date.today().year
+
+    # Check if user already paid annual dues for current year
+    already_paid_current_year = (
+        membership.annual_dues_paid_for_year == current_year and
+        membership.has_active_subscription
+    )
+
+    # Get pricing information
+    registration_pricing = MembershipPricing.objects.filter(
+        payment_type='registration',
+        is_active=True
+    ).order_by('membership_type')
+
+    annual_dues_pricing = MembershipPricing.objects.filter(
+        payment_type='annual_dues',
+        is_active=True
+    ).first()
+
+    context = {
+        'membership': membership,
+        'show_registration': show_registration,
+        'show_annual_dues': show_annual_dues,
+        'registration_pricing': registration_pricing,
+        'annual_dues_pricing': annual_dues_pricing,
+        'current_year': current_year,
+        'already_paid_current_year': already_paid_current_year,
+    }
+
+    return render(request, 'dashboard/payment_selection.html', context)
+
+
+@login_required
+def renewal(request):
+    """
+    Annual membership renewal view.
+    Allows members to renew their annual dues subscription.
+    """
+    from datetime import date
+    from .models import Membership, MembershipPricing
+
+    # Ensure user has a membership
+    if not hasattr(request.user, 'membership'):
+        messages.error(request, 'You need to complete membership registration first.')
+        return redirect('dashboard:register')
+
+    membership = request.user.membership
+
+    # Check if registration is paid
+    if not membership.registration_paid:
+        messages.warning(request, 'Please complete your registration payment first.')
+        return redirect('dashboard:payment_selection')
+
+    # Get current year
+    current_year = date.today().year
+
+    # Check if already paid for current year
+    already_paid = (
+        membership.annual_dues_paid_for_year == current_year and
+        membership.has_active_subscription
+    )
+
+    # Get annual dues pricing
+    annual_dues_pricing = MembershipPricing.objects.filter(
+        payment_type='annual_dues',
+        is_active=True
+    ).first()
+
+    # Get subscription status
+    subscription_expired = not membership.has_active_subscription
+    days_until_expiry = None
+
+    if membership.subscription_end_date:
+        days_until_expiry = (membership.subscription_end_date - date.today()).days
+
+    context = {
+        'membership': membership,
+        'current_year': current_year,
+        'already_paid': already_paid,
+        'subscription_expired': subscription_expired,
+        'days_until_expiry': days_until_expiry,
+        'annual_dues_pricing': annual_dues_pricing,
+    }
+
+    return render(request, 'dashboard/renewal.html', context)

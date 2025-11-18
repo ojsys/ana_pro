@@ -29,6 +29,8 @@ urlpatterns = [
     # path('verify/<uuid:qr_code>/', views.verify_membership, name='verify_membership'),
     
     # Payment URLs
+    path('payment/selection/', views.payment_selection, name='payment_selection'),
+    path('payment/renewal/', views.renewal, name='renewal'),
     path('payment/initiate/', views.initiate_payment, name='initiate_payment'),
     # path('payment/verify/', views.payment_verification, name='payment_verification'),
     # path('payment/mock/<uuid:payment_id>/', views.mock_payment_page, name='mock_payment'),

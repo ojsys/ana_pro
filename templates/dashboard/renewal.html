@@ -1,0 +1,728 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Membership Renewal - AKILIMO Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Paystack JavaScript SDK -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-5">
+    <h1 class="page-title">
+        <span class="material-icons">autorenew</span>
+        Membership Renewal
+    </h1>
+    <p class="page-subtitle">Renew your annual membership dues to continue accessing platform features</p>
+</div>
+
+<!-- Subscription Status Banner -->
+<div class="row mb-5">
+    <div class="col-12">
+        {% if already_paid %}
+        <div class="alert alert-success" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2.5rem;">verified</span>
+                <div>
+                    <h4 class="alert-heading mb-2">Active Subscription</h4>
+                    <p class="mb-1">Your annual membership dues for {{ current_year }} are paid and active.</p>
+                    <p class="mb-0"><strong>Valid until:</strong> December 31, {{ current_year }}</p>
+                </div>
+            </div>
+        </div>
+        {% elif subscription_expired %}
+        <div class="alert alert-warning" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2.5rem;">warning</span>
+                <div>
+                    <h4 class="alert-heading mb-2">Subscription Expired</h4>
+                    <p class="mb-1">Your membership subscription has expired. Renew now to regain access to:</p>
+                    <ul class="mb-0">
+                        <li>Dashboard and analytics</li>
+                        <li>Membership certificate downloads</li>
+                        <li>ID card downloads</li>
+                        <li>Partner organization data</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% elif days_until_expiry is not None and days_until_expiry <= 30 %}
+        <div class="alert alert-info" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2.5rem;">schedule</span>
+                <div>
+                    <h4 class="alert-heading mb-2">Subscription Expiring Soon</h4>
+                    <p class="mb-1">Your subscription will expire in <strong>{{ days_until_expiry }} day{{ days_until_expiry|pluralize }}</strong>.</p>
+                    <p class="mb-0">Renew now to avoid service interruption.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Membership Information Card -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="info-card">
+            <div class="info-card-header">
+                <h4><span class="material-icons me-2">person</span>Your Membership</h4>
+            </div>
+            <div class="info-card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <span class="info-label">Certificate Number</span>
+                            <span class="info-value">{{ membership.certificate_number }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <span class="info-label">Membership Type</span>
+                            <span class="info-value">{{ membership.get_membership_type_display }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <span class="info-label">Current Status</span>
+                            <span class="info-value">
+                                {% if already_paid %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-warning">Expired</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Renewal Payment Card -->
+{% if annual_dues_pricing %}
+<div class="row g-4 justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="renewal-card">
+            <div class="renewal-badge">Annual Dues {{ current_year }}</div>
+            <div class="renewal-header">
+                <div class="renewal-icon">
+                    <span class="material-icons">card_membership</span>
+                </div>
+                <h3>Annual Membership Dues</h3>
+                <p class="text-muted">Flat rate for all members</p>
+            </div>
+            <div class="renewal-price">
+                <span class="currency">₦</span>
+                <span class="amount">{{ annual_dues_pricing.price|floatformat:0|intcomma }}</span>
+                <span class="period">/year</span>
+            </div>
+            {% if annual_dues_pricing.description %}
+            <div class="renewal-description mb-4">
+                <p class="text-muted">{{ annual_dues_pricing.description }}</p>
+            </div>
+            {% endif %}
+            <div class="renewal-period mb-4">
+                <div class="period-info">
+                    <div class="period-label">Validity Period</div>
+                    <div class="period-dates">
+                        <span class="material-icons">calendar_today</span>
+                        January 1, {{ current_year }} - December 31, {{ current_year }}
+                    </div>
+                </div>
+            </div>
+            <ul class="renewal-features">
+                <li><span class="material-icons">check_circle</span>Full dashboard access</li>
+                <li><span class="material-icons">check_circle</span>Download membership certificates</li>
+                <li><span class="material-icons">check_circle</span>Download ID cards</li>
+                <li><span class="material-icons">check_circle</span>Access partner organization data</li>
+                <li><span class="material-icons">check_circle</span>Analytics and insights</li>
+                <li><span class="material-icons">check_circle</span>Training materials access</li>
+                <li><span class="material-icons">check_circle</span>Email support</li>
+                <li><span class="material-icons">check_circle</span>Event participation</li>
+            </ul>
+            <button class="btn btn-lg btn-success btn-renew w-100"
+                    data-amount="{{ annual_dues_pricing.price }}"
+                    data-year="{{ current_year }}"
+                    {% if already_paid %}disabled{% endif %}>
+                {% if already_paid %}
+                <span class="material-icons me-2">check_circle</span>
+                Already Paid for {{ current_year }}
+                {% else %}
+                <span class="material-icons me-2">autorenew</span>
+                Renew Now - ₦{{ annual_dues_pricing.price|floatformat:0|intcomma }}
+                {% endif %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Benefits Section -->
+<div class="row mb-5 mt-5">
+    <div class="col-12">
+        <div class="benefits-section">
+            <h3 class="text-center mb-4">Why Renew Your Membership?</h3>
+            <div class="row g-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <span class="material-icons">analytics</span>
+                        </div>
+                        <h5>Data & Insights</h5>
+                        <p>Access comprehensive agricultural analytics and performance metrics</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <span class="material-icons">workspace_premium</span>
+                        </div>
+                        <h5>Certificates</h5>
+                        <p>Download official membership certificates for verification</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <span class="material-icons">badge</span>
+                        </div>
+                        <h5>ID Cards</h5>
+                        <p>Access and download your digital membership ID card</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <span class="material-icons">groups</span>
+                        </div>
+                        <h5>Network</h5>
+                        <p>Connect with partner organizations and agricultural professionals</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div class="modal fade" id="renewalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <span class="material-icons me-2">payment</span>
+                    Confirm Renewal Payment
+                </h5>
+                <button type="button" class="btn-close" id="modalCloseBtn" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="payment-summary-header p-4 bg-light">
+                    <h6 class="mb-3 text-success">
+                        <span class="material-icons me-2" style="font-size: 20px;">receipt_long</span>
+                        Payment Summary
+                    </h6>
+                    <div class="summary-row">
+                        <span class="summary-label">Payment Type:</span>
+                        <span class="summary-value">Annual Membership Dues</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Subscription Year:</span>
+                        <span id="modalYear" class="summary-value"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Amount:</span>
+                        <span id="modalAmount" class="summary-value text-success fw-bold"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Email:</span>
+                        <span class="summary-value text-muted">{{ user.email }}</span>
+                    </div>
+                </div>
+
+                <div class="payment-method-section p-4">
+                    <h6 class="mb-3 text-dark">
+                        <span class="material-icons me-2" style="font-size: 20px;">payment</span>
+                        Payment Method
+                    </h6>
+
+                    <div class="paystack-card">
+                        <div class="paystack-header">
+                            <div class="paystack-logo me-3">
+                                <span class="material-icons">credit_card</span>
+                            </div>
+                            <div class="paystack-info">
+                                <div class="paystack-title">Paystack</div>
+                                <div class="paystack-subtitle">Secure Payment Gateway</div>
+                            </div>
+                        </div>
+
+                        <div class="security-info">
+                            <span class="material-icons me-2">security</span>
+                            <span>256-bit SSL encryption • PCI DSS compliant</span>
+                        </div>
+
+                        <div class="accepted-methods">
+                            <small class="text-muted">Accepts: Cards, Bank Transfer, USSD, Mobile Money</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-success" id="proceedPaymentBtn">
+                    <span class="material-icons me-1">credit_card</span>
+                    Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Info Card */
+.info-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.info-card-header {
+    background: linear-gradient(135deg, var(--light-green), var(--primary-green));
+    color: white;
+    padding: 1.5rem;
+}
+
+.info-card-header h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.info-card-body {
+    padding: 2rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* Renewal Card */
+.renewal-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    position: relative;
+    border: 2px solid var(--primary-green);
+}
+
+.renewal-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--light-green), var(--primary-green));
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.renewal-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    margin-top: 1rem;
+}
+
+.renewal-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.renewal-icon .material-icons {
+    font-size: 40px;
+    color: white;
+}
+
+.renewal-header h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.renewal-price {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #E8F5E8, #F0F8F0);
+    border-radius: 12px;
+}
+
+.renewal-price .currency {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    vertical-align: top;
+}
+
+.renewal-price .amount {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+.renewal-price .period {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+}
+
+.renewal-description {
+    text-align: center;
+}
+
+.renewal-period {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.period-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.period-dates {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.period-dates .material-icons {
+    font-size: 20px;
+    color: var(--primary-green);
+}
+
+.renewal-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+.renewal-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.875rem;
+    font-size: 1rem;
+}
+
+.renewal-features .material-icons {
+    font-size: 20px;
+    margin-right: 0.75rem;
+    color: var(--success-green);
+}
+
+.btn-renew {
+    padding: 1.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-renew:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Benefits Section */
+.benefits-section {
+    background: linear-gradient(135deg, #F0F8F0 0%, white 100%);
+    padding: 3rem 2rem;
+    border-radius: 12px;
+}
+
+.benefit-item {
+    text-align: center;
+}
+
+.benefit-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.benefit-icon .material-icons {
+    font-size: 30px;
+    color: white;
+}
+
+.benefit-item h5 {
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+.benefit-item p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* Modal Styles */
+.payment-summary-header {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.summary-value {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.paystack-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.paystack-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.paystack-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #0fa958, #15c96b);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.paystack-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.paystack-subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.security-info {
+    display: flex;
+    align-items: center;
+    background: #e8f5e9;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    color: #2e7d32;
+}
+
+.accepted-methods {
+    text-align: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.modal-content {
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    color: white;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof mdb === 'undefined') return;
+
+    const renewalModalElement = document.getElementById('renewalModal');
+    if (!renewalModalElement) return;
+
+    const renewalModal = new mdb.Modal(renewalModalElement);
+    let currentPaymentData = {};
+
+    document.querySelector('.btn-renew')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (this.disabled) return;
+
+        const amount = parseFloat(this.getAttribute('data-amount'));
+        const year = this.getAttribute('data-year');
+
+        currentPaymentData = {
+            amount: amount,
+            subscriptionYear: year,
+            email: '{{ user.email }}',
+            membershipType: '{{ membership.membership_type }}'
+        };
+
+        document.getElementById('modalYear').textContent = year;
+        document.getElementById('modalAmount').textContent = new Intl.NumberFormat('en-NG', {
+            style: 'currency',
+            currency: 'NGN',
+            minimumFractionDigits: 0
+        }).format(amount);
+
+        renewalModal.show();
+    });
+
+    document.getElementById('proceedPaymentBtn')?.addEventListener('click', function() {
+        renewalModal.hide();
+        initiateRenewalPayment(currentPaymentData);
+    });
+
+    document.getElementById('modalCloseBtn')?.addEventListener('click', () => renewalModal.hide());
+    document.getElementById('modalCancelBtn')?.addEventListener('click', () => renewalModal.hide());
+
+    function initiateRenewalPayment(paymentData) {
+        fetch('{% url "dashboard:initiate_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                membership_type: paymentData.membershipType,
+                amount: paymentData.amount,
+                payment_purpose: 'annual_dues',
+                subscription_year: paymentData.subscriptionYear
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && typeof PaystackPop !== 'undefined') {
+                let handler = PaystackPop.setup({
+                    key: data.public_key,
+                    email: paymentData.email,
+                    amount: paymentData.amount * 100,
+                    currency: 'NGN',
+                    ref: data.reference,
+                    metadata: {
+                        membership_id: data.membership_id,
+                        payment_purpose: 'annual_dues',
+                        subscription_year: paymentData.subscriptionYear
+                    },
+                    callback: function(response) {
+                        showAlert('success', 'Renewal Successful!', `Your membership has been renewed for ${paymentData.subscriptionYear}.`);
+                        setTimeout(() => window.location.reload(), 2000);
+                    },
+                    onClose: function() {
+                        showAlert('warning', 'Payment Cancelled', 'You can try again anytime.');
+                    }
+                });
+                handler.openIframe();
+            } else {
+                showAlert('danger', 'Payment Failed', data.error || 'Please try again.');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Payment Error', 'Request failed. Please try again.');
+        });
+    }
+
+    function showAlert(type, title, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-2">${type === 'success' ? 'check_circle' : type === 'warning' ? 'info' : 'error'}</span>
+                <div><strong>${title}</strong><br><small>${message}</small></div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 5000);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}
