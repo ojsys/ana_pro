@@ -4,7 +4,7 @@
 {% block title %}Membership Renewal - AKILIMO Dashboard{% endblock %}
 
 {% block extra_head %}
-<!-- Paystack JavaScript SDK -->
+<!-- Paystack JavaScript SDK - Load synchronously -->
 <script src="https://js.paystack.co/v1/inline.js"></script>
 {% endblock %}
 
@@ -649,6 +649,24 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('modalCloseBtn')?.addEventListener('click', () => renewalModal.hide());
     document.getElementById('modalCancelBtn')?.addEventListener('click', () => renewalModal.hide());
 
+    // Helper function to wait for PaystackPop to be available
+    function waitForPaystack(successCallback, errorCallback, attempts = 0) {
+        const maxAttempts = 20; // Try for 2 seconds (20 * 100ms)
+
+        if (typeof PaystackPop !== 'undefined') {
+            console.log('PaystackPop is available for renewal');
+            successCallback();
+        } else if (attempts < maxAttempts) {
+            console.log(`Waiting for PaystackPop (renewal)... attempt ${attempts + 1}/${maxAttempts}`);
+            setTimeout(() => {
+                waitForPaystack(successCallback, errorCallback, attempts + 1);
+            }, 100);
+        } else {
+            console.error('PaystackPop failed to load after ' + maxAttempts + ' attempts');
+            errorCallback();
+        }
+    }
+
     function initiateRenewalPayment(paymentData) {
         fetch('{% url "dashboard:initiate_payment" %}', {
             method: 'POST',
@@ -668,7 +686,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Renewal payment response:', data);
 
             if (data.status === 'success') {
-                if (typeof PaystackPop !== 'undefined') {
+                // Wait for PaystackPop to be available with retry mechanism
+                waitForPaystack(function() {
                     console.log('Opening Paystack popup for renewal with amount:', paymentData.amount);
 
                     let handler = PaystackPop.setup({
@@ -693,10 +712,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                     handler.openIframe();
-                } else {
-                    console.error('PaystackPop is not defined for renewal. SDK may not be loaded.');
-                    showAlert('danger', 'Payment Error', 'Paystack payment system is not available. Please refresh the page and try again.');
-                }
+                }, function() {
+                    console.error('PaystackPop is not defined after waiting. SDK failed to load.');
+                    showAlert('danger', 'Payment Error', 'Paystack payment system could not be loaded. Please refresh the page and try again.');
+                });
             } else {
                 console.error('Renewal payment initiation failed:', data.error);
                 showAlert('danger', 'Payment Failed', data.error || 'Please try again.');
