@@ -1157,8 +1157,10 @@ def initiate_payment(request):
         membership_type = data.get('membership_type', 'individual')
 
         # Clean amount - remove commas if present (from thousand separator formatting)
-        amount_str = str(data.get('amount', 10000)).replace(',', '')
+        amount_raw = data.get('amount', 10000)
+        amount_str = str(amount_raw).replace(',', '').replace(' ', '').strip()
         amount = Decimal(amount_str)
+        logger.info(f"Cleaned amount: {amount_raw} -> {amount}")
 
         payment_purpose = data.get('payment_purpose', 'registration')  # 'registration' or 'annual_dues'
 
@@ -1167,8 +1169,12 @@ def initiate_payment(request):
         subscription_year = None
         if subscription_year_raw:
             try:
-                subscription_year = int(str(subscription_year_raw).replace(',', ''))
-            except (ValueError, TypeError):
+                # Convert to string, remove commas and any whitespace, then convert to int
+                year_str = str(subscription_year_raw).replace(',', '').replace(' ', '').strip()
+                subscription_year = int(year_str)
+                logger.info(f"Cleaned subscription_year: {subscription_year_raw} -> {subscription_year}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"Failed to parse subscription_year '{subscription_year_raw}': {e}")
                 subscription_year = None
 
         # Get or create membership for current user
