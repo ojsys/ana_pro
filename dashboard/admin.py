@@ -632,7 +632,11 @@ class PaymentAdmin(ImportExportModelAdmin):
 
     def amount_display(self, obj):
         """Display amount with currency"""
-        return format_html('<strong>₦{:,.2f}</strong>', float(obj.amount))
+        from decimal import Decimal
+        # Convert to Decimal to avoid SafeString formatting issues
+        amount_value = Decimal(str(obj.amount))
+        formatted_amount = f'{amount_value:,.2f}'
+        return format_html('<strong>₦{}</strong>', formatted_amount)
     amount_display.short_description = 'Amount'
 
     def status_display(self, obj):
