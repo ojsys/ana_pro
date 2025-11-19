@@ -1615,13 +1615,13 @@ def download_certificate(request):
 
 @login_required
 def download_id_card(request):
-    """Generate and download membership ID card as PDF"""
+    """Generate and download membership ID card as PDF with front and back"""
     from django.http import HttpResponse
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch, cm, mm
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
     from reportlab.graphics.shapes import Drawing, Rect
     from io import BytesIO
@@ -1653,17 +1653,18 @@ def download_id_card(request):
     # Create PDF buffer
     buffer = BytesIO()
 
-    # Standard ID card size (CR80: 85.6mm x 53.98mm)
-    card_width = 8.56 * cm
+    # Standard plastic ID card size (CR80: 3.375" x 2.125" = 85.6mm x 53.98mm)
+    card_width = 3.375 * inch
+    card_height = 2.125 * inch
 
     # Create the PDF document
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=2*cm,
-        leftMargin=2*cm,
-        topMargin=2*cm,
-        bottomMargin=2*cm
+        rightMargin=1.5*cm,
+        leftMargin=1.5*cm,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm
     )
 
     # Styles
@@ -1672,29 +1673,29 @@ def download_id_card(request):
     name_style = ParagraphStyle(
         'Name',
         parent=styles['Normal'],
-        fontSize=9,
+        fontSize=11,
         textColor=colors.HexColor('#1a5f2a'),
         alignment=TA_LEFT,
         fontName='Helvetica-Bold',
-        leading=11,
+        leading=13,
     )
 
     detail_style = ParagraphStyle(
         'Detail',
         parent=styles['Normal'],
-        fontSize=7,
+        fontSize=9,
         textColor=colors.HexColor('#333333'),
         alignment=TA_LEFT,
-        leading=9,
+        leading=11,
     )
 
     label_style = ParagraphStyle(
         'Label',
         parent=styles['Normal'],
-        fontSize=6,
+        fontSize=7,
         textColor=colors.HexColor('#666666'),
         alignment=TA_LEFT,
-        leading=7,
+        leading=9,
     )
 
     # Build content
@@ -1703,22 +1704,22 @@ def download_id_card(request):
     # Page title and instructions
     elements.append(Paragraph(
         "<b>AKILIMO Nigeria Association - Membership ID Card</b>",
-        ParagraphStyle('Title', fontSize=14, alignment=TA_CENTER, spaceAfter=10)
+        ParagraphStyle('Title', fontSize=16, alignment=TA_CENTER, spaceAfter=10)
     ))
 
     if not has_photo:
         elements.append(Paragraph(
             "<font color='#d9534f'><b>Note:</b> Please upload a profile photo in your profile settings for a complete ID card.</font>",
-            ParagraphStyle('Warning', fontSize=9, alignment=TA_CENTER, spaceAfter=10)
+            ParagraphStyle('Warning', fontSize=10, alignment=TA_CENTER, spaceAfter=10)
         ))
 
     elements.append(Paragraph(
-        "Print this page and cut along the dotted line to create your ID card.",
-        ParagraphStyle('Instruction', fontSize=10, alignment=TA_CENTER, spaceAfter=20)
+        "Print this page, cut along the dotted lines, and fold to create a double-sided ID card.",
+        ParagraphStyle('Instruction', fontSize=10, alignment=TA_CENTER, spaceAfter=15)
     ))
 
-    # Generate QR code (smaller)
-    qr = qrcode.QRCode(version=1, box_size=2, border=1)
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=3, border=1)
     verification_url = request.build_absolute_uri(f'/dashboard/verify/{membership.qr_code}/')
     qr.add_data(verification_url)
     qr.make(fit=True)
@@ -1727,15 +1728,15 @@ def download_id_card(request):
     qr_buffer = BytesIO()
     qr_img.save(qr_buffer, format='PNG')
     qr_buffer.seek(0)
-    qr_image = Image(qr_buffer, width=0.7*inch, height=0.7*inch)
+    qr_image = Image(qr_buffer, width=0.9*inch, height=0.9*inch)
 
     # Member details
     full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
     membership_type = membership.get_membership_type_display()
 
     # Load profile photo or create placeholder
-    photo_width = 2.2 * cm
-    photo_height = 2.8 * cm
+    photo_width = 1 * inch
+    photo_height = 1.25 * inch
 
     if has_photo:
         try:
@@ -1751,7 +1752,6 @@ def download_id_card(request):
 
     # If no photo, create a placeholder drawing
     if not member_photo:
-        # Create a gray placeholder box
         placeholder = Drawing(photo_width, photo_height)
         placeholder.add(Rect(0, 0, photo_width, photo_height, fillColor=colors.HexColor('#e0e0e0'), strokeColor=colors.HexColor('#cccccc')))
         member_photo = placeholder
@@ -1761,16 +1761,21 @@ def download_id_card(request):
     if not os.path.exists(logo_path):
         logo_path = os.path.join(settings.MEDIA_ROOT, 'site', 'ana_logo.png')
 
-    # Create the ID card layout
-    # Row 1: Header with logo and title
+    # ==================== FRONT OF CARD ====================
+    elements.append(Paragraph(
+        "<b>FRONT</b>",
+        ParagraphStyle('SideLabel', fontSize=10, alignment=TA_CENTER, spaceAfter=5, textColor=colors.gray)
+    ))
+
+    # Header with logo and title
     if os.path.exists(logo_path):
-        header_logo = Image(logo_path, width=0.4*inch, height=0.4*inch)
+        header_logo = Image(logo_path, width=0.5*inch, height=0.5*inch)
     else:
         header_logo = ''
 
-    header_text = Paragraph("AKILIMO NIGERIA<br/>ASSOCIATION", ParagraphStyle(
-        'HeaderText', fontSize=7, textColor=colors.white, alignment=TA_CENTER,
-        fontName='Helvetica-Bold', leading=8
+    header_text = Paragraph("AKILIMO NIGERIA ASSOCIATION", ParagraphStyle(
+        'HeaderText', fontSize=10, textColor=colors.white, alignment=TA_CENTER,
+        fontName='Helvetica-Bold', leading=12
     ))
 
     # Member info paragraphs
@@ -1792,74 +1797,164 @@ def download_id_card(request):
     # Build member details column
     details_content = [
         name_para,
-        Spacer(1, 2*mm),
+        Spacer(1, 3*mm),
         type_label, type_value,
-        Spacer(1, 1*mm),
+        Spacer(1, 2*mm),
         id_label, id_value,
-        Spacer(1, 1*mm),
+        Spacer(1, 2*mm),
         valid_label, valid_value,
     ]
 
-    # Main card structure
     # Header row
-    header_data = [[header_logo, header_text, '']]
-    header_table = Table(header_data, colWidths=[0.6*cm, card_width - 1.2*cm, 0.6*cm])
+    header_data = [[header_logo, header_text]]
+    header_table = Table(header_data, colWidths=[0.7*inch, card_width - 0.7*inch])
     header_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#1a5f2a')),
-        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
         ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ]))
 
     # Content row: Photo | Details | QR
     content_data = [[member_photo, details_content, qr_image]]
-    content_table = Table(content_data, colWidths=[2.4*cm, card_width - 4.8*cm, 2.4*cm])
+    content_table = Table(content_data, colWidths=[1.1*inch, card_width - 2.3*inch, 1.2*inch])
     content_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.white),
         ('ALIGN', (0, 0), (0, 0), 'CENTER'),
         ('ALIGN', (1, 0), (1, 0), 'LEFT'),
         ('ALIGN', (2, 0), (2, 0), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+        ('VALIGN', (1, 0), (1, 0), 'TOP'),
+        ('VALIGN', (2, 0), (2, 0), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
     ]))
 
-    # Combine into main card
-    card_data = [
+    # Combine into front card
+    front_card_data = [
         [header_table],
         [content_table],
     ]
 
-    card_table = Table(card_data, colWidths=[card_width])
-    card_table.setStyle(TableStyle([
-        ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor('#1a5f2a')),
+    front_card = Table(front_card_data, colWidths=[card_width], rowHeights=[0.6*inch, card_height - 0.6*inch])
+    front_card.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#1a5f2a')),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
 
-    elements.append(card_table)
+    elements.append(front_card)
 
-    elements.append(Spacer(1, 1*cm))
-
-    # Add cutting guide
+    # Cutting guide
+    elements.append(Spacer(1, 0.5*cm))
     elements.append(Paragraph(
-        "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
+        "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
+        ParagraphStyle('Cut', fontSize=8, alignment=TA_CENTER, textColor=colors.gray)
+    ))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # ==================== BACK OF CARD ====================
+    elements.append(Paragraph(
+        "<b>BACK</b>",
+        ParagraphStyle('SideLabel', fontSize=10, alignment=TA_CENTER, spaceAfter=5, textColor=colors.gray)
+    ))
+
+    # Back card content
+    back_title = Paragraph(
+        "<b>AKILIMO NIGERIA ASSOCIATION</b>",
+        ParagraphStyle('BackTitle', fontSize=11, alignment=TA_CENTER, textColor=colors.HexColor('#1a5f2a'),
+                      fontName='Helvetica-Bold', spaceAfter=8)
+    )
+
+    back_subtitle = Paragraph(
+        "Member Identification Card",
+        ParagraphStyle('BackSubtitle', fontSize=9, alignment=TA_CENTER, textColor=colors.HexColor('#333333'),
+                      spaceAfter=10)
+    )
+
+    # Terms and contact info
+    back_info_style = ParagraphStyle(
+        'BackInfo', fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#666666'), leading=9
+    )
+
+    terms_text = Paragraph(
+        "This card certifies that the bearer is a registered member of AKILIMO Nigeria Association. "
+        "This card remains the property of ANA and must be returned upon request.",
+        back_info_style
+    )
+
+    contact_text = Paragraph(
+        "<b>Contact:</b> info@akilimonigeria.org<br/>"
+        "<b>Website:</b> www.akilimonigeria.org<br/>"
+        "<b>Phone:</b> +234 XXX XXX XXXX",
+        ParagraphStyle('Contact', fontSize=8, alignment=TA_CENTER, textColor=colors.HexColor('#333333'), leading=10)
+    )
+
+    verify_text = Paragraph(
+        "Scan QR code on front to verify membership online",
+        ParagraphStyle('Verify', fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#1a5f2a'),
+                      fontName='Helvetica-Oblique')
+    )
+
+    issued_text = Paragraph(
+        f"Issued: {date.today().strftime('%B %d, %Y')}",
+        ParagraphStyle('Issued', fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#999999'))
+    )
+
+    # Build back content
+    back_content = [
+        [back_title],
+        [back_subtitle],
+        [Spacer(1, 3*mm)],
+        [terms_text],
+        [Spacer(1, 5*mm)],
+        [contact_text],
+        [Spacer(1, 5*mm)],
+        [verify_text],
+        [Spacer(1, 3*mm)],
+        [issued_text],
+    ]
+
+    back_table = Table(back_content, colWidths=[card_width - 20])
+    back_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    # Wrap in card border
+    back_card_wrapper = Table([[back_table]], colWidths=[card_width], rowHeights=[card_height])
+    back_card_wrapper.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#1a5f2a')),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+    ]))
+
+    elements.append(back_card_wrapper)
+
+    # Final cutting guide
+    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Paragraph(
+        "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
         ParagraphStyle('Cut', fontSize=8, alignment=TA_CENTER, textColor=colors.gray)
     ))
 
     elements.append(Spacer(1, 0.5*cm))
-
     elements.append(Paragraph(
-        f"Scan QR code to verify membership • Issued: {date.today().strftime('%Y-%m-%d')}",
-        ParagraphStyle('Footer', fontSize=8, alignment=TA_CENTER, textColor=colors.gray)
+        "Cut along dotted lines, align front and back, then laminate for a durable ID card.",
+        ParagraphStyle('FinalInstruction', fontSize=9, alignment=TA_CENTER, textColor=colors.gray)
     ))
 
     # Build PDF
