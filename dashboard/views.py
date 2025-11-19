@@ -1621,7 +1621,7 @@ def download_id_card(request):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch, cm, mm
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
     from reportlab.graphics.shapes import Drawing, Rect
     from io import BytesIO
@@ -1842,7 +1842,7 @@ def download_id_card(request):
         [content_table],
     ]
 
-    front_card = Table(front_card_data, colWidths=[card_width], rowHeights=[0.6*inch, card_height - 0.6*inch])
+    front_card = Table(front_card_data, colWidths=[card_width], rowHeights=[0.7*inch, card_height - 0.7*inch])
     front_card.setStyle(TableStyle([
         ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#1a5f2a')),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
@@ -1867,79 +1867,32 @@ def download_id_card(request):
         ParagraphStyle('SideLabel', fontSize=10, alignment=TA_CENTER, spaceAfter=5, textColor=colors.gray)
     ))
 
-    # Back card content
-    back_title = Paragraph(
-        "<b>AKILIMO NIGERIA ASSOCIATION</b>",
-        ParagraphStyle('BackTitle', fontSize=11, alignment=TA_CENTER, textColor=colors.HexColor('#1a5f2a'),
-                      fontName='Helvetica-Bold', spaceAfter=8)
-    )
-
-    back_subtitle = Paragraph(
-        "Member Identification Card",
-        ParagraphStyle('BackSubtitle', fontSize=9, alignment=TA_CENTER, textColor=colors.HexColor('#333333'),
-                      spaceAfter=10)
-    )
-
-    # Terms and contact info
-    back_info_style = ParagraphStyle(
-        'BackInfo', fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#666666'), leading=9
-    )
-
-    terms_text = Paragraph(
-        "This card certifies that the bearer is a registered member of AKILIMO Nigeria Association. "
-        "This card remains the property of ANA and must be returned upon request.",
-        back_info_style
-    )
-
-    contact_text = Paragraph(
-        "<b>Contact:</b> info@akilimonigeria.org<br/>"
+    # Back card content - all in one combined paragraph for better fit
+    back_content_text = Paragraph(
+        "<b><font size='10' color='#1a5f2a'>AKILIMO NIGERIA ASSOCIATION</font></b><br/>"
+        "<font size='8' color='#333333'>Member Identification Card</font><br/><br/>"
+        "<font size='6' color='#666666'>This card certifies that the bearer is a registered "
+        "member of AKILIMO Nigeria Association. This card remains the property of ANA "
+        "and must be returned upon request.</font><br/><br/>"
+        "<font size='7' color='#333333'><b>Contact:</b> info@akilimonigeria.org<br/>"
         "<b>Website:</b> www.akilimonigeria.org<br/>"
-        "<b>Phone:</b> +234 XXX XXX XXXX",
-        ParagraphStyle('Contact', fontSize=8, alignment=TA_CENTER, textColor=colors.HexColor('#333333'), leading=10)
+        "<b>Phone:</b> +234 XXX XXX XXXX</font><br/><br/>"
+        f"<font size='6' color='#1a5f2a'><i>Scan QR code on front to verify membership</i></font><br/>"
+        f"<font size='6' color='#999999'>Issued: {date.today().strftime('%B %d, %Y')}</font>",
+        ParagraphStyle('BackContent', fontSize=8, alignment=TA_CENTER, leading=10)
     )
-
-    verify_text = Paragraph(
-        "Scan QR code on front to verify membership online",
-        ParagraphStyle('Verify', fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#1a5f2a'),
-                      fontName='Helvetica-Oblique')
-    )
-
-    issued_text = Paragraph(
-        f"Issued: {date.today().strftime('%B %d, %Y')}",
-        ParagraphStyle('Issued', fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#999999'))
-    )
-
-    # Build back content
-    back_content = [
-        [back_title],
-        [back_subtitle],
-        [Spacer(1, 3*mm)],
-        [terms_text],
-        [Spacer(1, 5*mm)],
-        [contact_text],
-        [Spacer(1, 5*mm)],
-        [verify_text],
-        [Spacer(1, 3*mm)],
-        [issued_text],
-    ]
-
-    back_table = Table(back_content, colWidths=[card_width - 20])
-    back_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
 
     # Wrap in card border
-    back_card_wrapper = Table([[back_table]], colWidths=[card_width], rowHeights=[card_height])
+    back_card_wrapper = Table([[back_content_text]], colWidths=[card_width], rowHeights=[card_height])
     back_card_wrapper.setStyle(TableStyle([
         ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#1a5f2a')),
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
     ]))
 
     elements.append(back_card_wrapper)
