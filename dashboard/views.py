@@ -1769,13 +1769,13 @@ def download_id_card(request):
 
     # Header with logo and title
     if os.path.exists(logo_path):
-        header_logo = Image(logo_path, width=0.5*inch, height=0.5*inch)
+        header_logo = Image(logo_path, width=0.45*inch, height=0.45*inch)
     else:
         header_logo = ''
 
     header_text = Paragraph("AKILIMO NIGERIA ASSOCIATION", ParagraphStyle(
-        'HeaderText', fontSize=10, textColor=colors.white, alignment=TA_CENTER,
-        fontName='Helvetica-Bold', leading=12
+        'HeaderText', fontSize=9, textColor=colors.white, alignment=TA_CENTER,
+        fontName='Helvetica-Bold', leading=11
     ))
 
     # Member info paragraphs
@@ -1797,58 +1797,55 @@ def download_id_card(request):
     # Build member details column
     details_content = [
         name_para,
-        Spacer(1, 3*mm),
+        Spacer(1, 2*mm),
         type_label, type_value,
-        Spacer(1, 2*mm),
+        Spacer(1, 1*mm),
         id_label, id_value,
-        Spacer(1, 2*mm),
+        Spacer(1, 1*mm),
         valid_label, valid_value,
     ]
 
-    # Header row
-    header_data = [[header_logo, header_text]]
-    header_table = Table(header_data, colWidths=[0.7*inch, card_width - 0.7*inch])
-    header_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#1a5f2a')),
-        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-    ]))
-
-    # Content row: Photo | Details | QR
-    content_data = [[member_photo, details_content, qr_image]]
-    content_table = Table(content_data, colWidths=[1.1*inch, card_width - 2.3*inch, 1.2*inch])
-    content_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-        ('ALIGN', (1, 0), (1, 0), 'LEFT'),
-        ('ALIGN', (2, 0), (2, 0), 'CENTER'),
-        ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
-        ('VALIGN', (1, 0), (1, 0), 'TOP'),
-        ('VALIGN', (2, 0), (2, 0), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-
-    # Combine into front card
+    # Build entire front card as single table
+    # Row 1: Logo | Header Text
+    # Row 2: Photo | Details | QR
     front_card_data = [
-        [header_table],
-        [content_table],
+        [header_logo, header_text, ''],  # Header row spans
+        [member_photo, details_content, qr_image],  # Content row
     ]
 
-    front_card = Table(front_card_data, colWidths=[card_width], rowHeights=[0.7*inch, card_height - 0.7*inch])
+    front_card = Table(
+        front_card_data,
+        colWidths=[1.1*inch, card_width - 2.3*inch, 1.2*inch],
+        rowHeights=[0.6*inch, card_height - 0.6*inch]
+    )
     front_card.setStyle(TableStyle([
+        # Header row styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f2a')),
+        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('SPAN', (1, 0), (2, 0)),  # Span header text across columns 2 and 3
+        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+
+        # Content row styling
+        ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+        ('ALIGN', (0, 1), (0, 1), 'CENTER'),
+        ('ALIGN', (1, 1), (1, 1), 'LEFT'),
+        ('ALIGN', (2, 1), (2, 1), 'CENTER'),
+        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
+        ('VALIGN', (1, 1), (1, 1), 'TOP'),
+        ('VALIGN', (2, 1), (2, 1), 'MIDDLE'),
+
+        # Padding
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 1), (-1, 1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+
+        # Border
         ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#1a5f2a')),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#1a5f2a')),
     ]))
 
     elements.append(front_card)
