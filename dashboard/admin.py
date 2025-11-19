@@ -461,8 +461,8 @@ class MembershipAdminForm(forms.ModelForm):
         widgets = {
             'subscription_start_date': forms.DateInput(attrs={'type': 'date'}),
             'subscription_end_date': forms.DateInput(attrs={'type': 'date'}),
-            'registration_payment_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'last_annual_dues_payment_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            # Use Django admin's default widgets for DateTimeFields
+            # They provide proper date/time selection functionality
         }
 
 
