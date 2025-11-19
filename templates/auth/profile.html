@@ -357,7 +357,7 @@
                                     <span class="material-icons me-2">info</span>
                                     <strong>Coming Soon:</strong> Certificate and ID card downloads will be available once your membership is processed.
                                 </div>
-                                {# Uncomment when download views are implemented
+                                {% comment "Uncomment when download views are implemented" %}
                                 <div class="d-grid gap-2">
                                     <a href="{% url 'dashboard:download_certificate' %}" class="btn btn-primary">
                                         <span class="material-icons me-2">workspace_premium</span>
@@ -380,7 +380,7 @@
                                         Documents include QR codes for verification
                                     </small>
                                 </div>
-                                #}
+                                {% endcomment %}
                             {% else %}
                                 <div class="alert alert-warning">
                                     {% if user.membership.status == 'pending' %}
