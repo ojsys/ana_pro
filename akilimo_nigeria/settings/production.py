@@ -206,6 +206,7 @@ LOGGING = {
             'maxBytes': 1024*1024*15,  # 15MB
             'backupCount': 10,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'error_file': {
             'level': 'ERROR',
@@ -214,6 +215,7 @@ LOGGING = {
             'maxBytes': 1024*1024*15,  # 15MB
             'backupCount': 10,
             'formatter': 'detailed',
+            'encoding': 'utf-8',
         },
         'debug_file': {
             'level': 'DEBUG',
@@ -222,6 +224,7 @@ LOGGING = {
             'maxBytes': 1024*1024*20,  # 20MB
             'backupCount': 5,
             'formatter': 'detailed',
+            'encoding': 'utf-8',
         },
         'db_file': {
             'level': 'DEBUG',
@@ -230,6 +233,7 @@ LOGGING = {
             'maxBytes': 1024*1024*10,  # 10MB
             'backupCount': 5,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'mail_admins': {
             'level': 'ERROR',
