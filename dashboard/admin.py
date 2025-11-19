@@ -454,42 +454,89 @@ class MembershipAdmin(ImportExportModelAdmin):
     )
 
     def subscription_status_display(self, obj):
-        """Display subscription status with color coding"""
-        status_colors = {
-            'Active': 'success',
-            'Expired': 'danger',
-            'Suspended': 'warning',
-            'No Active Subscription': 'secondary',
-        }
-        status_text = obj.subscription_status_text
-        color = status_colors.get(status_text, 'secondary')
-        return format_html('<span class="badge bg-{}">{}</span>', color, status_text)
+        """Display subscription status with color coding based on current status"""
+        from datetime import date
+
+        # Get real-time subscription status
+        current_year = date.today().year
+
+        if obj.access_suspended:
+            status_text = "Suspended"
+            color = "warning"
+            icon = "⚠"
+        elif obj.has_active_subscription:
+            # Has active annual dues for current year
+            status_text = "Active"
+            color = "success"
+            icon = "✓"
+            if obj.annual_dues_paid_for_year:
+                status_text = f"Active ({obj.annual_dues_paid_for_year})"
+        elif obj.annual_dues_paid_for_year and obj.annual_dues_paid_for_year < current_year:
+            # Paid for previous year but expired
+            status_text = f"Expired ({obj.annual_dues_paid_for_year})"
+            color = "danger"
+            icon = "✗"
+        elif obj.registration_paid and not obj.annual_dues_paid_for_year:
+            # Registered but no annual dues paid yet
+            status_text = "Registered (No Annual Dues)"
+            color = "info"
+            icon = "ℹ"
+        else:
+            # No active subscription
+            status_text = "Inactive"
+            color = "secondary"
+            icon = "○"
+
+        return format_html('<span class="badge bg-{}">{} {}</span>', color, icon, status_text)
     subscription_status_display.short_description = 'Subscription Status'
 
     def registration_status(self, obj):
-        """Display registration payment status"""
+        """Display registration payment status with date"""
         if obj.registration_paid:
+            if obj.registration_date:
+                date_str = obj.registration_date.strftime('%Y-%m-%d')
+                return format_html(
+                    '<span class="badge bg-success" title="Paid on {}">✓ Paid</span>',
+                    date_str
+                )
             return format_html('<span class="badge bg-success">✓ Paid</span>')
-        return format_html('<span class="badge bg-warning">Pending</span>')
+        return format_html('<span class="badge bg-warning">⚠ Pending</span>')
     registration_status.short_description = 'Registration'
 
     def subscription_year_display(self, obj):
-        """Display subscription year without thousand separator"""
-        if obj.subscription_year:
+        """Display subscription year with status indicator"""
+        from datetime import date
+        current_year = date.today().year
+
+        if obj.annual_dues_paid_for_year:
             # Format as string to prevent comma formatting from USE_THOUSAND_SEPARATOR
-            year_str = str(obj.subscription_year).replace(',', '')
-            return format_html('<strong>{}</strong>', year_str)
-        return '-'
-    subscription_year_display.short_description = 'Year'
+            year_str = str(obj.annual_dues_paid_for_year).replace(',', '')
+
+            if obj.annual_dues_paid_for_year == current_year and obj.has_active_subscription:
+                # Current year and active
+                return format_html('<strong class="text-success">{} ✓</strong>', year_str)
+            elif obj.annual_dues_paid_for_year < current_year:
+                # Previous year - expired
+                return format_html('<span class="text-danger">{} (Expired)</span>', year_str)
+            else:
+                return format_html('<strong>{}</strong>', year_str)
+        return format_html('<span class="text-muted">-</span>')
+    subscription_year_display.short_description = 'Annual Dues Year'
 
     def access_status(self, obj):
-        """Display access status"""
+        """Display platform access status with clear indicators"""
         if obj.access_suspended:
-            return format_html('<span class="badge bg-danger">Suspended</span>')
-        elif obj.has_platform_access:
-            return format_html('<span class="badge bg-success">✓ Active</span>')
-        return format_html('<span class="badge bg-secondary">No Access</span>')
-    access_status.short_description = 'Access'
+            return format_html('<span class="badge bg-danger">🚫 Suspended</span>')
+        elif obj.has_platform_access and obj.has_active_subscription:
+            # Has both registration and active annual dues
+            return format_html('<span class="badge bg-success">✓ Full Access</span>')
+        elif obj.registration_paid and not obj.has_active_subscription:
+            # Has registration but no active annual dues
+            return format_html('<span class="badge bg-warning">⚠ Limited (No Annual Dues)</span>')
+        else:
+            # No access
+            return format_html('<span class="badge bg-secondary">○ No Access</span>')
+    access_status.short_description = 'Platform Access'
 
     @admin.action(description='Activate subscription for selected memberships')
     def activate_subscription(self, request, queryset):
