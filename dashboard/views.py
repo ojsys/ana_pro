@@ -1263,9 +1263,8 @@ def initiate_payment(request):
 def verify_payment(request):
     """Verify payment after Paystack checkout redirect"""
     from .paystack_service import PaystackService
-    from .models import Payment, Membership
+    from .models import Payment
     from django.contrib import messages
-    from datetime import date, timedelta
 
     reference = request.GET.get('reference')
 
@@ -1282,27 +1281,11 @@ def verify_payment(request):
         verification_response = paystack.verify_transaction(reference)
 
         if verification_response.get('status') and verification_response['data']['status'] == 'success':
-            # Payment successful
-            payment.status = 'completed'
+            # Payment successful - update payment status
+            # Note: Membership will be automatically updated by signals
+            payment.status = 'successful'
             payment.paid_at = timezone.now()
             payment.save()
-
-            # Update membership
-            membership = payment.membership
-
-            if payment.payment_purpose == 'registration':
-                membership.registration_paid = True
-                membership.registration_payment_date = timezone.now()
-                membership.status = 'active'
-            elif payment.payment_purpose == 'annual_dues':
-                membership.annual_dues_paid_for_year = payment.subscription_year
-                membership.subscription_start_date = date(payment.subscription_year, 1, 1)
-                membership.subscription_end_date = date(payment.subscription_year, 12, 31)
-                membership.last_annual_dues_payment_date = timezone.now()
-                membership.status = 'active'
-                membership.access_suspended = False
-
-            membership.save()
 
             logger.info(f"Payment verified successfully: {reference}")
             messages.success(request, 'Payment successful! Your membership has been updated.')
@@ -1333,7 +1316,7 @@ def payment_selection(request):
     Shows appropriate pricing and allows user to choose payment type.
     """
     from datetime import date
-    from .models import Membership, MembershipPricing, Payment
+    from .models import Membership, MembershipPricing
 
     # Get or create membership for current user
     membership, created = Membership.objects.get_or_create(

@@ -597,7 +597,8 @@ class PaymentAdmin(ImportExportModelAdmin):
 
     fieldsets = (
         ('Payment Information', {
-            'fields': ('membership', 'payment_purpose', 'subscription_year', 'amount', 'currency', 'payment_method', 'status')
+            'fields': ('membership', 'payment_purpose', 'subscription_year', 'amount', 'currency', 'payment_method', 'status'),
+            'description': 'Note: Changing payment status to "Successful" will automatically update the associated membership.'
         }),
         ('Payment Gateway', {
             'fields': ('paystack_reference', 'paystack_access_code', 'gateway_response')
