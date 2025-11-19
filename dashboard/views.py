@@ -1414,3 +1414,379 @@ def renewal(request):
     }
 
     return render(request, 'dashboard/renewal.html', context)
+
+
+@login_required
+def download_certificate(request):
+    """Generate and download membership certificate as PDF"""
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch, cm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from io import BytesIO
+    import qrcode
+    from datetime import date
+
+    # Get membership
+    try:
+        membership = Membership.objects.get(member=request.user)
+    except Membership.DoesNotExist:
+        messages.error(request, 'No membership found.')
+        return redirect('dashboard:profile')
+
+    # Check if user can download certificate
+    if not membership.can_download_certificate:
+        messages.error(request, 'You do not have permission to download the certificate. Please ensure your annual dues are paid.')
+        return redirect('dashboard:profile')
+
+    # Create PDF buffer
+    buffer = BytesIO()
+
+    # Create the PDF document (landscape A4)
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        rightMargin=1*cm,
+        leftMargin=1*cm,
+        topMargin=1*cm,
+        bottomMargin=1*cm
+    )
+
+    # Styles
+    styles = getSampleStyleSheet()
+
+    # Custom styles
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=36,
+        textColor=colors.HexColor('#1a5f2a'),
+        alignment=TA_CENTER,
+        spaceAfter=20,
+    )
+
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=18,
+        textColor=colors.HexColor('#333333'),
+        alignment=TA_CENTER,
+        spaceAfter=30,
+    )
+
+    body_style = ParagraphStyle(
+        'Body',
+        parent=styles['Normal'],
+        fontSize=14,
+        textColor=colors.HexColor('#333333'),
+        alignment=TA_CENTER,
+        spaceAfter=10,
+    )
+
+    name_style = ParagraphStyle(
+        'Name',
+        parent=styles['Heading2'],
+        fontSize=28,
+        textColor=colors.HexColor('#1a5f2a'),
+        alignment=TA_CENTER,
+        spaceAfter=20,
+    )
+
+    # Build content
+    elements = []
+
+    # Add spacing at top
+    elements.append(Spacer(1, 1*cm))
+
+    # Title
+    elements.append(Paragraph("AKILIMO Nigeria Association", title_style))
+
+    # Subtitle
+    elements.append(Paragraph("Certificate of Membership", subtitle_style))
+
+    # Decorative line
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Certificate text
+    elements.append(Paragraph("This is to certify that", body_style))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Member name
+    full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+    elements.append(Paragraph(f"<b>{full_name}</b>", name_style))
+
+    elements.append(Spacer(1, 0.3*cm))
+
+    # Membership details
+    elements.append(Paragraph(
+        f"is a registered member of AKILIMO Nigeria Association",
+        body_style
+    ))
+
+    elements.append(Spacer(1, 0.3*cm))
+
+    # Membership type and certificate number
+    membership_type_display = membership.get_membership_type_display()
+    elements.append(Paragraph(
+        f"Membership Type: <b>{membership_type_display}</b>",
+        body_style
+    ))
+
+    elements.append(Paragraph(
+        f"Certificate Number: <b>{membership.certificate_number}</b>",
+        body_style
+    ))
+
+    if membership.annual_dues_paid_for_year:
+        elements.append(Paragraph(
+            f"Valid for: <b>{membership.annual_dues_paid_for_year}</b>",
+            body_style
+        ))
+
+    elements.append(Spacer(1, 1*cm))
+
+    # Generate QR code for verification
+    qr = qrcode.QRCode(version=1, box_size=4, border=1)
+    verification_url = request.build_absolute_uri(f'/dashboard/verify/{membership.qr_code}/')
+    qr.add_data(verification_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+
+    # Save QR to buffer
+    qr_buffer = BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+
+    # Create table with QR code and date
+    qr_image = Image(qr_buffer, width=1.5*inch, height=1.5*inch)
+
+    footer_data = [
+        [qr_image, Paragraph(f"Issue Date: {date.today().strftime('%B %d, %Y')}", body_style)],
+        [Paragraph("Scan to verify", ParagraphStyle('Small', fontSize=8, alignment=TA_CENTER)), '']
+    ]
+
+    footer_table = Table(footer_data, colWidths=[2*inch, 4*inch])
+    footer_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(footer_table)
+
+    # Build PDF
+    doc.build(elements)
+
+    # Mark certificate as generated
+    if not membership.certificate_generated:
+        membership.certificate_generated = True
+        membership.save(update_fields=['certificate_generated'])
+
+    # Get PDF content
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    # Create response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ANA_Certificate_{membership.certificate_number}.pdf"'
+    response.write(pdf)
+
+    logger.info(f"Certificate downloaded for member: {request.user.email}")
+
+    return response
+
+
+@login_required
+def download_id_card(request):
+    """Generate and download membership ID card as PDF"""
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch, cm, mm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.graphics.shapes import Drawing, Rect, String
+    from io import BytesIO
+    import qrcode
+    from datetime import date
+
+    # Get membership
+    try:
+        membership = Membership.objects.get(member=request.user)
+    except Membership.DoesNotExist:
+        messages.error(request, 'No membership found.')
+        return redirect('dashboard:profile')
+
+    # Check if user can download ID card
+    if not membership.can_download_id_card:
+        messages.error(request, 'You do not have permission to download the ID card. Please ensure your annual dues are paid.')
+        return redirect('dashboard:profile')
+
+    # Create PDF buffer
+    buffer = BytesIO()
+
+    # ID card size (credit card size: 85.6mm x 53.98mm, we'll make it slightly larger for printing)
+    card_width = 9 * cm
+    card_height = 5.5 * cm
+
+    # Create the PDF document
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm
+    )
+
+    # Styles
+    styles = getSampleStyleSheet()
+
+    header_style = ParagraphStyle(
+        'Header',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.white,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold',
+    )
+
+    name_style = ParagraphStyle(
+        'Name',
+        parent=styles['Normal'],
+        fontSize=11,
+        textColor=colors.HexColor('#1a5f2a'),
+        alignment=TA_LEFT,
+        fontName='Helvetica-Bold',
+    )
+
+    detail_style = ParagraphStyle(
+        'Detail',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#333333'),
+        alignment=TA_LEFT,
+    )
+
+    # Build content
+    elements = []
+
+    # Instructions
+    elements.append(Paragraph(
+        "<b>AKILIMO Nigeria Association - Membership ID Card</b>",
+        ParagraphStyle('Title', fontSize=14, alignment=TA_CENTER, spaceAfter=20)
+    ))
+
+    elements.append(Paragraph(
+        "Print this page and cut along the dotted line to create your ID card.",
+        ParagraphStyle('Instruction', fontSize=10, alignment=TA_CENTER, spaceAfter=20)
+    ))
+
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=3, border=1)
+    verification_url = request.build_absolute_uri(f'/dashboard/verify/{membership.qr_code}/')
+    qr.add_data(verification_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+
+    qr_buffer = BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+    qr_image = Image(qr_buffer, width=1.2*inch, height=1.2*inch)
+
+    # Member details
+    full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+    membership_type = membership.get_membership_type_display()
+
+    # Get profile for additional info
+    try:
+        profile = request.user.profile
+        organization = profile.partner_organization.name if profile.partner_organization else profile.partner_name or 'N/A'
+    except:
+        organization = 'N/A'
+
+    # Create ID card as a table
+    # Header row (green background)
+    header = Paragraph("AKILIMO NIGERIA ASSOCIATION", header_style)
+
+    # Member info
+    name_para = Paragraph(f"<b>{full_name}</b>", name_style)
+    type_para = Paragraph(f"Type: {membership_type}", detail_style)
+    cert_para = Paragraph(f"ID: {membership.certificate_number}", detail_style)
+    org_para = Paragraph(f"Org: {organization[:30]}", detail_style)
+
+    if membership.annual_dues_paid_for_year:
+        valid_para = Paragraph(f"Valid: {membership.annual_dues_paid_for_year}", detail_style)
+    else:
+        valid_para = Paragraph("", detail_style)
+
+    # Create the card layout
+    card_data = [
+        # Header row
+        [header, ''],
+        # Content row
+        [[name_para, Spacer(1, 3*mm), type_para, cert_para, org_para, valid_para], qr_image],
+    ]
+
+    card_table = Table(card_data, colWidths=[card_width - 3.5*cm, 3.5*cm], rowHeights=[0.8*cm, card_height - 0.8*cm])
+
+    card_table.setStyle(TableStyle([
+        # Header styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f2a')),
+        ('SPAN', (0, 0), (1, 0)),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+
+        # Content styling
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('ALIGN', (0, 1), (0, 1), 'LEFT'),
+        ('ALIGN', (1, 1), (1, 1), 'CENTER'),
+        ('VALIGN', (0, 1), (-1, -1), 'TOP'),
+        ('PADDING', (0, 1), (0, 1), 8),
+        ('PADDING', (1, 1), (1, 1), 5),
+
+        # Border
+        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#1a5f2a')),
+        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#1a5f2a')),
+    ]))
+
+    elements.append(card_table)
+
+    elements.append(Spacer(1, 1*cm))
+
+    # Add cutting guide
+    elements.append(Paragraph(
+        "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
+        ParagraphStyle('Cut', fontSize=8, alignment=TA_CENTER, textColor=colors.gray)
+    ))
+
+    elements.append(Spacer(1, 0.5*cm))
+
+    elements.append(Paragraph(
+        f"Scan QR code to verify membership • Issued: {date.today().strftime('%Y-%m-%d')}",
+        ParagraphStyle('Footer', fontSize=8, alignment=TA_CENTER, textColor=colors.gray)
+    ))
+
+    # Build PDF
+    doc.build(elements)
+
+    # Mark ID card as generated
+    if not membership.id_card_generated:
+        membership.id_card_generated = True
+        membership.save(update_fields=['id_card_generated'])
+
+    # Get PDF content
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    # Create response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ANA_ID_Card_{membership.certificate_number}.pdf"'
+    response.write(pdf)
+
+    logger.info(f"ID card downloaded for member: {request.user.email}")
+
+    return response

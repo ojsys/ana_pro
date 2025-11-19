@@ -24,8 +24,8 @@ urlpatterns = [
     
     # Membership and Certificate URLs
     path('membership/', views.membership_subscription, name='membership_subscription'),
-    # path('certificate/download/', views.download_certificate, name='download_certificate'),
-    # path('id-card/download/', views.download_id_card, name='download_id_card'),
+    path('certificate/download/', views.download_certificate, name='download_certificate'),
+    path('id-card/download/', views.download_id_card, name='download_id_card'),
     # path('verify/<uuid:qr_code>/', views.verify_membership, name='verify_membership'),
     
     # Payment URLs
