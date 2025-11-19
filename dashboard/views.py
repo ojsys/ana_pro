@@ -1462,7 +1462,7 @@ def download_certificate(request):
     title_style = ParagraphStyle(
         'Title',
         parent=styles['Heading1'],
-        fontSize=32,
+        fontSize=34,
         textColor=colors.HexColor('#1a5f2a'),
         alignment=TA_CENTER,
         spaceAfter=25,
@@ -1471,7 +1471,7 @@ def download_certificate(request):
     subtitle_style = ParagraphStyle(
         'Subtitle',
         parent=styles['Normal'],
-        fontSize=16,
+        fontSize=17,
         textColor=colors.HexColor('#333333'),
         alignment=TA_CENTER,
         spaceAfter=10,
@@ -1480,19 +1480,19 @@ def download_certificate(request):
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
-        fontSize=12,
+        fontSize=13,
         textColor=colors.HexColor('#333333'),
         alignment=TA_CENTER,
-        spaceAfter=6,
+        spaceAfter=8,
     )
 
     name_style = ParagraphStyle(
         'Name',
         parent=styles['Heading2'],
-        fontSize=24,
+        fontSize=26,
         textColor=colors.HexColor('#1a5f2a'),
         alignment=TA_CENTER,
-        spaceAfter=10,
+        spaceAfter=12,
     )
 
     # Build content
