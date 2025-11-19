@@ -2,7 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
+from django import forms
 from decimal import Decimal
+from datetime import date, datetime
 from import_export.admin import ImportExportModelAdmin
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
@@ -390,12 +392,89 @@ class UserProfileAdmin(ImportExportModelAdmin):
         return super().get_queryset(request).select_related('user', 'partner_organization')
 
 
+# Inline for showing payments in Membership admin
+class PaymentInline(admin.TabularInline):
+    """Show all payments for this membership"""
+    model = Payment
+    extra = 0
+    can_delete = False
+    readonly_fields = [
+        'payment_id_short', 'payment_purpose_display', 'amount_with_currency',
+        'status_badge', 'subscription_year', 'paid_at', 'created_at'
+    ]
+    fields = [
+        'payment_id_short', 'payment_purpose_display', 'subscription_year',
+        'amount_with_currency', 'status_badge', 'payment_method', 'paid_at'
+    ]
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def payment_id_short(self, obj):
+        """Display shortened payment ID with link"""
+        if obj.pk:
+            url = f'/admin/dashboard/payment/{obj.pk}/change/'
+            return format_html('<a href="{}">{}</a>', url, str(obj.payment_id)[:8].upper())
+        return '-'
+    payment_id_short.short_description = 'Payment ID'
+
+    def payment_purpose_display(self, obj):
+        """Display payment purpose with badge"""
+        colors = {'registration': 'primary', 'annual_dues': 'success'}
+        color = colors.get(obj.payment_purpose, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color,
+            obj.get_payment_purpose_display() if obj.pk else '-'
+        )
+    payment_purpose_display.short_description = 'Purpose'
+
+    def amount_with_currency(self, obj):
+        """Display amount with currency symbol"""
+        if obj.pk:
+            return f'₦{obj.amount:,.2f}'
+        return '-'
+    amount_with_currency.short_description = 'Amount'
+
+    def status_badge(self, obj):
+        """Display status with color coding"""
+        if not obj.pk:
+            return '-'
+        status_colors = {
+            'successful': 'success',
+            'pending': 'warning',
+            'processing': 'info',
+            'failed': 'danger',
+        }
+        color = status_colors.get(obj.status, 'secondary')
+        return format_html('<span class="badge bg-{}">{}</span>', color, obj.get_status_display())
+    status_badge.short_description = 'Status'
+
+
+# Custom Form for Membership with better date/time widgets
+class MembershipAdminForm(forms.ModelForm):
+    """Custom form for Membership admin with date/time pickers"""
+
+    class Meta:
+        model = Membership
+        fields = '__all__'
+        widgets = {
+            'subscription_start_date': forms.DateInput(attrs={'type': 'date'}),
+            'subscription_end_date': forms.DateInput(attrs={'type': 'date'}),
+            'registration_payment_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'last_annual_dues_payment_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+
 @admin.register(Membership)
 class MembershipAdmin(ImportExportModelAdmin):
     resource_class = MembershipResource
+    form = MembershipAdminForm  # Use custom form with date/time pickers
+    inlines = [PaymentInline]  # Show payment history inline
+
     list_display = [
         'certificate_number', 'member', 'membership_type', 'subscription_status_display',
-        'registration_status', 'subscription_year_display', 'access_status', 'created_at'
+        'registration_status', 'subscription_year_display', 'recent_payment_info', 'access_status', 'created_at'
     ]
     list_filter = [
         'membership_type', 'status', 'registration_paid', 'has_platform_access',
@@ -407,7 +486,10 @@ class MembershipAdmin(ImportExportModelAdmin):
         'subscription_status_text', 'has_active_subscription', 'days_until_expiry', 'needs_renewal'
     ]
     date_hierarchy = 'created_at'
-    actions = ['activate_subscription', 'suspend_access', 'restore_access']
+    actions = [
+        'activate_subscription', 'suspend_access', 'restore_access',
+        'mark_annual_dues_paid_current_year', 'mark_annual_dues_paid_next_year'
+    ]
 
     fieldsets = (
         ('Member Information', {
@@ -423,7 +505,12 @@ class MembershipAdmin(ImportExportModelAdmin):
                 'subscription_start_date', 'subscription_end_date',
                 'last_annual_dues_payment_date'
             ),
-            'description': 'Annual membership dues tracking (Jan 1 - Dec 31)'
+            'description': (
+                'Annual membership dues tracking. '
+                '<strong>Automatic:</strong> When a Paystack payment is successful, these fields update automatically. '
+                '<strong>Manual:</strong> Use date pickers for custom periods, or use admin actions to mark as paid. '
+                'See payment history below.'
+            )
         }),
         ('Access Control', {
             'fields': (
@@ -503,6 +590,33 @@ class MembershipAdmin(ImportExportModelAdmin):
         return format_html('<span class="badge bg-warning">⚠ Pending</span>')
     registration_status.short_description = 'Registration'
 
+    def recent_payment_info(self, obj):
+        """Display most recent successful payment from Paystack"""
+        recent_payment = obj.payments.filter(status='successful').order_by('-paid_at').first()
+
+        if recent_payment:
+            purpose_icons = {
+                'registration': '🎫',
+                'annual_dues': '💳'
+            }
+            icon = purpose_icons.get(recent_payment.payment_purpose, '💰')
+
+            if recent_payment.paid_at:
+                # Show relative time (e.g., "2 days ago")
+                from django.utils.timesince import timesince
+                time_ago = timesince(recent_payment.paid_at)
+
+                return format_html(
+                    '<span title="₦{:,.2f} - {}">{} {} ago</span>',
+                    recent_payment.amount,
+                    recent_payment.get_payment_purpose_display(),
+                    icon,
+                    time_ago.split(',')[0]  # Show only the first part (e.g., "2 days" not "2 days, 3 hours")
+                )
+
+        return format_html('<span style="color: #999;">No payments</span>')
+    recent_payment_info.short_description = 'Last Payment'
+
     def subscription_year_display(self, obj):
         """Display subscription year with status indicator"""
         from datetime import date
@@ -578,6 +692,57 @@ class MembershipAdmin(ImportExportModelAdmin):
             count += 1
 
         messages.success(request, f'Restored access for {count} membership(s).')
+
+    def mark_annual_dues_paid_current_year(self, request, queryset):
+        """Mark selected members as having paid annual dues for current year"""
+        from django.contrib import messages
+        from django.utils import timezone
+
+        current_year = date.today().year
+        count = 0
+
+        for membership in queryset:
+            membership.annual_dues_paid_for_year = current_year
+            membership.subscription_start_date = date(current_year, 1, 1)
+            membership.subscription_end_date = date(current_year, 12, 31)
+            membership.last_annual_dues_payment_date = timezone.now()
+            membership.status = 'active'
+            membership.access_suspended = False
+            membership.save()
+            count += 1
+
+        messages.success(
+            request,
+            f'Marked {count} member(s) as paid for {current_year}. '
+            f'Subscription dates set to Jan 1 - Dec 31, {current_year}.'
+        )
+    mark_annual_dues_paid_current_year.short_description = f'✓ Mark annual dues PAID for {date.today().year}'
+
+    def mark_annual_dues_paid_next_year(self, request, queryset):
+        """Mark selected members as having paid annual dues for next year"""
+        from django.contrib import messages
+        from django.utils import timezone
+
+        current_year = date.today().year
+        next_year = current_year + 1
+        count = 0
+
+        for membership in queryset:
+            membership.annual_dues_paid_for_year = next_year
+            membership.subscription_start_date = date(next_year, 1, 1)
+            membership.subscription_end_date = date(next_year, 12, 31)
+            membership.last_annual_dues_payment_date = timezone.now()
+            membership.status = 'active'
+            membership.access_suspended = False
+            membership.save()
+            count += 1
+
+        messages.success(
+            request,
+            f'Marked {count} member(s) as paid for {next_year}. '
+            f'Subscription dates set to Jan 1 - Dec 31, {next_year}.'
+        )
+    mark_annual_dues_paid_next_year.short_description = f'✓ Mark annual dues PAID for {date.today().year + 1}'
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('member')
