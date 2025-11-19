@@ -1498,8 +1498,23 @@ def download_certificate(request):
     # Build content
     elements = []
 
-    # Add spacing at top
-    elements.append(Spacer(1, 1*cm))
+    # Add logo at top center
+    import os
+    from django.conf import settings
+
+    logo_path = os.path.join(settings.BASE_DIR, 'ana_logo.png')
+    if not os.path.exists(logo_path):
+        # Try media folder
+        logo_path = os.path.join(settings.MEDIA_ROOT, 'site', 'ana_logo.png')
+
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=1.5*inch, height=1.5*inch)
+        logo.hAlign = 'CENTER'
+        elements.append(logo)
+        elements.append(Spacer(1, 0.5*cm))
+    else:
+        # Add spacing if no logo
+        elements.append(Spacer(1, 1*cm))
 
     # Title
     elements.append(Paragraph("AKILIMO Nigeria Association", title_style))
@@ -1674,10 +1689,24 @@ def download_id_card(request):
     # Build content
     elements = []
 
+    # Add logo at top
+    import os
+    from django.conf import settings
+
+    logo_path = os.path.join(settings.BASE_DIR, 'ana_logo.png')
+    if not os.path.exists(logo_path):
+        logo_path = os.path.join(settings.MEDIA_ROOT, 'site', 'ana_logo.png')
+
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=0.8*inch, height=0.8*inch)
+        logo.hAlign = 'CENTER'
+        elements.append(logo)
+        elements.append(Spacer(1, 0.3*cm))
+
     # Instructions
     elements.append(Paragraph(
         "<b>AKILIMO Nigeria Association - Membership ID Card</b>",
-        ParagraphStyle('Title', fontSize=14, alignment=TA_CENTER, spaceAfter=20)
+        ParagraphStyle('Title', fontSize=14, alignment=TA_CENTER, spaceAfter=10)
     ))
 
     elements.append(Paragraph(
@@ -1790,3 +1819,69 @@ def download_id_card(request):
     logger.info(f"ID card downloaded for member: {request.user.email}")
 
     return response
+
+
+def verify_membership(request, qr_code):
+    """
+    Public view to verify membership via QR code.
+    Anyone can access this to verify a member's status.
+    """
+    from datetime import date
+
+    try:
+        membership = Membership.objects.select_related('member').get(qr_code=qr_code)
+
+        # Get member details
+        member = membership.member
+        full_name = f"{member.first_name} {member.last_name}".strip() or member.username
+
+        # Get organization
+        try:
+            profile = member.profile
+            organization = profile.partner_organization.name if profile.partner_organization else profile.partner_name or None
+        except:
+            organization = None
+
+        # Determine verification status
+        is_valid = False
+        status_message = ""
+        status_class = "danger"
+
+        current_year = date.today().year
+
+        if membership.access_suspended:
+            status_message = "Membership Suspended"
+            status_class = "warning"
+        elif membership.has_active_subscription:
+            is_valid = True
+            status_message = f"Valid Member ({membership.annual_dues_paid_for_year})"
+            status_class = "success"
+        elif membership.annual_dues_paid_for_year and membership.annual_dues_paid_for_year < current_year:
+            status_message = f"Expired ({membership.annual_dues_paid_for_year})"
+            status_class = "danger"
+        elif membership.registration_paid and not membership.annual_dues_paid_for_year:
+            status_message = "Registered (Annual Dues Pending)"
+            status_class = "warning"
+        else:
+            status_message = "Inactive"
+            status_class = "secondary"
+
+        context = {
+            'membership': membership,
+            'member_name': full_name,
+            'organization': organization,
+            'is_valid': is_valid,
+            'status_message': status_message,
+            'status_class': status_class,
+            'current_year': current_year,
+            'found': True,
+        }
+
+    except Membership.DoesNotExist:
+        context = {
+            'found': False,
+            'status_message': 'Invalid QR Code',
+            'status_class': 'danger',
+        }
+
+    return render(request, 'dashboard/verify_membership.html', context)

@@ -13,7 +13,7 @@
 <div class="page-header">
     <h1 class="page-title">
         <span class="material-icons">
-            {% if is_valid %}verified{% else %}error{% endif %}
+            {% if is_valid %}verified{% elif found %}warning{% else %}error{% endif %}
         </span>
         Membership Verification
     </h1>
@@ -24,7 +24,28 @@
     <div class="col-lg-8">
         <div class="chart-card">
             <div class="chart-body text-center">
-                {% if is_valid %}
+                {% if not found %}
+                    <!-- QR Code Not Found -->
+                    <div class="mb-4">
+                        <div class="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 80px; height: 80px;">
+                            <span class="material-icons text-white" style="font-size: 48px;">error</span>
+                        </div>
+                        <h2 class="text-danger mb-2">✗ Invalid QR Code</h2>
+                        <p class="text-muted">This QR code does not match any membership in our system</p>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons me-2">warning</span>
+                            <div>
+                                <strong>Verification Failed:</strong><br>
+                                The QR code or verification link is invalid or does not correspond to any registered membership.
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif is_valid %}
                     <!-- Valid Membership -->
                     <div class="mb-4">
                         <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
@@ -45,7 +66,7 @@
                         <div class="col-md-6">
                             <div class="metric-card">
                                 <div class="metric-label">Certificate Number</div>
-                                <div class="metric-value" style="font-size: 1.5rem;">{{ certificate_number }}</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ membership.certificate_number }}</div>
                             </div>
                         </div>
                     </div>
@@ -54,23 +75,29 @@
                         <div class="col-md-6">
                             <div class="metric-card">
                                 <div class="metric-label">Membership Type</div>
-                                <div class="metric-value" style="font-size: 1.5rem;">{{ membership_type }}</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ membership.get_membership_type_display }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="metric-card">
-                                <div class="metric-label">Valid Until</div>
-                                <div class="metric-value" style="font-size: 1.5rem;">{{ valid_until|date:"M d, Y" }}</div>
+                                <div class="metric-label">Valid For Year</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">
+                                    {% if membership.annual_dues_paid_for_year %}
+                                        {{ membership.annual_dues_paid_for_year }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {% if partner_name and partner_name != 'N/A' %}
+                    {% if organization %}
                     <div class="row g-4 mb-4">
                         <div class="col-12">
                             <div class="metric-card">
                                 <div class="metric-label">Partner Organization</div>
-                                <div class="metric-value" style="font-size: 1.5rem;">{{ partner_name }}</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ organization }}</div>
                             </div>
                         </div>
                     </div>
@@ -87,34 +114,64 @@
                     </div>
 
                 {% else %}
-                    <!-- Invalid Membership -->
+                    <!-- Membership Found But Not Active -->
                     <div class="mb-4">
-                        <div class="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                        <div class="bg-{{ status_class }} rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                              style="width: 80px; height: 80px;">
-                            <span class="material-icons text-white" style="font-size: 48px;">error</span>
+                            <span class="material-icons text-white" style="font-size: 48px;">
+                                {% if status_class == 'warning' %}warning{% else %}cancel{% endif %}
+                            </span>
                         </div>
-                        <h2 class="text-danger mb-2">✗ Invalid Membership</h2>
-                        <p class="text-muted">This verification code is not valid or the membership has expired</p>
+                        <h2 class="text-{{ status_class }} mb-2">{{ status_message }}</h2>
+                        <p class="text-muted">This membership is registered but not currently active</p>
                     </div>
 
-                    <div class="alert alert-danger" role="alert">
-                        <div class="d-flex align-items-center">
-                            <span class="material-icons me-2">warning</span>
-                            <div>
-                                <strong>Verification Failed:</strong><br>
-                                {{ error_message|default:"The QR code or verification link is invalid, expired, or does not correspond to an active membership." }}
+                    <!-- Show member info anyway -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Member Name</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ member_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Certificate Number</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ membership.certificate_number }}</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-4">
-                        <h5>What does this mean?</h5>
-                        <ul class="text-start text-muted">
-                            <li>The membership may have expired</li>
-                            <li>The verification code may be invalid or tampered with</li>
-                            <li>The member may have cancelled their subscription</li>
-                            <li>This may be a fraudulent certificate</li>
-                        </ul>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Membership Type</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">{{ membership.get_membership_type_display }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Status</div>
+                                <div class="metric-value" style="font-size: 1.5rem;">
+                                    <span class="badge bg-{{ status_class }}">{{ status_message }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-{{ status_class }}" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons me-2">info</span>
+                            <div>
+                                {% if status_class == 'danger' %}
+                                    <strong>Membership Expired:</strong> This member's subscription for {{ membership.annual_dues_paid_for_year }} has expired.
+                                {% elif status_class == 'warning' %}
+                                    <strong>Action Required:</strong> This member needs to complete annual dues payment to activate full membership benefits.
+                                {% else %}
+                                    <strong>Inactive:</strong> This membership is currently inactive.
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 {% endif %}
 
