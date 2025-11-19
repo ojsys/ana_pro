@@ -1465,7 +1465,7 @@ def download_certificate(request):
         fontSize=32,
         textColor=colors.HexColor('#1a5f2a'),
         alignment=TA_CENTER,
-        spaceAfter=10,
+        spaceAfter=25,
     )
 
     subtitle_style = ParagraphStyle(
@@ -1474,7 +1474,7 @@ def download_certificate(request):
         fontSize=16,
         textColor=colors.HexColor('#333333'),
         alignment=TA_CENTER,
-        spaceAfter=15,
+        spaceAfter=10,
     )
 
     body_style = ParagraphStyle(
