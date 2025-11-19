@@ -1451,8 +1451,8 @@ def download_certificate(request):
         pagesize=landscape(A4),
         rightMargin=1*cm,
         leftMargin=1*cm,
-        topMargin=1*cm,
-        bottomMargin=1*cm
+        topMargin=0.5*cm,
+        bottomMargin=0.5*cm
     )
 
     # Styles
@@ -1462,37 +1462,37 @@ def download_certificate(request):
     title_style = ParagraphStyle(
         'Title',
         parent=styles['Heading1'],
-        fontSize=36,
+        fontSize=32,
         textColor=colors.HexColor('#1a5f2a'),
         alignment=TA_CENTER,
-        spaceAfter=20,
+        spaceAfter=10,
     )
 
     subtitle_style = ParagraphStyle(
         'Subtitle',
         parent=styles['Normal'],
-        fontSize=18,
+        fontSize=16,
         textColor=colors.HexColor('#333333'),
         alignment=TA_CENTER,
-        spaceAfter=30,
+        spaceAfter=15,
     )
 
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
-        fontSize=14,
+        fontSize=12,
         textColor=colors.HexColor('#333333'),
         alignment=TA_CENTER,
-        spaceAfter=10,
+        spaceAfter=6,
     )
 
     name_style = ParagraphStyle(
         'Name',
         parent=styles['Heading2'],
-        fontSize=28,
+        fontSize=24,
         textColor=colors.HexColor('#1a5f2a'),
         alignment=TA_CENTER,
-        spaceAfter=20,
+        spaceAfter=10,
     )
 
     # Build content
@@ -1508,13 +1508,13 @@ def download_certificate(request):
         logo_path = os.path.join(settings.MEDIA_ROOT, 'site', 'ana_logo.png')
 
     if os.path.exists(logo_path):
-        logo = Image(logo_path, width=1.5*inch, height=1.5*inch)
+        logo = Image(logo_path, width=1.2*inch, height=1.2*inch)
         logo.hAlign = 'CENTER'
         elements.append(logo)
-        elements.append(Spacer(1, 0.5*cm))
+        elements.append(Spacer(1, 0.3*cm))
     else:
         # Add spacing if no logo
-        elements.append(Spacer(1, 1*cm))
+        elements.append(Spacer(1, 0.5*cm))
 
     # Title
     elements.append(Paragraph("AKILIMO Nigeria Association", title_style))
@@ -1523,17 +1523,17 @@ def download_certificate(request):
     elements.append(Paragraph("Certificate of Membership", subtitle_style))
 
     # Decorative line
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.3*cm))
 
     # Certificate text
     elements.append(Paragraph("This is to certify that", body_style))
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.3*cm))
 
     # Member name
     full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
     elements.append(Paragraph(f"<b>{full_name}</b>", name_style))
 
-    elements.append(Spacer(1, 0.3*cm))
+    elements.append(Spacer(1, 0.2*cm))
 
     # Membership details
     elements.append(Paragraph(
@@ -1541,7 +1541,7 @@ def download_certificate(request):
         body_style
     ))
 
-    elements.append(Spacer(1, 0.3*cm))
+    elements.append(Spacer(1, 0.2*cm))
 
     # Membership type and certificate number
     membership_type_display = membership.get_membership_type_display()
@@ -1561,7 +1561,7 @@ def download_certificate(request):
             body_style
         ))
 
-    elements.append(Spacer(1, 1*cm))
+    elements.append(Spacer(1, 0.5*cm))
 
     # Generate QR code for verification
     qr = qrcode.QRCode(version=1, box_size=4, border=1)
@@ -1576,14 +1576,14 @@ def download_certificate(request):
     qr_buffer.seek(0)
 
     # Create table with QR code and date
-    qr_image = Image(qr_buffer, width=1.5*inch, height=1.5*inch)
+    qr_image = Image(qr_buffer, width=1.2*inch, height=1.2*inch)
 
     footer_data = [
         [qr_image, Paragraph(f"Issue Date: {date.today().strftime('%B %d, %Y')}", body_style)],
         [Paragraph("Scan to verify", ParagraphStyle('Small', fontSize=8, alignment=TA_CENTER)), '']
     ]
 
-    footer_table = Table(footer_data, colWidths=[2*inch, 4*inch])
+    footer_table = Table(footer_data, colWidths=[1.5*inch, 4*inch])
     footer_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
