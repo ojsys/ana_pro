@@ -227,3 +227,5 @@ media_uploads/
 # Local development settings override
 local_settings.py
 settings_local.py
+
+*.sh

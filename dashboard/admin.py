@@ -493,8 +493,8 @@ class MembershipAdmin(ImportExportModelAdmin):
     def registration_status(self, obj):
         """Display registration payment status with date"""
         if obj.registration_paid:
-            if obj.registration_date:
-                date_str = obj.registration_date.strftime('%Y-%m-%d')
+            if obj.registration_payment_date:
+                date_str = obj.registration_payment_date.strftime('%Y-%m-%d')
                 return format_html(
                     '<span class="badge bg-success" title="Paid on {}">✓ Paid</span>',
                     date_str

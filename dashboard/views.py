@@ -1292,7 +1292,7 @@ def verify_payment(request):
 
             if payment.payment_purpose == 'registration':
                 membership.registration_paid = True
-                membership.registration_date = date.today()
+                membership.registration_payment_date = timezone.now()
                 membership.status = 'active'
             elif payment.payment_purpose == 'annual_dues':
                 membership.annual_dues_paid_for_year = payment.subscription_year
