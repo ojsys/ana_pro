@@ -443,9 +443,9 @@ class SiteSettings(models.Model):
     )
     footer_tagline = models.CharField(
         max_length=200,
-        default="Built with ❤️ for Nigerian Farmers",
+        default="Built with love for Nigerian Farmers",
         verbose_name="Footer Tagline",
-        help_text="Tagline shown in footer. Example: 'Built with ❤️ for Nigerian Farmers' or 'Made with Love for Farmers'"
+        help_text="Tagline shown in footer. Example: 'Built with love for Nigerian Farmers' or 'Made with Love for Farmers'"
     )
 
     # Images
