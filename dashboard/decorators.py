@@ -6,6 +6,9 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
+# TEMPORARY: Set to True to bypass payment requirements for free access
+BYPASS_PAYMENT_REQUIREMENTS = True
+
 
 def require_active_subscription(view_func):
     """
@@ -18,10 +21,23 @@ def require_active_subscription(view_func):
     4. Access is not suspended
 
     Redirects to appropriate page if requirements not met.
+
+    NOTE: If BYPASS_PAYMENT_REQUIREMENTS is True, all payment checks are bypassed.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
+        # BYPASS: Skip all payment checks if bypass flag is enabled
+        if BYPASS_PAYMENT_REQUIREMENTS:
+            # Create membership automatically if it doesn't exist
+            if not hasattr(request.user, 'membership'):
+                from .models import Membership
+                Membership.objects.get_or_create(
+                    member=request.user,
+                    defaults={'status': 'active'}
+                )
+            return view_func(request, *args, **kwargs)
+
         # Check if user has a membership
         if not hasattr(request.user, 'membership'):
             messages.error(
@@ -67,10 +83,23 @@ def require_registration_payment(view_func):
 
     Used for basic features that should be accessible after registration
     but before annual dues payment.
+
+    NOTE: If BYPASS_PAYMENT_REQUIREMENTS is True, all payment checks are bypassed.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
+        # BYPASS: Skip all payment checks if bypass flag is enabled
+        if BYPASS_PAYMENT_REQUIREMENTS:
+            # Create membership automatically if it doesn't exist
+            if not hasattr(request.user, 'membership'):
+                from .models import Membership
+                Membership.objects.get_or_create(
+                    member=request.user,
+                    defaults={'status': 'active'}
+                )
+            return view_func(request, *args, **kwargs)
+
         # Check if user has a membership
         if not hasattr(request.user, 'membership'):
             messages.error(
@@ -98,12 +127,25 @@ def admin_or_subscription_required(view_func):
     """
     Decorator for views that should be accessible by admins regardless of subscription,
     but require active subscription for regular members.
+
+    NOTE: If BYPASS_PAYMENT_REQUIREMENTS is True, all payment checks are bypassed.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
         # Admins can always access
         if request.user.is_staff or request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+
+        # BYPASS: Skip all payment checks if bypass flag is enabled
+        if BYPASS_PAYMENT_REQUIREMENTS:
+            # Create membership automatically if it doesn't exist
+            if not hasattr(request.user, 'membership'):
+                from .models import Membership
+                Membership.objects.get_or_create(
+                    member=request.user,
+                    defaults={'status': 'active'}
+                )
             return view_func(request, *args, **kwargs)
 
         # For non-admins, require active subscription
