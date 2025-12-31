@@ -447,3 +447,298 @@ class SiteSettings(models.Model):
         if not self.pk and SiteSettings.objects.exists():
             self.pk = SiteSettings.objects.first().pk
         super().save(*args, **kwargs)
+
+
+class HeroSlide(models.Model):
+    """Hero slider slides for homepage"""
+    title = models.CharField(max_length=200, help_text="Main slide title")
+    subtitle = models.CharField(max_length=300, blank=True, help_text="Slide subtitle")
+    description = models.TextField(blank=True, help_text="Slide description text")
+    background_image = models.ImageField(
+        upload_to='hero_slides/',
+        blank=True,
+        null=True,
+        help_text="Background image for the slide"
+    )
+    background_color = models.CharField(
+        max_length=50,
+        default="linear-gradient(135deg, #1C4523 0%, #4CAF50 100%)",
+        help_text="CSS background color or gradient"
+    )
+
+    # Buttons
+    button_1_text = models.CharField(max_length=50, blank=True, help_text="First button text")
+    button_1_url = models.CharField(max_length=200, blank=True, help_text="First button URL")
+    button_1_icon = models.CharField(max_length=50, blank=True, help_text="Bootstrap icon class")
+
+    button_2_text = models.CharField(max_length=50, blank=True, help_text="Second button text")
+    button_2_url = models.CharField(max_length=200, blank=True, help_text="Second button URL")
+    button_2_icon = models.CharField(max_length=50, blank=True, help_text="Bootstrap icon class")
+
+    # Display
+    order = models.IntegerField(default=0, help_text="Slide order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Hero Slide"
+        verbose_name_plural = "Hero Slides"
+
+    def __str__(self):
+        return self.title
+
+
+class MissionVision(models.Model):
+    """Mission and Vision statements"""
+    mission_title = models.CharField(max_length=100, default="Our Mission")
+    mission_content = models.TextField(
+        help_text="Mission statement content",
+        default="To promote and scale the use of AKILIMO's evidence-based agronomic advisory services across Nigeria."
+    )
+    mission_icon = models.CharField(
+        max_length=50,
+        default="bi-crosshair",
+        help_text="Bootstrap icon class for mission"
+    )
+
+    vision_title = models.CharField(max_length=100, default="Our Vision")
+    vision_content = models.TextField(
+        help_text="Vision statement content",
+        default="A thriving agricultural sector in Nigeria where every smallholder farmer has access to data-driven decision support tools."
+    )
+    vision_icon = models.CharField(
+        max_length=50,
+        default="bi-lightbulb",
+        help_text="Bootstrap icon class for vision"
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Mission & Vision"
+        verbose_name_plural = "Mission & Vision"
+
+    def __str__(self):
+        return "Mission & Vision Statements"
+
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists
+        if not self.pk and MissionVision.objects.exists():
+            self.pk = MissionVision.objects.first().pk
+        super().save(*args, **kwargs)
+
+
+class OperationalPillar(models.Model):
+    """AKILIMO's Four Operational Pillars"""
+    title = models.CharField(max_length=100, help_text="Pillar title")
+    description = models.TextField(help_text="Pillar description")
+    icon = models.CharField(
+        max_length=50,
+        help_text="Bootstrap icon class (e.g., 'bi-clipboard-data')"
+    )
+
+    # Display
+    order = models.IntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Operational Pillar"
+        verbose_name_plural = "Operational Pillars"
+
+    def __str__(self):
+        return self.title
+
+
+class PlatformFeature(models.Model):
+    """AKILIMO Platform Features"""
+    title = models.CharField(max_length=100, help_text="Feature title")
+    description = models.TextField(help_text="Feature description")
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Bootstrap icon class (e.g., 'bi-check-circle-fill')"
+    )
+
+    # Display
+    order = models.IntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Platform Feature"
+        verbose_name_plural = "Platform Features"
+
+    def __str__(self):
+        return self.title
+
+
+class TrainingProgram(models.Model):
+    """Training Programs and Capacity Building"""
+    title = models.CharField(max_length=100, help_text="Program title")
+    description = models.TextField(help_text="Program description")
+    icon = models.CharField(
+        max_length=50,
+        help_text="Bootstrap icon class (e.g., 'bi-people-fill')"
+    )
+
+    # Display
+    order = models.IntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Training Program"
+        verbose_name_plural = "Training Programs"
+
+    def __str__(self):
+        return self.title
+
+
+class SupportTeam(models.Model):
+    """AKILIMO Support Teams (Content, Tech, Business)"""
+    name = models.CharField(max_length=100, help_text="Team name (e.g., 'CONTENT Team')")
+    description = models.TextField(blank=True, help_text="Brief team description")
+    icon = models.CharField(
+        max_length=50,
+        help_text="Bootstrap icon class (e.g., 'bi-file-text')"
+    )
+    responsibilities = models.TextField(
+        help_text="Team responsibilities (one per line)",
+        blank=True
+    )
+
+    # Display
+    order = models.IntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Support Team"
+        verbose_name_plural = "Support Teams"
+
+    def __str__(self):
+        return self.name
+
+    def get_responsibilities_list(self):
+        """Return responsibilities as a list"""
+        if self.responsibilities:
+            return [r.strip() for r in self.responsibilities.split('\n') if r.strip()]
+        return []
+
+
+class CallToAction(models.Model):
+    """Call to Action sections"""
+    PLACEMENT_CHOICES = [
+        ('home', 'Home Page'),
+        ('about', 'About Page'),
+        ('programs', 'Programs Page'),
+        ('news', 'News Detail'),
+        ('page', 'Page Detail'),
+        ('partners', 'Partners Page'),
+        ('all', 'All Pages'),
+    ]
+
+    title = models.CharField(max_length=200, help_text="CTA heading")
+    description = models.TextField(help_text="CTA description text")
+
+    button_1_text = models.CharField(max_length=50, help_text="First button text")
+    button_1_url = models.CharField(max_length=200, help_text="First button URL")
+    button_1_icon = models.CharField(max_length=50, blank=True, help_text="Bootstrap icon class")
+
+    button_2_text = models.CharField(max_length=50, blank=True, help_text="Second button text")
+    button_2_url = models.CharField(max_length=200, blank=True, help_text="Second button URL")
+    button_2_icon = models.CharField(max_length=50, blank=True, help_text="Bootstrap icon class")
+
+    background_style = models.CharField(
+        max_length=200,
+        default="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));",
+        help_text="CSS background style"
+    )
+
+    placement = models.CharField(
+        max_length=20,
+        choices=PLACEMENT_CHOICES,
+        default='all',
+        help_text="Where to display this CTA"
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Call to Action"
+        verbose_name_plural = "Call to Actions"
+
+    def __str__(self):
+        return f"{self.title} ({self.get_placement_display()})"
+
+
+class PageContent(models.Model):
+    """Editable page content sections"""
+    PAGE_CHOICES = [
+        ('home_hero', 'Home - Hero Section'),
+        ('home_about', 'Home - About Section'),
+        ('about_hero', 'About - Hero Section'),
+        ('about_highlights', 'About - Key Highlights'),
+        ('about_org_structure', 'About - Organizational Structure'),
+        ('programs_hero', 'Programs - Hero Section'),
+        ('programs_platform', 'Programs - Platform Description'),
+        ('partners_hero', 'Partners - Hero Section'),
+    ]
+
+    page_section = models.CharField(
+        max_length=50,
+        choices=PAGE_CHOICES,
+        unique=True,
+        help_text="Page section identifier"
+    )
+    title = models.CharField(max_length=200, blank=True, help_text="Section title")
+    subtitle = models.CharField(max_length=300, blank=True, help_text="Section subtitle")
+    content = models.TextField(blank=True, help_text="Section content")
+
+    # Additional fields for flexibility
+    badge_text = models.CharField(max_length=100, blank=True, help_text="Badge or label text")
+    highlight_1 = models.CharField(max_length=100, blank=True)
+    highlight_2 = models.CharField(max_length=100, blank=True)
+    highlight_3 = models.CharField(max_length=100, blank=True)
+
+    is_active = models.BooleanField(default=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Page Content"
+        verbose_name_plural = "Page Contents"
+
+    def __str__(self):
+        return f"{self.get_page_section_display()}"

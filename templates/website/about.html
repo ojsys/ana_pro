@@ -20,27 +20,27 @@
                         About AKILIMO Nigeria Association
                     </h1>
                     <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.4rem; line-height: 1.6; color: rgba(255,255,255,0.9); max-width: 800px; margin: 0 auto;">
-                        Empowering smallholder farmers through digital innovation and sustainable agricultural practices across Nigeria
+                        Promoting AKILIMO's evidence-based agronomic advisory services to empower smallholder farmers across Nigeria
                     </p>
-                    
+
                     <!-- Key Highlights -->
                     <div class="row mt-5" data-aos="fade-up" data-aos-delay="400">
                         <div class="col-md-4 mb-3">
                             <div class="d-flex align-items-center justify-content-center text-white">
-                                <i class="bi bi-award me-2 fs-4"></i>
-                                <span class="fs-5">Excellence in Innovation</span>
+                                <i class="bi bi-graph-up me-2 fs-4"></i>
+                                <span class="fs-5">Data-Driven Insights</span>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <div class="d-flex align-items-center justify-content-center text-white">
-                                <i class="bi bi-globe me-2 fs-4"></i>
-                                <span class="fs-5">Global Partnerships</span>
+                                <i class="bi bi-bullseye me-2 fs-4"></i>
+                                <span class="fs-5">Site-Specific Solutions</span>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <div class="d-flex align-items-center justify-content-center text-white">
-                                <i class="bi bi-heart me-2 fs-4"></i>
-                                <span class="fs-5">Farmer-Focused</span>
+                                <i class="bi bi-people me-2 fs-4"></i>
+                                <span class="fs-5">5,000+ Farmers Validated</span>
                             </div>
                         </div>
                     </div>
@@ -58,28 +58,54 @@
     <section class="section-padding">
         <div class="container">
             <div class="row">
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-body text-center p-5">
-                            <div class="mb-4">
-                                <i class="bi bi-plus-circle display-4" style="color: var(--primary-accent);"></i>
+                {% if mission_vision %}
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-lg">
+                            <div class="card-body text-center p-5">
+                                <div class="mb-4">
+                                    <i class="{{ mission_vision.mission_icon|default:'bi-crosshair' }} display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">{{ mission_vision.mission_title }}</h3>
+                                <p class="card-text lead">{{ mission_vision.mission_content }}</p>
                             </div>
-                            <h3 class="card-title mb-4" style="color: var(--primary-accent);">Our Mission</h3>
-                            <p class="card-text lead">Our mission is to empower smallholder farmers by providing training, site-specific recommendations and market linkages that optimize productivity and profits.</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-body text-center p-5">
-                            <div class="mb-4">
-                                <i class="bi bi-eye display-3" style="color: var(--primary-accent);"></i>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-lg">
+                            <div class="card-body text-center p-5">
+                                <div class="mb-4">
+                                    <i class="{{ mission_vision.vision_icon|default:'bi-lightbulb' }} display-3" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">{{ mission_vision.vision_title }}</h3>
+                                <p class="card-text lead">{{ mission_vision.vision_content }}</p>
                             </div>
-                            <h3 class="card-title mb-4" style="color: var(--primary-accent);">Our Vision</h3>
-                            <p class="card-text lead">Our vision is to create a digitally empowered and resilient agricultural sector, where farmers and value chain actors are enabled to achieve optimal productivity, improved livelihoods, and sustainable development through the adoption of AKILIMO tools.</p>
                         </div>
                     </div>
-                </div>
+                {% else %}
+                    <!-- Default mission & vision if no CMS content exists -->
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-lg">
+                            <div class="card-body text-center p-5">
+                                <div class="mb-4">
+                                    <i class="bi bi-crosshair display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">Our Mission</h3>
+                                <p class="card-text lead">To promote and scale the use of AKILIMO's evidence-based agronomic advisory services across Nigeria, empowering smallholder farmers with site-specific recommendations that optimize productivity and profitability.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-lg">
+                            <div class="card-body text-center p-5">
+                                <div class="mb-4">
+                                    <i class="bi bi-lightbulb display-3" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">Our Vision</h3>
+                                <p class="card-text lead">A thriving agricultural sector in Nigeria where every smallholder farmer has access to data-driven decision support tools, leading to improved livelihoods, sustainable practices, and enhanced food security.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -87,101 +113,103 @@
     <!-- Aims & Objectives Section -->
     <section class="section-padding bg-light-green">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Aims & Objectives</h2>
+            <h2 class="section-title" data-aos="fade-up">AKILIMO's Four Operational Pillars in Nigeria</h2>
             <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Our comprehensive approach to transforming agricultural systems
+                Building on AKILIMO's proven framework to advance agricultural innovation across Nigeria
             </p>
-            
+
             <div class="row">
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3">
-                                    <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
-                                        <span class="fw-bold">1</span>
+                {% if operational_pillars %}
+                    {% for pillar in operational_pillars %}
+                        <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-3">
+                                            <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                                <i class="{{ pillar.icon }}"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h5 class="card-title" style="color: var(--primary-accent);">{{ pillar.title }}</h5>
+                                            <p class="card-text">{{ pillar.description }}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <h5 class="card-title style="color: var(--primary-accent);"">Use, Uptake, and Integration</h5>
-                                    <p class="card-text">Promote the widespread uptake and integration of AKILIMO tools into national agricultural systems and digital extension services across member countries.</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Default pillars if no CMS content exists -->
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                            <i class="bi bi-clipboard-data"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title" style="color: var(--primary-accent);">Advisory Service</h5>
+                                        <p class="card-text">Providing customized decision support for farm operations through evidence-based, site-specific recommendations that account for major production limiting factors using advanced data analytics.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3">
-                                    <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
-                                        <span class="fw-bold">2</span>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                            <i class="bi bi-people-fill"></i>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <h5 class="card-title style="color: var(--primary-accent);"">Capacity Building</h5>
-                                    <p class="card-text">Facilitate training for farmers and value chain actors to foster the exchange of best practices in production, processing, aggregation, and marketing.</p>
+                                    <div>
+                                        <h5 class="card-title" style="color: var(--primary-accent);">Research Community</h5>
+                                        <p class="card-text">Collaborating with farmers, researchers, and global organizations on predictive modeling and agricultural innovation to continuously improve recommendation algorithms.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="300">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3">
-                                    <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
-                                        <span class="fw-bold">3</span>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                            <i class="bi bi-handshake"></i>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <h5 class="card-title style="color: var(--primary-accent);"">Sustainable Agricultural Practices</h5>
-                                    <p class="card-text">Encourage sustainable and inclusive investments to ensure the long-term use and relevance of AKILIMO tools.</p>
+                                    <div>
+                                        <h5 class="card-title" style="color: var(--primary-accent);">Strategic Partnership</h5>
+                                        <p class="card-text">Building win-win scenarios that maximize profitability across value chain networks, connecting farmers with markets, inputs, and financial services through strategic alliances.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="400">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3">
-                                    <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
-                                        <span class="fw-bold">4</span>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                            <i class="bi bi-mortarboard"></i>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <h5 class="card-title style="color: var(--primary-accent);"">Data-Driven Learning</h5>
-                                    <p class="card-text">Develop a robust communication strategy and Monitoring, Evaluation, and Learning (ME&L) system for improved data collection, fostering actionable insights among stakeholders.</p>
+                                    <div>
+                                        <h5 class="card-title" style="color: var(--primary-accent);">Training Platform</h5>
+                                        <p class="card-text">Developing comprehensive training materials and capacity building programs for extension agents, aggregators, and last-mile delivery partners to effectively disseminate AKILIMO recommendations.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="col-lg-12 mb-4" data-aos="fade-up" data-aos-delay="500">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3">
-                                    <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
-                                        <span class="fw-bold">5</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h5 class="card-title style="color: var(--primary-accent);"">Policy Advocacy</h5>
-                                    <p class="card-text">Advocate for the integration of AKILIMO into national agricultural policies, ensuring sustained support through policy initiatives and strategic partnerships.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -199,49 +227,69 @@
                     <div class="card border-0 shadow-lg" data-aos="fade-up" data-aos-delay="200">
                         <div class="card-body p-5">
                             <div class="text-center mb-5">
-                                <h4 class="style="color: var(--primary-accent);" mb-3">AKILIMO Support Teams</h4>
-                                <p class="text-muted">Three core teams supporting the functionality of AKILIMO</p>
+                                <h4 style="color: var(--primary-accent);" class="mb-3">AKILIMO Support Teams</h4>
+                                <p class="text-muted">Core teams supporting the functionality of AKILIMO</p>
                             </div>
-                            
+
                             <div class="row text-center">
-                                <div class="col-lg-4 mb-4">
-                                    <div class="p-4 bg-light-green rounded-3">
-                                        <i class="bi bi-file-text display-4 style="color: var(--primary-accent);" mb-3"></i>
-                                        <h5 class="style="color: var(--primary-accent);"">CONTENT Team</h5>
-                                        <ul class="list-unstyled text-start mt-3">
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content development and review</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Translation into local languages</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Website content inclusion</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content optimization</li>
-                                        </ul>
+                                {% if support_teams %}
+                                    {% for team in support_teams %}
+                                        <div class="col-lg-4 mb-4">
+                                            <div class="p-4 bg-light-green rounded-3">
+                                                <i class="{{ team.icon }} display-4 mb-3" style="color: var(--primary-accent);"></i>
+                                                <h5 style="color: var(--primary-accent);">{{ team.name }}</h5>
+                                                {% if team.description %}
+                                                    <p class="text-muted small">{{ team.description }}</p>
+                                                {% endif %}
+                                                {% if team.responsibilities %}
+                                                    <ul class="list-unstyled text-start mt-3">
+                                                        {% for responsibility in team.get_responsibilities_list %}
+                                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ responsibility }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <!-- Default teams if no CMS content exists -->
+                                    <div class="col-lg-4 mb-4">
+                                        <div class="p-4 bg-light-green rounded-3">
+                                            <i class="bi bi-file-text display-4 mb-3" style="color: var(--primary-accent);"></i>
+                                            <h5 style="color: var(--primary-accent);">CONTENT Team</h5>
+                                            <ul class="list-unstyled text-start mt-3">
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content development and review</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Translation into local languages</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Website content inclusion</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content optimization</li>
+                                            </ul>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="col-lg-4 mb-4">
-                                    <div class="p-4 bg-light-green rounded-3">
-                                        <i class="bi bi-gear display-4 style="color: var(--primary-accent);" mb-3"></i>
-                                        <h5 class="style="color: var(--primary-accent);"">TECH Team</h5>
-                                        <ul class="list-unstyled text-start mt-3">
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Technical solutions development</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Data analysis and monitoring</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>System maintenance</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Bug tracking and resolution</li>
-                                        </ul>
+                                    <div class="col-lg-4 mb-4">
+                                        <div class="p-4 bg-light-green rounded-3">
+                                            <i class="bi bi-gear display-4 mb-3" style="color: var(--primary-accent);"></i>
+                                            <h5 style="color: var(--primary-accent);">TECH Team</h5>
+                                            <ul class="list-unstyled text-start mt-3">
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Technical solutions development</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Data analysis and monitoring</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>System maintenance</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Bug tracking and resolution</li>
+                                            </ul>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="col-lg-4 mb-4">
-                                    <div class="p-4 bg-light-green rounded-3">
-                                        <i class="bi bi-briefcase display-4 style="color: var(--primary-accent);" mb-3"></i>
-                                        <h5 class="style="color: var(--primary-accent);"">BUSINESS Team</h5>
-                                        <ul class="list-unstyled text-start mt-3">
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Business development and grants</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Marketing and promotion</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Partner relationship management</li>
-                                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Revenue generation</li>
-                                        </ul>
+                                    <div class="col-lg-4 mb-4">
+                                        <div class="p-4 bg-light-green rounded-3">
+                                            <i class="bi bi-briefcase display-4 mb-3" style="color: var(--primary-accent);"></i>
+                                            <h5 style="color: var(--primary-accent);">BUSINESS Team</h5>
+                                            <ul class="list-unstyled text-start mt-3">
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Business development and grants</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Marketing and promotion</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Partner relationship management</li>
+                                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Revenue generation</li>
+                                            </ul>
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -257,38 +305,43 @@
             <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
                 Distinguished leaders guiding AKILIMO Nigeria Association's strategic direction
             </p>
-            
+
             <div class="row">
                 {% if bot_members %}
                     {% for member in bot_members %}
                         <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3">
-                                        {% if member.photo %}
-                                            <img src="{{ member.photo.url }}" alt="{{ member.name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
-                                        {% else %}
-                                            <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                                <i class="bi bi-person display-6"></i>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <h5 class="card-title">{{ member.name }}</h5>
-                                    <p class="text-muted mb-2">{{ member.position }}</p>
-                                    {% if member.bio %}
-                                        <small class="text-secondary">{{ member.bio|truncatewords:20 }}</small>
+                            <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                                <!-- Photo Section -->
+                                <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                    {% if member.photo %}
+                                        <img src="{{ member.photo.url }}" alt="{{ member.name }}" style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
+                                    {% else %}
+                                        <div class="d-flex align-items-center justify-content-center h-100">
+                                            <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
+                                        </div>
                                     {% endif %}
-                                    
+                                    <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                        <h5 class="text-white mb-0">{{ member.name }}</h5>
+                                    </div>
+                                </div>
+
+                                <!-- Content Section -->
+                                <div class="card-body p-4">
+                                    <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">{{ member.position }}</p>
+                                    {% if member.bio %}
+                                        <p class="text-secondary small mb-3">{{ member.bio|truncatewords:25 }}</p>
+                                    {% endif %}
+
                                     {% if member.email or member.linkedin_url %}
-                                        <div class="mt-3">
+                                        <div class="d-flex gap-2 mt-3">
                                             {% if member.email %}
-                                                <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-sm me-1">
-                                                    <i class="bi bi-envelope"></i>
+                                                <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-sm flex-fill">
+                                                    <i class="bi bi-envelope me-1"></i>Email
                                                 </a>
                                             {% endif %}
                                             {% if member.linkedin_url %}
-                                                <a href="{{ member.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                                    <i class="bi bi-linkedin"></i>
+                                                <a href="{{ member.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm flex-fill">
+                                                    <i class="bi bi-linkedin me-1"></i>LinkedIn
                                                 </a>
                                             {% endif %}
                                         </div>
@@ -300,106 +353,120 @@
                 {% else %}
                     <!-- Default BOT members if no CMS members -->
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Dr. Adeyemi Olojede</h5>
-                                <p class="text-muted mb-2">National Root Crops Research Institute (NRCRI)</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Dr. Adeyemi Olojede</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">National Root Crops Research Institute (NRCRI)</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Dr. Muhammed Murtala Omotosho</h5>
-                                <p class="text-muted mb-2">NOTORE</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Dr. Muhammed Murtala Omotosho</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">NOTORE</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Prof. Emmanuel Ikani</h5>
-                                <p class="text-muted mb-2">Executive Director, NAERLS</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Prof. Emmanuel Ikani</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Executive Director, NAERLS</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Prof. Sani Miko Ahmed</h5>
-                                <p class="text-muted mb-2">Sasakawa Africa Association</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Prof. Sani Miko Ahmed</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Sasakawa Africa Association</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="500">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Dr. Thompson Ogunsanmi</h5>
-                                <p class="text-muted mb-2">International Institute of Tropical Agriculture (IITA)</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Dr. Thompson Ogunsanmi</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">International Institute of Tropical Agriculture (IITA)</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="600">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Mrs. Oluyemisi Iranloye</h5>
-                                <p class="text-muted mb-2">Psaltry International</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Mrs. Oluyemisi Iranloye</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Psaltry International</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="700">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <div class="style="background-color: var(--primary-accent);" text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-6"></i>
-                                    </div>
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden" style="border-radius: 1rem;">
+                            <div class="position-relative" style="height: 280px; overflow: hidden; background: linear-gradient(135deg, #2E7D32, #4CAF50);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-person-circle display-1 text-white opacity-50"></i>
                                 </div>
-                                <h5 class="card-title">Chief Rashidi Ladoja</h5>
-                                <p class="text-muted mb-2">Former Governor of Oyo State</p>
-                                <small class="text-secondary">Board Member</small>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+                                    <h5 class="text-white mb-0">Chief Rashidi Ladoja</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Former Governor of Oyo State</p>
+                                <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
                     </div>
@@ -461,24 +528,50 @@
     {% endif %}
 
     <!-- Call to Action -->
-    <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
-        <div class="container text-center">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join Our Mission</h2>
-                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                        Be part of the digital transformation of Nigerian agriculture. Access AKILIMO tools and join thousands of farmers improving their productivity.
-                    </p>
-                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>Get Started
-                        </a>
-                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-envelope me-2"></i>Contact Us
-                        </a>
+    {% if cta %}
+        <section class="section-padding text-white" style="{{ cta.background_style }}">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">{{ cta.title }}</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            {{ cta.description }}
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{{ cta.button_1_url }}" class="btn btn-light btn-lg px-5 py-3">
+                                {% if cta.button_1_icon %}<i class="{{ cta.button_1_icon }} me-2"></i>{% endif %}{{ cta.button_1_text }}
+                            </a>
+                            {% if cta.button_2_text %}
+                                <a href="{{ cta.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                    {% if cta.button_2_icon %}<i class="{{ cta.button_2_icon }} me-2"></i>{% endif %}{{ cta.button_2_text }}
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    {% else %}
+        <!-- Default CTA if no CMS content exists -->
+        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join the AKILIMO Movement</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            Access evidence-based, site-specific recommendations validated by 5,000+ farmers. Start optimizing your productivity and profits today.
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3">
+                                <i class="bi bi-person-plus me-2"></i>Get Started
+                            </a>
+                            <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                <i class="bi bi-envelope me-2"></i>Contact Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}

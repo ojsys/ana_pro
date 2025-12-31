@@ -3,151 +3,289 @@
 
 {% block title %}{{ site_settings.site_title|default:"AKILIMO Nigeria Association" }} - {{ site_settings.site_tagline|default:"Advancing Cassava Production Through Innovation" }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Hero Slider Custom Styles */
+    #heroCarousel .carousel-item {
+        transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
+    }
+
+    #heroCarousel .carousel-fade .carousel-item {
+        opacity: 0;
+        transition-property: opacity;
+        transform: none;
+    }
+
+    #heroCarousel .carousel-fade .carousel-item.active {
+        opacity: 1;
+    }
+
+    #heroCarousel .carousel-control-prev,
+    #heroCarousel .carousel-control-next {
+        width: 60px;
+        height: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    #heroCarousel:hover .carousel-control-prev,
+    #heroCarousel:hover .carousel-control-next {
+        opacity: 1;
+    }
+
+    #heroCarousel .carousel-control-prev {
+        left: 30px;
+    }
+
+    #heroCarousel .carousel-control-next {
+        right: 30px;
+    }
+
+    #heroCarousel .carousel-control-prev:hover,
+    #heroCarousel .carousel-control-next:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    #heroCarousel .carousel-indicators {
+        margin-bottom: 2rem;
+    }
+
+    #heroCarousel .carousel-indicators button {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin: 0 6px;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        background-color: transparent;
+        transition: all 0.3s ease;
+    }
+
+    #heroCarousel .carousel-indicators button.active {
+        background-color: white;
+        width: 40px;
+        border-radius: 6px;
+    }
+
+    /* Bounce Animation for Scroll Indicator */
+    .animate-bounce {
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-10px);
+        }
+        60% {
+            transform: translateY(-5px);
+        }
+    }
+
+    /* Responsive Text Sizes */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem !important;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem !important;
+        }
+
+        .lead {
+            font-size: 1rem !important;
+        }
+
+        #heroCarousel .carousel-control-prev,
+        #heroCarousel .carousel-control-next {
+            width: 40px;
+            height: 40px;
+        }
+
+        #heroCarousel .carousel-control-prev {
+            left: 10px;
+        }
+
+        #heroCarousel .carousel-control-next {
+            right: 10px;
+        }
+    }
+
+    /* Smooth scroll */
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-    <!-- Hero Section -->
-    <section class="hero-section" style="min-height: 100vh; padding: 8rem 0;" data-aos="fade-in">
-        <div class="container">
-            <div class="row align-items-center min-vh-75">
-                <div class="col-lg-6">
-                    <div class="hero-content pe-lg-4">
-                        <div class="mb-3" data-aos="fade-up" data-aos-delay="100">
-                            <span class="badge bg-light px-3 py-2 rounded-pill fs-6" style="color: var(--primary-accent);">
-                                <i class="bi bi-star me-1"></i>Digital Agricultural Innovation
-                            </span>
-                        </div>
-                        <h1 class="hero-title mb-4" data-aos="fade-up" data-aos-delay="200" style="font-size: 3.5rem; line-height: 1.2;">
-                            AKILIMO Nigeria Association
-                        </h1>
-                        <h2 class="hero-subtitle mb-4" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.5rem; font-weight: 400; color: rgba(255,255,255,0.9);">
-                            Empowering Smallholder Farmers Through Digital Innovation
-                        </h2>
-                        <p class="lead mb-5" data-aos="fade-up" data-aos-delay="400" style="font-size: 1.2rem; line-height: 1.6; color: rgba(255,255,255,0.85);">
-                            Join us in creating a digitally empowered and resilient agricultural sector where farmers achieve optimal productivity, improved livelihoods, and sustainable development through AKILIMO tools.
-                        </p>
-                        <div class="d-flex flex-column flex-sm-row gap-3" data-aos="fade-up" data-aos-delay="500">
-                            <a href="{% url 'website:register_redirect' %}" class="btn btn-success btn-lg px-4 py-3" style="background: linear-gradient(135deg, #4CAF50, #66BB6A); border: none;">
-                                <i class="bi bi-download me-2"></i>Join ANA
-                            </a>
-                            <a href="{% url 'website:about' %}" class="btn btn-outline-light btn-lg px-4 py-3">
-                                <i class="bi bi-info-circle me-2"></i>Learn More
-                            </a>
-                        </div>
-                        
-                        <!-- Key Stats -->
-                        <div class="row mt-5" data-aos="fade-up" data-aos-delay="600">
-                            {% if homepage_statistics %}
-                                {% for stat in homepage_statistics %}
-                                    <div class="col-4">
-                                        <div class="text-center">
-                                            {% if stat.icon %}
-                                                <i class="{{ stat.icon }} fs-4 text-light mb-2"></i>
+    <!-- Hero Section with Slider -->
+    <section class="hero-section position-relative" style="min-height: 100vh; overflow: hidden;">
+        <!-- Hero Slider -->
+        <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+            <div class="carousel-inner">
+                {% if hero_slides %}
+                    {% for slide in hero_slides %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}" style="min-height: 100vh; background: {{ slide.background_color }}; display: flex; align-items: center;">
+                            {% if slide.background_image %}
+                                <div class="position-absolute top-0 start-0 w-100 h-100" style="background-image: url('{{ slide.background_image.url }}'); background-size: cover; background-position: center; opacity: 0.3;"></div>
+                            {% endif %}
+                            <div class="container" style="position: relative; z-index: 1;">
+                                <div class="row justify-content-center text-center">
+                                    <div class="col-lg-10">
+                                        <h1 class="hero-title mb-4 text-white" data-aos="fade-up" style="font-size: 4rem; font-weight: 700; line-height: 1.2;">
+                                            {{ slide.title }}
+                                        </h1>
+                                        {% if slide.subtitle %}
+                                            <h2 class="hero-subtitle mb-5 text-white" data-aos="fade-up" data-aos-delay="100" style="font-size: 1.8rem; font-weight: 300; opacity: 0.95;">
+                                                {{ slide.subtitle }}
+                                            </h2>
+                                        {% endif %}
+                                        {% if slide.description %}
+                                            <p class="lead mb-5 text-white" data-aos="fade-up" data-aos-delay="200" style="font-size: 1.3rem; max-width: 800px; margin: 0 auto; opacity: 0.9;">
+                                                {{ slide.description }}
+                                            </p>
+                                        {% endif %}
+                                        <div class="d-flex justify-content-center gap-3 flex-wrap" data-aos="fade-up" data-aos-delay="300">
+                                            {% if slide.button_1_text %}
+                                                <a href="{{ slide.button_1_url }}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px; font-weight: 600;">
+                                                    {% if slide.button_1_icon %}<i class="{{ slide.button_1_icon }} me-2"></i>{% endif %}{{ slide.button_1_text }}
+                                                </a>
                                             {% endif %}
-                                            <h3 class="text-white mb-1">{{ stat.value }}</h3>
-                                            <small class="text-light">{{ stat.label }}</small>
+                                            {% if slide.button_2_text %}
+                                                <a href="{{ slide.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
+                                                    {% if slide.button_2_icon %}<i class="{{ slide.button_2_icon }} me-2"></i>{% endif %}{{ slide.button_2_text %}
+                                                </a>
+                                            {% endif %}
                                         </div>
                                     </div>
-                                {% endfor %}
-                            {% else %}
-                                <!-- Default stats if no CMS statistics -->
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h3 class="text-white mb-1">500+</h3>
-                                        <small class="text-light">Active Farmers</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h3 class="text-white mb-1">25</h3>
-                                        <small class="text-light">States Covered</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h3 class="text-white mb-1">50+</h3>
-                                        <small class="text-light">Partners</small>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mt-5 mt-lg-0" data-aos="fade-left" data-aos-delay="300">
-                    <div class="position-relative">
-                        {% if homepage_sections %}
-                            {% for section in homepage_sections %}
-                                {% if section.section_type == 'hero' and section.image %}
-                                    <img src="{{ section.image.url }}" alt="{{ section.title }}" class="img-fluid rounded-4 shadow-lg">
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <div class="hero-image-placeholder bg-white rounded-4 p-5 shadow-lg text-center">
-                                <div class="mb-4">
-                                    <i class="bi bi-phone display-1" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h3 class="mb-3" style="color: var(--primary-accent);">AKILIMO Digital Platform</h3>
-                                <p class="text-muted mb-4">Site-specific recommendations for optimal farming</p>
-                                <div class="d-flex justify-content-center gap-2">
-                                    <span class="badge" style="background-color: var(--primary-accent);">iOS</span>
-                                    <span class="badge bg-success">Android</span>
-                                    <span class="badge" style="background-color: var(--light-accent);">Web</span>
                                 </div>
                             </div>
-                        {% endif %}
-                        
-                        <!-- Floating Elements -->
-                        <div class="position-absolute top-0 end-0 translate-middle">
-                            <div class="bg-warning text-dark rounded-circle p-3 shadow">
-                                <i class="bi bi-trophy fs-4"></i>
-                            </div>
                         </div>
-                        <div class="position-absolute bottom-0 start-0 translate-middle">
-                            <div class="bg-success text-white rounded-circle p-3 shadow">
-                                <i class="bi bi-graph-up fs-4"></i>
+                    {% endfor %}
+                {% else %}
+                    <!-- Default slide if no CMS slides exist -->
+                    <div class="carousel-item active" style="min-height: 100vh; background: linear-gradient(135deg, #1C4523 0%, #4CAF50 100%); display: flex; align-items: center;">
+                        <div class="container">
+                            <div class="row justify-content-center text-center">
+                                <div class="col-lg-10">
+                                    <h1 class="hero-title mb-4 text-white" data-aos="fade-up" style="font-size: 4rem; font-weight: 700; line-height: 1.2;">
+                                        AKILIMO Nigeria Association
+                                    </h1>
+                                    <h2 class="hero-subtitle mb-5 text-white" data-aos="fade-up" data-aos-delay="100" style="font-size: 1.8rem; font-weight: 300; opacity: 0.95;">
+                                        Promoting Evidence-Based Agronomic Advisory Services
+                                    </h2>
+                                    <p class="lead mb-5 text-white" data-aos="fade-up" data-aos-delay="200" style="font-size: 1.3rem; max-width: 800px; margin: 0 auto; opacity: 0.9;">
+                                        Advancing AKILIMO tools to provide site-specific recommendations that optimize productivity and profits for smallholder farmers
+                                    </p>
+                                    <div class="d-flex justify-content-center gap-3 flex-wrap" data-aos="fade-up" data-aos-delay="300">
+                                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px; font-weight: 600;">
+                                            <i class="bi bi-person-plus me-2"></i>Join ANA
+                                        </a>
+                                        <a href="{% url 'website:about' %}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
+                                            <i class="bi bi-info-circle me-2"></i>Learn More
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                {% endif %}
             </div>
-        </div>
-        
-        <!-- Scroll Indicator -->
-        <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4" data-aos="fade-up" data-aos-delay="800">
-            <div class="text-center">
-                <div class="text-white mb-2">
-                    <i class="bi bi-chevron-down animate-bounce"></i>
+
+            <!-- Slider Controls -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+
+            <!-- Slider Indicators -->
+            {% if hero_slides %}
+                <div class="carousel-indicators" style="bottom: 50px;">
+                    {% for slide in hero_slides %}
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+                    {% endfor %}
                 </div>
-                <small class="text-light">Scroll to explore</small>
+            {% endif %}
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="position-absolute bottom-0 start-50 translate-middle-x mb-5" style="z-index: 10;">
+            <div class="text-center">
+                <a href="#mission-section" class="text-decoration-none">
+                    <div class="text-white mb-2 animate-bounce">
+                        <i class="bi bi-chevron-down fs-3"></i>
+                    </div>
+                    <small class="text-white" style="opacity: 0.8;">Scroll to explore</small>
+                </a>
             </div>
         </div>
     </section>
 
     <!-- Mission & Vision Section -->
-    <section class="section-padding bg-light-green">
+    <section id="mission-section" class="section-padding bg-light-green">
         <div class="container">
             <h2 class="section-title" data-aos="fade-up">Mission & Vision</h2>
             <div class="row">
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-plus-circle display-4" style="color: var(--primary-accent);"></i>
+                {% if mission_vision %}
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="{{ mission_vision.mission_icon|default:'bi-crosshair' }} display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">{{ mission_vision.mission_title }}</h4>
+                                <p class="card-text">{{ mission_vision.mission_content }}</p>
                             </div>
-                            <h4 class="card-title mb-3" style="color: var(--primary-accent);">Our Mission</h4>
-                            <p class="card-text">Our mission is to empower smallholder farmers by providing training, site-specific recommendations and market linkages that optimize productivity and profits.</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-eye display-4" style="color: var(--primary-accent);"></i>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="{{ mission_vision.vision_icon|default:'bi-lightbulb' }} display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">{{ mission_vision.vision_title }}</h4>
+                                <p class="card-text">{{ mission_vision.vision_content }}</p>
                             </div>
-                            <h4 class="card-title mb-3" style="color: var(--primary-accent);">Our Vision</h4>
-                            <p class="card-text">Our vision is to create a digitally empowered and resilient agricultural sector, where farmers and value chain actors achieve optimal productivity, improved livelihoods, and sustainable development through AKILIMO tools.</p>
                         </div>
                     </div>
-                </div>
+                {% else %}
+                    <!-- Default mission & vision if no CMS content exists -->
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-crosshair display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">Our Mission</h4>
+                                <p class="card-text">To promote and scale the use of AKILIMO's evidence-based agronomic advisory services across Nigeria, empowering smallholder farmers with site-specific recommendations that optimize productivity and profitability.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-lightbulb display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">Our Vision</h4>
+                                <p class="card-text">A thriving agricultural sector in Nigeria where every smallholder farmer has access to data-driven decision support tools, leading to improved livelihoods, sustainable practices, and enhanced food security.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -249,83 +387,73 @@
     <!-- Aims & Objectives Section -->
     <section class="section-padding bg-light-green">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">AKILIMO Associations: Aims & Objectives</h2>
+            <h2 class="section-title" data-aos="fade-up">AKILIMO's Four Operational Pillars</h2>
             <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Our key objectives to transform agricultural systems across member countries
+                Building on AKILIMO's proven framework to advance agricultural innovation in Nigeria
             </p>
-            
-            <div class="row">
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <i class="bi bi-gear display-4" style="color: var(--primary-accent);"></i>
-                            </div>
-                            <h5 class="card-title">Use, Uptake, and Integration</h5>
-                            <p class="card-text">Promote the widespread uptake and integration of AKILIMO tools into national agricultural systems and digital extension services across member countries.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <i class="bi bi-mortarboard display-4" style="color: var(--primary-accent);"></i>
-                            </div>
-                            <h5 class="card-title">Capacity Building</h5>
-                            <p class="card-text">Facilitate training for farmers and value chain actors to foster the exchange of best practices in production, processing, aggregation, and marketing.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <i class="bi bi-arrow-repeat display-4" style="color: var(--primary-accent);"></i>
-                            </div>
-                            <h5 class="card-title">Sustainable Agricultural Practices</h5>
-                            <p class="card-text">Encourage sustainable and inclusive investments to ensure the long-term use and relevance of AKILIMO tools.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <i class="bi bi-graph-up display-4" style="color: var(--primary-accent);"></i>
-                            </div>
-                            <h5 class="card-title">Data-Driven Learning</h5>
-                            <p class="card-text">Develop a robust communication strategy and Monitoring, Evaluation, and Learning (ME&L) system for improved data collection and actionable insights.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="500">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <i class="bi bi-shield-check display-4" style="color: var(--primary-accent);"></i>
-                            </div>
-                            <h5 class="card-title">Policy Advocacy</h5>
-                            <p class="card-text">Advocate for the integration of AKILIMO into national agricultural policies, ensuring sustained support through policy initiatives and strategic partnerships.</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="600">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <i class="bi bi-phone display-4" style="color: var(--primary-accent);"></i>
+            <div class="row justify-content-center">
+                {% if operational_pillars %}
+                    {% for pillar in operational_pillars %}
+                        <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="mb-3">
+                                        <i class="{{ pillar.icon }} display-4" style="color: var(--primary-accent);"></i>
+                                    </div>
+                                    <h5 class="card-title">{{ pillar.title }}</h5>
+                                    <p class="card-text">{{ pillar.description }}</p>
+                                </div>
                             </div>
-                            <h5 class="card-title">Digital Innovation</h5>
-                            <p class="card-text">Leverage cutting-edge technology to provide site-specific recommendations, market linkages, and real-time agricultural insights to farmers.</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Default pillars if no CMS content exists -->
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-clipboard-data display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h5 class="card-title">Advisory Service</h5>
+                                <p class="card-text">Providing customized decision support for farm operations through evidence-based, site-specific recommendations that account for major production limiting factors using advanced data analytics.</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-people-fill display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h5 class="card-title">Research Community</h5>
+                                <p class="card-text">Collaborating with farmers, researchers, and global organizations on predictive modeling and agricultural innovation to continuously improve recommendation algorithms.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-handshake display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h5 class="card-title">Strategic Partnership</h5>
+                                <p class="card-text">Building win-win scenarios that maximize profitability across value chain networks, connecting farmers with markets, inputs, and financial services through strategic alliances.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-mortarboard display-4" style="color: var(--primary-accent);"></i>
+                                </div>
+                                <h5 class="card-title">Training Platform</h5>
+                                <p class="card-text">Developing comprehensive training materials and capacity building programs for extension agents, aggregators, and last-mile delivery partners to effectively disseminate AKILIMO recommendations.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -503,24 +631,50 @@
     {% endif %}
 
     <!-- Call to Action -->
-    <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
-        <div class="container text-center">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Ready to Transform Your Farming?</h2>
-                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                        Join thousands of farmers who have already improved their cassava production with AKILIMO Nigeria Association.
-                    </p>
-                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>Join Now
-                        </a>
-                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-envelope me-2"></i>Contact Us
-                        </a>
+    {% if cta %}
+        <section class="section-padding text-white" style="{{ cta.background_style }}">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">{{ cta.title }}</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            {{ cta.description }}
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{{ cta.button_1_url }}" class="btn btn-light btn-lg px-5 py-3">
+                                {% if cta.button_1_icon %}<i class="{{ cta.button_1_icon }} me-2"></i>{% endif %}{{ cta.button_1_text }}
+                            </a>
+                            {% if cta.button_2_text %}
+                                <a href="{{ cta.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                    {% if cta.button_2_icon %}<i class="{{ cta.button_2_icon }} me-2"></i>{% endif %}{{ cta.button_2_text }}
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    {% else %}
+        <!-- Default CTA if no CMS content exists -->
+        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join the AKILIMO Movement</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            Access evidence-based, site-specific recommendations validated by 5,000+ farmers. Start optimizing your productivity and profits today.
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3">
+                                <i class="bi bi-person-plus me-2"></i>Join ANA
+                            </a>
+                            <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                <i class="bi bi-envelope me-2"></i>Contact Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}

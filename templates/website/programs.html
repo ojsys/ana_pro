@@ -7,62 +7,24 @@
 
 {% block content %}
     <!-- Page Header -->
-    <section class="hero-section" style="min-height: 70vh; padding: 8rem 0 6rem;" data-aos="fade-in">
+    <section class="hero-section" style="min-height: 60vh; display: flex; align-items: center;" data-aos="fade-in">
         <div class="container">
-            <div class="row align-items-center min-vh-50">
-                <div class="col-lg-6">
-                    <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--primary-accent);">
-                            <i class="bi bi-gear me-2"></i>Our Programs & Services
-                        </span>
-                    </div>
-                    <h1 class="hero-title mb-4" data-aos="fade-up" data-aos-delay="200" style="font-size: 3.5rem; line-height: 1.2;">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title mb-4" data-aos="fade-up" style="font-size: 3.5rem; line-height: 1.2;">
                         Programs & Services
                     </h1>
-                    <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="300" style="font-size: 1.3rem; line-height: 1.6; color: rgba(255,255,255,0.9);">
-                        Comprehensive digital solutions and training programs designed to optimize farming productivity and maximize profits for smallholder farmers across Nigeria.
+                    <p class="hero-subtitle mb-5" data-aos="fade-up" data-aos-delay="100" style="font-size: 1.3rem; line-height: 1.6; color: rgba(255,255,255,0.9); max-width: 700px; margin: 0 auto;">
+                        Evidence-based agronomic advisory services built on 5,000+ on-farm trials, optimizing productivity and profitability for Nigerian farmers.
                     </p>
-                    
-                    <div class="d-flex flex-column flex-sm-row gap-3 mb-5" data-aos="fade-up" data-aos-delay="400">
-                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-4 py-3">
-                            <i class="bi bi-download me-2"></i>Access Tools Now
+
+                    <div class="d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px;">
+                            <i class="bi bi-person-plus me-2"></i>Get Started
                         </a>
-                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-4 py-3">
-                            <i class="bi bi-telephone me-2"></i>Request Training
+                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
+                            <i class="bi bi-envelope me-2"></i>Contact Us
                         </a>
-                    </div>
-                </div>
-                
-                <div class="col-lg-6" data-aos="fade-left" data-aos-delay="300">
-                    <div class="position-relative">
-                        <div class="bg-white rounded-4 p-5 shadow-lg text-center">
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
-                                        <i class="bi bi-phone display-6 mb-2"></i>
-                                        <h6 class="mb-0">Mobile App</h6>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="bg-success text-white rounded-3 p-3">
-                                        <i class="bi bi-laptop display-6 mb-2"></i>
-                                        <h6 class="mb-0">Web Platform</h6>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--light-accent);">
-                                        <i class="bi bi-people display-6 mb-2"></i>
-                                        <h6 class="mb-0">Training</h6>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--dark-accent);">
-                                        <i class="bi bi-graph-up display-6 mb-2"></i>
-                                        <h6 class="mb-0">Analytics</h6>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -72,103 +34,74 @@
     <!-- AKILIMO Digital Platform Section -->
     <section class="section-padding">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
-                    <div class="bg-light-green rounded-3 p-5 text-center">
-                        <i class="bi bi-phone display-1 style="color: var(--primary-accent);""></i>
-                        <h4 class="mt-3 style="color: var(--primary-accent);"">AKILIMO Digital Platform</h4>
-                        <p class="text-muted">Site-specific agricultural recommendations</p>
-                    </div>
-                </div>
-                <div class="col-lg-6" data-aos="fade-left">
-                    <h2 class="section-title text-start mb-4">Global AKILIMO Platform</h2>
-                    <p class="lead mb-4">The AKILIMO platform provides farmers with personalized, site-specific recommendations to optimize cassava production and maximize profits.</p>
-                    
-                    <div class="row">
-                        <div class="col-sm-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-check-circle text-success me-3"></i>
-                                <span>Multi-country data analysis</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-check-circle text-success me-3"></i>
-                                <span>Dynamic crop calendars</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-check-circle text-success me-3"></i>
-                                <span>Real-time price data</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-check-circle text-success me-3"></i>
-                                <span>Advanced analytics</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <a href="{% url 'website:register_redirect' %}" class="btn btn-primary mt-3">
-                        Access Platform
-                        <i class="bi bi-arrow-right ms-2"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Platform Features Section -->
-    <section class="section-padding bg-light-green">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Platform Features</h2>
+            <h2 class="section-title" data-aos="fade-up">AKILIMO Advisory Platform</h2>
             <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Comprehensive tools designed for different user types and needs
+                State-of-the-art agronomic advisory service employing advanced analytics
             </p>
-            
-            <div class="row">
-                <!-- Public Dashboard -->
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-header text-white text-center" style="background-color: var(--primary-accent);">
-                            <h4 class="mb-0">Public Dashboard</h4>
-                            <p class="mb-0 opacity-75">Free Access</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <ul class="list-unstyled">
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Basic crop insights</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>General market information</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Educational content</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Weather updates</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Best practices guides</li>
-                            </ul>
-                            <div class="text-center mt-4">
-                                <a href="{% url 'website:register_redirect' %}" class="btn btn-outline-primary">Get Started</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Advanced Dashboard -->
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-header bg-success text-white text-center">
-                            <h4 class="mb-0">Advanced Dashboard</h4>
-                            <p class="mb-0 opacity-75">For Partners & Clients</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <ul class="list-unstyled">
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Site-specific recommendations</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Bulk SMS services</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Custom subdomain</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Partner database access</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Data download capabilities</li>
-                                <li class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Advanced insights</li>
-                            </ul>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card border-0 shadow-lg" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card-body p-5">
+                            <div class="row">
+                                {% if platform_features %}
+                                    {% for feature in platform_features %}
+                                        <div class="col-md-6 mb-4">
+                                            <div class="d-flex align-items-start">
+                                                <i class="{{ feature.icon|default:'bi-check-circle-fill' }} text-success me-3 fs-4"></i>
+                                                <div>
+                                                    <h5>{{ feature.title }}</h5>
+                                                    <p class="text-muted mb-0">{{ feature.description }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <!-- Default features if no CMS content exists -->
+                                    <div class="col-md-6 mb-4">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
+                                            <div>
+                                                <h5>Site-Specific Recommendations</h5>
+                                                <p class="text-muted mb-0">Customized advice based on your farm's unique conditions</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
+                                            <div>
+                                                <h5>Data-Driven Insights</h5>
+                                                <p class="text-muted mb-0">Built on 5,000+ trials and 50,000+ yield measurements</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
+                                            <div>
+                                                <h5>Multi-Platform Access</h5>
+                                                <p class="text-muted mb-0">Available on mobile, web, and SMS platforms</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
+                                            <div>
+                                                <h5>Real-Time Market Data</h5>
+                                                <p class="text-muted mb-0">Current prices and market linkages for better profits</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
                             <div class="text-center mt-4">
-                                <a href="{% url 'website:contact' %}" class="btn btn-success">Contact Us</a>
+                                <a href="{% url 'website:register_redirect' %}" class="btn btn-primary btn-lg px-5 py-3">
+                                    Access Platform
+                                    <i class="bi bi-arrow-right ms-2"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -178,229 +111,150 @@
     </section>
 
     <!-- Training Programs Section -->
-    <section class="section-padding">
+    <section class="section-padding bg-light-green">
         <div class="container">
             <h2 class="section-title" data-aos="fade-up">Training & Capacity Building</h2>
             <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Comprehensive training programs for farmers and value chain actors
+                Comprehensive training programs for farmers, extension agents, and value chain actors
             </p>
-            
-            <div class="row">
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-people display-4 style="color: var(--primary-accent);""></i>
-                            </div>
-                            <h5 class="card-title">Farmer Training</h5>
-                            <p class="card-text">Hands-on training for smallholder farmers on modern cassava production techniques, AKILIMO tool usage, and best agricultural practices.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-mortarboard display-4 style="color: var(--primary-accent);""></i>
-                            </div>
-                            <h5 class="card-title">Extension Officer Training</h5>
-                            <p class="card-text">Training programs for agricultural extension officers to effectively use and promote AKILIMO tools within their communities.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-graph-up display-4 style="color: var(--primary-accent);""></i>
-                            </div>
-                            <h5 class="card-title">Value Chain Training</h5>
-                            <p class="card-text">Specialized training for value chain actors including processors, aggregators, and marketers to optimize the entire cassava value chain.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-laptop display-4 style="color: var(--primary-accent);""></i>
-                            </div>
-                            <h5 class="card-title">Digital Literacy</h5>
-                            <p class="card-text">Training programs to improve digital literacy among farmers, enabling them to effectively use mobile and web-based agricultural tools.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="500">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-shield-check display-4 style="color: var(--primary-accent);""></i>
-                            </div>
-                            <h5 class="card-title">Sustainable Practices</h5>
-                            <p class="card-text">Training on sustainable and climate-smart agricultural practices to ensure long-term environmental and economic benefits.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="600">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <i class="bi bi-currency-dollar display-4 style="color: var(--primary-accent);""></i>
-                            </div>
-                            <h5 class="card-title">Market Linkages</h5>
-                            <p class="card-text">Training on market analysis, price negotiation, and connecting farmers with reliable buyers and financial services.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- AKILIMO Scaling Teams Section -->
-    <section class="section-padding bg-light-green">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">AKILIMO Scaling & Support Teams</h2>
-            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Specialized teams ensuring effective implementation and continuous improvement
-            </p>
-            
-            <div class="row">
-                <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-header text-white text-center" style="background-color: var(--primary-accent);">
-                            <i class="bi bi-file-text display-5"></i>
-                            <h4 class="mt-2 mb-0">CONTENT Team</h4>
-                        </div>
-                        <div class="card-body p-4">
-                            <h6 class="style="color: var(--primary-accent);" mb-3">Responsibilities:</h6>
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><i class="bi bi-arrow-right style="color: var(--primary-accent);" me-2"></i>Content development and review</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right style="color: var(--primary-accent);" me-2"></i>Translation into local languages</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right style="color: var(--primary-accent);" me-2"></i>Website content management</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right style="color: var(--primary-accent);" me-2"></i>Content optimization</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right style="color: var(--primary-accent);" me-2"></i>User data generation</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-header bg-success text-white text-center">
-                            <i class="bi bi-gear display-5"></i>
-                            <h4 class="mt-2 mb-0">TECH Team</h4>
-                        </div>
-                        <div class="card-body p-4">
-                            <h6 class="text-success mb-3">Functions:</h6>
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><i class="bi bi-arrow-right text-success me-2"></i>Technical solutions development</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-success me-2"></i>Data analysis & monitoring</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-success me-2"></i>System maintenance & updates</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-success me-2"></i>Bug tracking & resolution</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-success me-2"></i>Multi-platform app development</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="300">
-                    <div class="card h-100 border-0 shadow-lg">
-                        <div class="card-header text-white text-center" style="background-color: var(--light-accent);">
-                            <i class="bi bi-briefcase display-5"></i>
-                            <h4 class="mt-2 mb-0">BUSINESS Team</h4>
-                        </div>
-                        <div class="card-body p-4">
-                            <h6 class="text-warning mb-3">Activities:</h6>
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><i class="bi bi-arrow-right text-warning me-2"></i>Business development & grants</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-warning me-2"></i>Marketing & promotion</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-warning me-2"></i>Partner relationship management</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-warning me-2"></i>Revenue generation</li>
-                                <li class="mb-2"><i class="bi bi-arrow-right text-warning me-2"></i>Price data collection systems</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Service Delivery Structure -->
-    <section class="section-padding">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Service Delivery Structure</h2>
-            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                A comprehensive network ensuring effective reach and impact
-            </p>
-            
             <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="card border-0 shadow-lg" data-aos="fade-up" data-aos-delay="200">
-                        <div class="card-body p-5">
-                            <div class="row text-center">
-                                <div class="col-md-6 col-lg-3 mb-4">
-                                    <div class="p-3 bg-light-green rounded-3">
-                                        <i class="bi bi-geo-alt display-4 style="color: var(--primary-accent);" mb-2"></i>
-                                        <h6 class="style="color: var(--primary-accent);"">Zonal Coordinators</h6>
-                                        <small class="text-muted">6 Agricultural Zones</small>
+                {% if training_programs %}
+                    {% for program in training_programs %}
+                        <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-3">
+                                            <i class="{{ program.icon }} display-4" style="color: var(--primary-accent);"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="card-title">{{ program.title }}</h5>
+                                            <p class="card-text text-muted">{{ program.description }}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div class="col-md-6 col-lg-3 mb-4">
-                                    <div class="p-3 bg-light-green rounded-3">
-                                        <i class="bi bi-map display-4 style="color: var(--primary-accent);" mb-2"></i>
-                                        <h6 class="style="color: var(--primary-accent);"">State Coordinators</h6>
-                                        <small class="text-muted">Multi-state Coverage</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Default programs if no CMS content exists -->
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="bi bi-people-fill display-4" style="color: var(--primary-accent);"></i>
                                     </div>
-                                </div>
-                                
-                                <div class="col-md-6 col-lg-3 mb-4">
-                                    <div class="p-3 bg-light-green rounded-3">
-                                        <i class="bi bi-people display-4 style="color: var(--primary-accent);" mb-2"></i>
-                                        <h6 class="style="color: var(--primary-accent);"">Lead Farmers</h6>
-                                        <small class="text-muted">Community Champions</small>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6 col-lg-3 mb-4">
-                                    <div class="p-3 bg-light-green rounded-3">
-                                        <i class="bi bi-mortarboard display-4 style="color: var(--primary-accent);" mb-2"></i>
-                                        <h6 class="style="color: var(--primary-accent);"">AKILIMO Trainers</h6>
-                                        <small class="text-muted">Expert Instructors</small>
+                                    <div>
+                                        <h5 class="card-title">Farmer Training</h5>
+                                        <p class="card-text text-muted">Hands-on training on AKILIMO tool usage, modern cassava production techniques, and best agricultural practices.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="bi bi-mortarboard display-4" style="color: var(--primary-accent);"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title">Extension Agent Training</h5>
+                                        <p class="card-text text-muted">Capacity building for extension officers and last-mile delivery partners to effectively promote AKILIMO within their communities.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="bi bi-diagram-3 display-4" style="color: var(--primary-accent);"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title">Value Chain Development</h5>
+                                        <p class="card-text text-muted">Specialized training for processors, aggregators, and marketers to optimize the entire agricultural value chain.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="bi bi-graph-up-arrow display-4" style="color: var(--primary-accent);"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title">Market Linkages & Financial Access</h5>
+                                        <p class="card-text text-muted">Training on market analysis, connecting with buyers, and accessing financial services for improved profitability.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="500">
+                <a href="{% url 'website:contact' %}" class="btn btn-primary btn-lg px-5 py-3">
+                    <i class="bi bi-calendar me-2"></i>Request Training
+                </a>
             </div>
         </div>
     </section>
 
     <!-- Call to Action -->
-    <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
-        <div class="container text-center">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Ready to Get Started?</h2>
-                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                        Join thousands of farmers who are already benefiting from AKILIMO tools and services. Access site-specific recommendations and improve your farming today.
-                    </p>
-                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
-                            <i class="bi bi-download me-2"></i>Access AKILIMO Tools
-                        </a>
-                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-telephone me-2"></i>Request Training
-                        </a>
+    {% if cta %}
+        <section class="section-padding text-white" style="{{ cta.background_style }}">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">{{ cta.title }}</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            {{ cta.description }}
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{{ cta.button_1_url }}" class="btn btn-light btn-lg px-5 py-3">
+                                {% if cta.button_1_icon %}<i class="{{ cta.button_1_icon }} me-2"></i>{% endif %}{{ cta.button_1_text }}
+                            </a>
+                            {% if cta.button_2_text %}
+                                <a href="{{ cta.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                    {% if cta.button_2_icon %}<i class="{{ cta.button_2_icon }} me-2"></i>{% endif %}{{ cta.button_2_text }}
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    {% else %}
+        <!-- Default CTA if no CMS content exists -->
+        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join the AKILIMO Movement</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            Access evidence-based, site-specific recommendations validated by 5,000+ farmers. Start optimizing your productivity and profits today.
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3">
+                                <i class="bi bi-person-plus me-2"></i>Get Started
+                            </a>
+                            <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                <i class="bi bi-envelope me-2"></i>Contact Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}

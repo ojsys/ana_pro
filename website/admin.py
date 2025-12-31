@@ -5,7 +5,9 @@ from django.forms import Textarea
 from import_export.admin import ImportExportModelAdmin
 from .models import (
     Page, NewsArticle, HomePageSection, TeamMember, PartnerShowcase,
-    Testimonial, FAQ, ContactInfo, SiteSettings, Statistic
+    Testimonial, FAQ, ContactInfo, SiteSettings, Statistic, HeroSlide,
+    MissionVision, OperationalPillar, PlatformFeature, TrainingProgram,
+    SupportTeam, CallToAction, PageContent
 )
 from .resources import (
     PageResource, NewsArticleResource, HomePageSectionResource,
@@ -357,6 +359,223 @@ class SiteSettingsAdmin(ImportExportModelAdmin):
     def has_delete_permission(self, request, obj=None):
         # Don't allow deletion of SiteSettings
         return False
+
+
+@admin.register(HeroSlide)
+class HeroSlideAdmin(admin.ModelAdmin):
+    list_display = ['title', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title', 'subtitle', 'description']
+    ordering = ['order']
+
+    fieldsets = (
+        ('Slide Content', {
+            'fields': ('title', 'subtitle', 'description')
+        }),
+        ('Visual Elements', {
+            'fields': ('background_image', 'background_color')
+        }),
+        ('Button 1', {
+            'fields': ('button_1_text', 'button_1_url', 'button_1_icon'),
+            'classes': ('collapse',)
+        }),
+        ('Button 2', {
+            'fields': ('button_2_text', 'button_2_url', 'button_2_icon'),
+            'classes': ('collapse',)
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(MissionVision)
+class MissionVisionAdmin(admin.ModelAdmin):
+    list_display = ['mission_title', 'vision_title', 'is_active', 'updated_at']
+
+    fieldsets = (
+        ('Mission', {
+            'fields': ('mission_title', 'mission_content', 'mission_icon')
+        }),
+        ('Vision', {
+            'fields': ('vision_title', 'vision_content', 'vision_icon')
+        }),
+        ('Display Settings', {
+            'fields': ('is_active',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    def has_add_permission(self, request):
+        # Only allow one MissionVision instance
+        return not MissionVision.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        # Don't allow deletion
+        return False
+
+
+@admin.register(OperationalPillar)
+class OperationalPillarAdmin(admin.ModelAdmin):
+    list_display = ['title', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title', 'description']
+    ordering = ['order']
+
+    fieldsets = (
+        ('Pillar Information', {
+            'fields': ('title', 'description', 'icon')
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(PlatformFeature)
+class PlatformFeatureAdmin(admin.ModelAdmin):
+    list_display = ['title', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title', 'description']
+    ordering = ['order']
+
+    fieldsets = (
+        ('Feature Information', {
+            'fields': ('title', 'description', 'icon')
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(TrainingProgram)
+class TrainingProgramAdmin(admin.ModelAdmin):
+    list_display = ['title', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title', 'description']
+    ordering = ['order']
+
+    fieldsets = (
+        ('Program Information', {
+            'fields': ('title', 'description', 'icon')
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(SupportTeam)
+class SupportTeamAdmin(admin.ModelAdmin):
+    list_display = ['name', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name', 'description', 'responsibilities']
+    ordering = ['order']
+
+    fieldsets = (
+        ('Team Information', {
+            'fields': ('name', 'description', 'icon', 'responsibilities'),
+            'description': 'Enter responsibilities one per line'
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(CallToAction)
+class CallToActionAdmin(admin.ModelAdmin):
+    list_display = ['title', 'placement', 'is_active', 'created_at']
+    list_filter = ['placement', 'is_active', 'created_at']
+    search_fields = ['title', 'description']
+
+    fieldsets = (
+        ('CTA Content', {
+            'fields': ('title', 'description')
+        }),
+        ('Button 1 (Primary)', {
+            'fields': ('button_1_text', 'button_1_url', 'button_1_icon')
+        }),
+        ('Button 2 (Secondary)', {
+            'fields': ('button_2_text', 'button_2_url', 'button_2_icon'),
+            'classes': ('collapse',)
+        }),
+        ('Display Settings', {
+            'fields': ('placement', 'background_style', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(PageContent)
+class PageContentAdmin(admin.ModelAdmin):
+    list_display = ['page_section', 'title', 'is_active', 'updated_at']
+    list_filter = ['page_section', 'is_active']
+    search_fields = ['title', 'content']
+
+    fieldsets = (
+        ('Page Section', {
+            'fields': ('page_section',)
+        }),
+        ('Content', {
+            'fields': ('title', 'subtitle', 'content', 'badge_text')
+        }),
+        ('Key Highlights', {
+            'fields': ('highlight_1', 'highlight_2', 'highlight_3'),
+            'classes': ('collapse',),
+            'description': 'For About page key highlights'
+        }),
+        ('Display Settings', {
+            'fields': ('is_active',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
 
 
 # Admin site customization

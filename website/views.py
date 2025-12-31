@@ -5,8 +5,10 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.http import Http404
 from .models import (
-    Page, NewsArticle, HomePageSection, TeamMember, 
-    PartnerShowcase, Testimonial, FAQ, ContactInfo, SiteSettings, Statistic
+    Page, NewsArticle, HomePageSection, TeamMember,
+    PartnerShowcase, Testimonial, FAQ, ContactInfo, SiteSettings, Statistic,
+    HeroSlide, MissionVision, OperationalPillar, PlatformFeature,
+    TrainingProgram, SupportTeam, CallToAction, PageContent
 )
 from dashboard.models import PartnerOrganization
 
@@ -17,40 +19,61 @@ class HomeView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
+        # Get hero slides
+        context['hero_slides'] = HeroSlide.objects.filter(
+            is_active=True
+        ).order_by('order')
+
+        # Get mission and vision
+        context['mission_vision'] = MissionVision.objects.filter(
+            is_active=True
+        ).first()
+
+        # Get operational pillars
+        context['operational_pillars'] = OperationalPillar.objects.filter(
+            is_active=True
+        ).order_by('order')
+
         # Get active homepage sections
         context['homepage_sections'] = HomePageSection.objects.filter(
             is_active=True
         ).order_by('order')
-        
+
         # Get homepage statistics
         context['homepage_statistics'] = Statistic.objects.filter(
             is_active=True,
             show_on_homepage=True
         ).order_by('order')
-        
+
         # Get featured content
         context['featured_news'] = NewsArticle.objects.filter(
-            is_published=True, 
+            is_published=True,
             is_featured=True
         )[:3]
-        
+
         context['featured_testimonials'] = Testimonial.objects.filter(
-            is_active=True, 
+            is_active=True,
             is_featured=True
         )[:3]
-        
+
         context['featured_partners'] = PartnerOrganization.objects.filter(
-            is_active=True, 
+            is_active=True,
             is_featured=True
         ).order_by('feature_order', 'name')[:10]
-        
+
         # Get site settings
         try:
             context['site_settings'] = SiteSettings.objects.first()
         except SiteSettings.DoesNotExist:
             context['site_settings'] = None
-            
+
+        # Get CTA for homepage
+        context['cta'] = CallToAction.objects.filter(
+            is_active=True,
+            placement__in=['home', 'all']
+        ).first()
+
         return context
 
 
@@ -60,7 +83,38 @@ class AboutView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
+        # Get mission and vision
+        context['mission_vision'] = MissionVision.objects.filter(
+            is_active=True
+        ).first()
+
+        # Get operational pillars
+        context['operational_pillars'] = OperationalPillar.objects.filter(
+            is_active=True
+        ).order_by('order')
+
+        # Get support teams
+        context['support_teams'] = SupportTeam.objects.filter(
+            is_active=True
+        ).order_by('order')
+
+        # Get page content sections
+        context['about_hero'] = PageContent.objects.filter(
+            page_section='about_hero',
+            is_active=True
+        ).first()
+
+        context['about_highlights'] = PageContent.objects.filter(
+            page_section='about_highlights',
+            is_active=True
+        ).first()
+
+        context['about_org_structure'] = PageContent.objects.filter(
+            page_section='about_org_structure',
+            is_active=True
+        ).first()
+
         # Try to get About page content from CMS
         try:
             context['about_page'] = Page.objects.get(
@@ -69,38 +123,65 @@ class AboutView(TemplateView):
             )
         except Page.DoesNotExist:
             context['about_page'] = None
-        
+
         # Get team members by category
         context['bot_members'] = TeamMember.objects.filter(
             is_active=True,
             category='bot'
         ).order_by('order', 'name')
-        
+
         context['exco_members'] = TeamMember.objects.filter(
             is_active=True,
             category='exco'
         ).order_by('order', 'name')
-        
+
         context['staff_members'] = TeamMember.objects.filter(
             is_active=True,
             category='staff'
         ).order_by('order', 'name')
-        
+
         # Get all team members for backward compatibility
         context['team_members'] = TeamMember.objects.filter(
             is_active=True
         ).order_by('category', 'order', 'name')
-        
+
+        # Get CTA for about page
+        context['cta'] = CallToAction.objects.filter(
+            is_active=True,
+            placement__in=['about', 'all']
+        ).first()
+
         return context
 
 
 class ProgramsView(TemplateView):
     """Programs and services page"""
     template_name = 'website/programs.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
+        # Get platform features
+        context['platform_features'] = PlatformFeature.objects.filter(
+            is_active=True
+        ).order_by('order')
+
+        # Get training programs
+        context['training_programs'] = TrainingProgram.objects.filter(
+            is_active=True
+        ).order_by('order')
+
+        # Get page content sections
+        context['programs_hero'] = PageContent.objects.filter(
+            page_section='programs_hero',
+            is_active=True
+        ).first()
+
+        context['programs_platform'] = PageContent.objects.filter(
+            page_section='programs_platform',
+            is_active=True
+        ).first()
+
         # Try to get Programs page content from CMS
         try:
             context['programs_page'] = Page.objects.get(
@@ -109,7 +190,13 @@ class ProgramsView(TemplateView):
             )
         except Page.DoesNotExist:
             context['programs_page'] = None
-            
+
+        # Get CTA for programs page
+        context['cta'] = CallToAction.objects.filter(
+            is_active=True,
+            placement__in=['programs', 'all']
+        ).first()
+
         return context
 
 
@@ -144,7 +231,13 @@ class PartnersView(TemplateView):
             )
         except Page.DoesNotExist:
             context['partners_page'] = None
-            
+
+        # Get CTA for partners page
+        context['cta'] = CallToAction.objects.filter(
+            is_active=True,
+            placement__in=['partners', 'all']
+        ).first()
+
         return context
 
 
@@ -295,13 +388,19 @@ class NewsDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Get related articles
         context['related_articles'] = NewsArticle.objects.filter(
             is_published=True,
             category=self.object.category
         ).exclude(id=self.object.id)[:3]
-        
+
+        # Get CTA for news detail page
+        context['cta'] = CallToAction.objects.filter(
+            is_active=True,
+            placement__in=['news', 'all']
+        ).first()
+
         return context
 
 
@@ -334,9 +433,20 @@ class PageDetailView(DetailView):
     context_object_name = 'page'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
-    
+
     def get_queryset(self):
         return Page.objects.filter(is_published=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get CTA for page detail
+        context['cta'] = CallToAction.objects.filter(
+            is_active=True,
+            placement__in=['page', 'all']
+        ).first()
+
+        return context
 
 
 class LoginRedirectView(RedirectView):

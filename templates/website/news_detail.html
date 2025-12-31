@@ -152,26 +152,52 @@
     {% endif %}
 
     <!-- Call to Action -->
-    <section class="section-padding bg-primary text-white">
-        <div class="container text-center">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Stay Connected</h2>
-                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                        Don't miss out on the latest updates from AKILIMO Nigeria Association. Join our community of farmers and agricultural innovators.
-                    </p>
-                    <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>Join AKILIMO
-                        </a>
-                        <a href="{% url 'website:news_list' %}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-newspaper me-2"></i>More Articles
-                        </a>
+    {% if cta %}
+        <section class="section-padding text-white" style="{{ cta.background_style }}">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">{{ cta.title }}</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            {{ cta.description }}
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{{ cta.button_1_url }}" class="btn btn-light btn-lg px-5 py-3">
+                                {% if cta.button_1_icon %}<i class="{{ cta.button_1_icon }} me-2"></i>{% endif %}{{ cta.button_1_text }}
+                            </a>
+                            {% if cta.button_2_text %}
+                                <a href="{{ cta.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                    {% if cta.button_2_icon %}<i class="{{ cta.button_2_icon }} me-2"></i>{% endif %}{{ cta.button_2_text }}
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    {% else %}
+        <!-- Default CTA if no CMS content exists -->
+        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join the AKILIMO Movement</h2>
+                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                            Access evidence-based, site-specific recommendations validated by 5,000+ farmers. Start optimizing your productivity and profits today.
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                            <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3">
+                                <i class="bi bi-person-plus me-2"></i>Get Started
+                            </a>
+                            <a href="{% url 'website:news_list' %}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                <i class="bi bi-newspaper me-2"></i>More Articles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}
 
 {% block extra_css %}
