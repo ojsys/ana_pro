@@ -433,7 +433,21 @@ class SiteSettings(models.Model):
     # SEO
     google_analytics_id = models.CharField(max_length=20, blank=True)
     meta_keywords = models.CharField(max_length=200, blank=True)
-    
+
+    # Footer Settings
+    footer_copyright_text = models.CharField(
+        max_length=200,
+        default="All rights reserved.",
+        verbose_name="Footer Copyright Text",
+        help_text="Copyright text (year will be added automatically). Example: 'All rights reserved.'"
+    )
+    footer_tagline = models.CharField(
+        max_length=200,
+        default="Built with ❤️ for Nigerian Farmers",
+        verbose_name="Footer Tagline",
+        help_text="Tagline shown in footer. Example: 'Built with ❤️ for Nigerian Farmers' or 'Made with Love for Farmers'"
+    )
+
     # Images
     logo = models.ImageField(upload_to='site/', blank=True, null=True)
     favicon = models.ImageField(upload_to='site/', blank=True, null=True)

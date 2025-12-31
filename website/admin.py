@@ -348,6 +348,10 @@ class SiteSettingsAdmin(ImportExportModelAdmin):
             'fields': ('logo', 'favicon'),
             'classes': ('collapse',)
         }),
+        ('Footer Settings', {
+            'fields': ('footer_copyright_text', 'footer_tagline'),
+            'description': 'Customize the footer text displayed at the bottom of every page. The current year is automatically added to the copyright text.'
+        }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
