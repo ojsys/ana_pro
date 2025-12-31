@@ -323,11 +323,15 @@ class StatisticAdmin(ImportExportModelAdmin):
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(ImportExportModelAdmin):
     resource_class = SiteSettingsResource
-    list_display = ['site_title', 'site_tagline', 'primary_email', 'primary_phone']
+    list_display = ['site_title', 'site_tagline', 'bypass_payment_requirements', 'primary_email', 'primary_phone']
     
     fieldsets = (
         ('Site Information', {
             'fields': ('site_title', 'site_tagline', 'site_description')
+        }),
+        ('Payment Settings', {
+            'fields': ('bypass_payment_requirements',),
+            'description': '<div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin-bottom: 15px; border-radius: 4px;"><strong>⚠️ Important:</strong> When "Bypass Payment Requirements" is <strong>enabled</strong>, users can register and access the dashboard <strong>without any payment</strong>. Disable this setting to enforce payment requirements.</div>'
         }),
         ('Contact Information', {
             'fields': ('primary_email', 'primary_phone')

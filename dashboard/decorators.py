@@ -6,8 +6,22 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-# TEMPORARY: Set to True to bypass payment requirements for free access
-BYPASS_PAYMENT_REQUIREMENTS = True
+
+def get_payment_bypass_setting():
+    """
+    Check if payment requirements should be bypassed.
+    Returns True if bypass is enabled in Site Settings, False otherwise.
+    """
+    try:
+        from website.models import SiteSettings
+        site_settings = SiteSettings.objects.first()
+        if site_settings:
+            return site_settings.bypass_payment_requirements
+        # Default to True if no settings exist (for backwards compatibility)
+        return True
+    except Exception:
+        # If there's any error (e.g., during migrations), default to True
+        return True
 
 
 def require_active_subscription(view_func):
@@ -22,13 +36,13 @@ def require_active_subscription(view_func):
 
     Redirects to appropriate page if requirements not met.
 
-    NOTE: If BYPASS_PAYMENT_REQUIREMENTS is True, all payment checks are bypassed.
+    NOTE: If payment bypass is enabled in Site Settings, all payment checks are bypassed.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
-        # BYPASS: Skip all payment checks if bypass flag is enabled
-        if BYPASS_PAYMENT_REQUIREMENTS:
+        # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
+        if get_payment_bypass_setting():
             # Create membership automatically if it doesn't exist
             if not hasattr(request.user, 'membership'):
                 from .models import Membership
@@ -84,13 +98,13 @@ def require_registration_payment(view_func):
     Used for basic features that should be accessible after registration
     but before annual dues payment.
 
-    NOTE: If BYPASS_PAYMENT_REQUIREMENTS is True, all payment checks are bypassed.
+    NOTE: If payment bypass is enabled in Site Settings, all payment checks are bypassed.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
-        # BYPASS: Skip all payment checks if bypass flag is enabled
-        if BYPASS_PAYMENT_REQUIREMENTS:
+        # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
+        if get_payment_bypass_setting():
             # Create membership automatically if it doesn't exist
             if not hasattr(request.user, 'membership'):
                 from .models import Membership
@@ -128,7 +142,7 @@ def admin_or_subscription_required(view_func):
     Decorator for views that should be accessible by admins regardless of subscription,
     but require active subscription for regular members.
 
-    NOTE: If BYPASS_PAYMENT_REQUIREMENTS is True, all payment checks are bypassed.
+    NOTE: If payment bypass is enabled in Site Settings, all payment checks are bypassed.
     """
     @wraps(view_func)
     @login_required
@@ -137,8 +151,8 @@ def admin_or_subscription_required(view_func):
         if request.user.is_staff or request.user.is_superuser:
             return view_func(request, *args, **kwargs)
 
-        # BYPASS: Skip all payment checks if bypass flag is enabled
-        if BYPASS_PAYMENT_REQUIREMENTS:
+        # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
+        if get_payment_bypass_setting():
             # Create membership automatically if it doesn't exist
             if not hasattr(request.user, 'membership'):
                 from .models import Membership

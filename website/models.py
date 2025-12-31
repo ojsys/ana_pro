@@ -412,7 +412,14 @@ class SiteSettings(models.Model):
     site_description = models.TextField(
         default="AKILIMO Nigeria Association promotes sustainable cassava production and agricultural innovation across Nigeria."
     )
-    
+
+    # Payment Settings
+    bypass_payment_requirements = models.BooleanField(
+        default=True,
+        verbose_name="Bypass Payment Requirements",
+        help_text="When enabled, users can register and access the dashboard without payment. Disable to enforce payment requirements."
+    )
+
     # Contact
     primary_email = models.EmailField(blank=True)
     primary_phone = models.CharField(max_length=20, blank=True)
