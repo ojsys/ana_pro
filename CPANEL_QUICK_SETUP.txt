@@ -1,0 +1,150 @@
+================================================================================
+CPANEL SETUP - AUTOMATIC DATA SYNC FOR AKILIMO
+================================================================================
+
+Your Virtual Environment: ~/virtualenv/ana_pro/3.11
+Your Project Directory: ~/ana_pro
+
+================================================================================
+STEP 1: Upload and Setup Script
+================================================================================
+
+On your cPanel server, run these commands:
+
+cd ~/ana_pro
+chmod +x run_sync_cpanel.sh
+mkdir -p logs
+
+
+================================================================================
+STEP 2: Test the Sync Script
+================================================================================
+
+Test that it works:
+
+./run_sync_cpanel.sh
+
+Then check the logs:
+
+tail -20 logs/sync.log
+
+
+================================================================================
+STEP 3: Add Cron Job
+================================================================================
+
+METHOD A: Via cPanel Interface (RECOMMENDED)
+--------------------------------------------
+1. Log into cPanel
+2. Find and click "Cron Jobs"
+3. Under "Add New Cron Job", set:
+
+   Minute:   0
+   Hour:     */6
+   Day:      *
+   Month:    *
+   Weekday:  *
+   Command:  /home/akilimon/ana_pro/run_sync_cpanel.sh
+
+4. Click "Add New Cron Job"
+
+
+METHOD B: Via Command Line
+---------------------------
+crontab -e
+
+Then add this line:
+
+0 */6 * * * /home/akilimon/ana_pro/run_sync_cpanel.sh
+
+Save and exit.
+
+
+================================================================================
+STEP 4: Verify Setup
+================================================================================
+
+Check cron job was added:
+
+crontab -l
+
+You should see:
+0 */6 * * * /home/akilimon/ana_pro/run_sync_cpanel.sh
+
+
+================================================================================
+MONITORING
+================================================================================
+
+View sync logs in real-time:
+tail -f ~/ana_pro/logs/sync.log
+
+View last 50 lines:
+tail -50 ~/ana_pro/logs/sync.log
+
+Check for errors:
+grep -i error ~/ana_pro/logs/sync.log
+
+
+================================================================================
+MANUAL SYNC
+================================================================================
+
+To run sync manually anytime:
+
+cd ~/ana_pro
+source ~/virtualenv/ana_pro/3.11/bin/activate
+python manage.py sync_akilimo_data
+
+
+With dry-run (preview only):
+
+python manage.py sync_akilimo_data --dry-run
+
+
+================================================================================
+SYNC SCHEDULE
+================================================================================
+
+Syncs run automatically every 6 hours:
+- 12:00 AM
+- 6:00 AM
+- 12:00 PM
+- 6:00 PM
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+If sync fails, check:
+
+1. Virtual environment active:
+   source ~/virtualenv/ana_pro/3.11/bin/activate
+
+2. You're in project directory:
+   cd ~/ana_pro
+   pwd
+
+3. API configuration exists:
+   python manage.py shell
+   >>> from dashboard.models import APIConfiguration
+   >>> APIConfiguration.objects.filter(is_active=True).first()
+
+4. Check logs:
+   tail -50 logs/sync.log
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+✓ Virtual Environment: ~/virtualenv/ana_pro/3.11
+✓ Sync Script: ~/ana_pro/run_sync_cpanel.sh
+✓ Logs: ~/ana_pro/logs/sync.log
+✓ Schedule: Every 6 hours
+✓ Cron Command: 0 */6 * * * /home/akilimon/ana_pro/run_sync_cpanel.sh
+
+
+Need help? Check logs or run manual sync to see errors.
+================================================================================
