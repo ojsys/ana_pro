@@ -1,16 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, TemplateView, RedirectView
 from django.urls import reverse_lazy
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.paginator import Paginator
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.views.decorators.http import require_GET
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from .models import (
     Page, NewsArticle, HomePageSection, TeamMember,
     PartnerShowcase, Testimonial, FAQ, ContactInfo, SiteSettings, Statistic,
     HeroSlide, MissionVision, OperationalPillar, PlatformFeature,
     TrainingProgram, SupportTeam, CallToAction, PageContent
 )
-from dashboard.models import PartnerOrganization
+from dashboard.models import PartnerOrganization, AkilimoParticipant
 
 
 class HomeView(TemplateView):
@@ -40,11 +43,8 @@ class HomeView(TemplateView):
             is_active=True
         ).order_by('order')
 
-        # Get homepage statistics
-        context['homepage_statistics'] = Statistic.objects.filter(
-            is_active=True,
-            show_on_homepage=True
-        ).order_by('order')
+        # Get homepage statistics - compute real statistics from database
+        context['homepage_statistics'] = self._get_real_statistics()
 
         # Get featured content
         context['featured_news'] = NewsArticle.objects.filter(
@@ -75,6 +75,92 @@ class HomeView(TemplateView):
         ).first()
 
         return context
+
+    def _get_real_statistics(self):
+        """
+        Compute real statistics from AkilimoParticipant data.
+        Falls back to static Statistic model if no data available.
+        """
+        try:
+            # Filter for Nigeria by default
+            queryset = AkilimoParticipant.objects.filter(country__iexact='nigeria')
+
+            if not queryset.exists():
+                # Fallback to static statistics if no data
+                return Statistic.objects.filter(
+                    is_active=True,
+                    show_on_homepage=True
+                ).order_by('order')
+
+            # Calculate statistics
+            total_participants = queryset.count()
+            unique_states = queryset.exclude(
+                admin_level1__isnull=True
+            ).exclude(admin_level1='').values('admin_level1').distinct().count()
+
+            unique_partners = queryset.exclude(
+                partner__isnull=True
+            ).exclude(partner='').values('partner').distinct().count()
+
+            unique_events = queryset.exclude(
+                event_type__isnull=True
+            ).exclude(event_type='').values('event_date', 'event_type', 'event_venue').distinct().count()
+
+            unique_cities = queryset.exclude(
+                event_city__isnull=True
+            ).exclude(event_city='').values('event_city').distinct().count()
+
+            extension_agents = queryset.exclude(
+                org_first_name__isnull=True
+            ).exclude(org_first_name='').values('org_first_name', 'org_surname').distinct().count()
+
+            male_count = queryset.filter(farmer_gender__icontains='male').exclude(farmer_gender__icontains='female').count()
+            female_count = queryset.filter(farmer_gender__icontains='female').count()
+
+            # Format numbers
+            def format_number(num):
+                if num >= 1000000:
+                    return f"{num/1000000:.1f}M+"
+                elif num >= 1000:
+                    return f"{num/1000:.1f}k+"
+                elif num > 0:
+                    return f"{num:,}+"
+                else:
+                    return "0"
+
+            # Return statistics as list of dictionaries
+            return [
+                {
+                    'icon': 'bi bi-people-fill',
+                    'value': format_number(total_participants),
+                    'label': 'Active Farmers',
+                    'description': f'{male_count:,} male, {female_count:,} female'
+                },
+                {
+                    'icon': 'bi bi-building',
+                    'value': format_number(unique_partners),
+                    'label': 'Partner Organizations',
+                    'description': 'Working together for impact'
+                },
+                {
+                    'icon': 'bi bi-geo-alt-fill',
+                    'value': format_number(unique_states),
+                    'label': 'States Covered',
+                    'description': f'{unique_cities} cities reached'
+                },
+                {
+                    'icon': 'bi bi-calendar-event',
+                    'value': format_number(unique_events),
+                    'label': 'Training Events',
+                    'description': f'{extension_agents} extension agents'
+                }
+            ]
+        except Exception:
+            # Fallback to static statistics on error
+            return Statistic.objects.filter(
+                is_active=True,
+                show_on_homepage=True
+            ).order_by('order')
 
 
 class AboutView(TemplateView):
@@ -506,5 +592,115 @@ def website_context(request):
         context['primary_contact'] = ContactInfo.objects.filter(
             is_active=True
         ).first()
-    
+
     return context
+
+
+@require_GET
+@cache_page(60 * 5)  # Cache for 5 minutes
+def get_live_statistics(request):
+    """
+    API endpoint to fetch live statistics for the homepage.
+    Returns real-time data from the AkilimoParticipant model.
+    """
+    try:
+        # Filter for Nigeria by default (for Akilimo Nigeria Association)
+        country_filter = request.GET.get('country', 'nigeria').lower()
+
+        if country_filter == 'all':
+            queryset = AkilimoParticipant.objects.all()
+        else:
+            queryset = AkilimoParticipant.objects.filter(country__iexact=country_filter)
+
+        # Calculate statistics
+        total_participants = queryset.count()
+
+        # Count unique states
+        unique_states = queryset.exclude(
+            admin_level1__isnull=True
+        ).exclude(admin_level1='').values('admin_level1').distinct().count()
+
+        # Count unique partners
+        unique_partners = queryset.exclude(
+            partner__isnull=True
+        ).exclude(partner='').values('partner').distinct().count()
+
+        # Count participants with phone numbers
+        connected_farmers = queryset.exclude(
+            farmer_phone_no__isnull=True
+        ).exclude(farmer_phone_no='').count()
+
+        # Count unique training events
+        unique_events = queryset.exclude(
+            event_type__isnull=True
+        ).exclude(event_type='').values('event_date', 'event_type', 'event_venue').distinct().count()
+
+        # Count unique cities
+        unique_cities = queryset.exclude(
+            event_city__isnull=True
+        ).exclude(event_city='').values('event_city').distinct().count()
+
+        # Count extension agents (unique org persons)
+        extension_agents = queryset.exclude(
+            org_first_name__isnull=True
+        ).exclude(org_first_name='').values('org_first_name', 'org_surname').distinct().count()
+
+        # Gender breakdown
+        male_count = queryset.filter(farmer_gender__icontains='male').exclude(farmer_gender__icontains='female').count()
+        female_count = queryset.filter(farmer_gender__icontains='female').count()
+
+        # Format numbers for display (e.g., 1500 -> "1,500+" or "1.5k+")
+        def format_number(num):
+            if num >= 1000000:
+                return f"{num/1000000:.1f}M+"
+            elif num >= 1000:
+                return f"{num/1000:.1f}k+"
+            elif num > 0:
+                return f"{num:,}+"
+            else:
+                return "0"
+
+        # Return statistics in the format expected by the homepage
+        statistics = [
+            {
+                'icon': 'bi bi-people-fill',
+                'value': format_number(total_participants),
+                'label': 'Active Farmers',
+                'description': f'{male_count:,} male, {female_count:,} female',
+                'raw_value': total_participants
+            },
+            {
+                'icon': 'bi bi-building',
+                'value': format_number(unique_partners),
+                'label': 'Partner Organizations',
+                'description': 'Working together for impact',
+                'raw_value': unique_partners
+            },
+            {
+                'icon': 'bi bi-geo-alt-fill',
+                'value': format_number(unique_states),
+                'label': 'States Covered',
+                'description': f'{unique_cities} cities reached',
+                'raw_value': unique_states
+            },
+            {
+                'icon': 'bi bi-calendar-event',
+                'value': format_number(unique_events),
+                'label': 'Training Events',
+                'description': f'{extension_agents} extension agents',
+                'raw_value': unique_events
+            }
+        ]
+
+        return JsonResponse({
+            'success': True,
+            'statistics': statistics,
+            'last_updated': queryset.order_by('-created_at').first().created_at.isoformat() if queryset.exists() else None
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'statistics': []
+        }, status=500)
