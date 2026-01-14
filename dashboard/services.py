@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 
 class EiAMeliaAPIService:
     """Service class to interact with EiA MELIA API"""
-    
-    BASE_URL = "https://my.eia.cgiar.org/api/v1/melia"
+
+    BASE_URL = "https://my.sfp.cgiar.org/api/v1/melia"
     
     def __init__(self, token: str):
         self.token = token
