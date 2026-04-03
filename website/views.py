@@ -294,17 +294,13 @@ class PartnersView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Primary: Nigeria-specific ANA partners from the official list
-        context['ana_nigeria_partners'] = ANANigeriaPartner.objects.filter(
-            is_active=True
-        ).order_by('organization')
+        ana_qs = ANANigeriaPartner.objects.filter(is_active=True).order_by('organization')
+        context['ana_nigeria_partners'] = ana_qs
 
         # Counts for summary display
-        context['ana_partners_integrated'] = context['ana_nigeria_partners'].filter(
-            is_integrated_akilimo=True
-        ).count()
-        context['ana_partners_uploading'] = context['ana_nigeria_partners'].filter(
-            is_uploading_data=True
-        ).count()
+        context['ana_partners_total'] = ana_qs.count()
+        context['ana_partners_integrated'] = ana_qs.filter(is_integrated_akilimo=True).count()
+        context['ana_partners_uploading'] = ana_qs.filter(is_uploading_data=True).count()
 
         # Legacy: all PartnerOrganization records (kept for backward compatibility)
         context['all_partners'] = PartnerOrganization.objects.filter(

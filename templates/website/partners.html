@@ -34,46 +34,31 @@
                 </div>
                 
                 <div class="col-lg-6" data-aos="fade-left" data-aos-delay="300">
-                    <div class="position-relative">
-                        <div class="bg-white rounded-4 p-4 shadow-lg">
-                            <div class="row g-3 text-center">
-                                <div class="col-4">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
-                                        <i class="bi bi-building fs-3 mb-2"></i>
-                                        <h6 class="mb-0 small">Research Institutes</h6>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="bg-success text-white rounded-3 p-3">
-                                        <i class="bi bi-globe fs-3 mb-2"></i>
-                                        <h6 class="mb-0 small">International Orgs</h6>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--light-accent);">
-                                        <i class="bi bi-mortarboard fs-3 mb-2"></i>
-                                        <h6 class="mb-0 small">Universities</h6>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--dark-accent);">
-                                        <i class="bi bi-briefcase fs-3 mb-2"></i>
-                                        <h6 class="mb-0 small">Private Sector</h6>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
-                                        <i class="bi bi-shield-check fs-3 mb-2"></i>
-                                        <h6 class="mb-0 small">Government</h6>
-                                    </div>
+                    <div class="bg-white rounded-4 p-4 shadow-lg">
+                        <div class="row g-3 text-center">
+                            <div class="col-12 mb-2">
+                                <p class="text-muted small mb-0">ANA Nigeria Partner Summary</p>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
+                                    <i class="bi bi-building fs-3 d-block mb-1"></i>
+                                    <span class="fw-bold fs-5">{{ ana_partners_total }}</span>
+                                    <h6 class="mb-0 small">Total Partners</h6>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Partnership Stats -->
-                        <div class="position-absolute top-0 end-0 translate-middle">
-                            <div class="text-white rounded-circle p-3 shadow" style="background-color: var(--light-accent);">
-                                <span class="fw-bold">50+</span>
+                            <div class="col-4">
+                                <div class="bg-success text-white rounded-3 p-3">
+                                    <i class="bi bi-check2-circle fs-3 d-block mb-1"></i>
+                                    <span class="fw-bold fs-5">{{ ana_partners_integrated }}</span>
+                                    <h6 class="mb-0 small">Integrated</h6>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-white rounded-3 p-3" style="background-color: var(--light-accent);">
+                                    <i class="bi bi-cloud-upload fs-3 d-block mb-1"></i>
+                                    <span class="fw-bold fs-5">{{ ana_partners_uploading }}</span>
+                                    <h6 class="mb-0 small">Uploading Data</h6>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -82,61 +67,98 @@
         </div>
     </section>
 
-    <!-- All Partners -->
+    <!-- ANA Nigeria Partners -->
     <section class="section-padding">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">All Partners</h2>
+            <h2 class="section-title" data-aos="fade-up">ANA Nigeria Partners</h2>
             <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Leading institutions and organizations committed to agricultural innovation
+                Nigerian organisations working with AKILIMO to transform cassava farming
             </p>
-            
+
+            <!-- Summary counts bar -->
+            <div class="row g-3 mb-5" data-aos="fade-up" data-aos-delay="150">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-3 p-3 rounded-3 border">
+                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background-color:var(--primary-accent);">
+                            <i class="bi bi-building fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold fs-4">{{ ana_partners_total }}</div>
+                            <div class="text-muted small">Total Partner Organisations</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-3 p-3 rounded-3 border">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                            <i class="bi bi-check2-circle fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold fs-4">{{ ana_partners_integrated }}</div>
+                            <div class="text-muted small">Integrated AKILIMO</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-3 p-3 rounded-3 border">
+                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background-color:var(--light-accent);">
+                            <i class="bi bi-cloud-upload fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold fs-4">{{ ana_partners_uploading }}</div>
+                            <div class="text-muted small">Uploading Data</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partner cards -->
             <div class="row">
-                {% for partner in all_partners %}
-                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
-                        <div class="card h-100 border-0 shadow-sm partner-card">
-                            {% if partner.logo %}
-                                <div class="text-center p-3">
-                                    {% if partner.website %}
-                                        <a href="{{ partner.website }}" target="_blank" rel="noopener">
-                                            <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" class="img-fluid" style="max-height: 120px; object-fit: contain; transition: transform 0.3s ease;">
-                                        </a>
-                                    {% else %}
-                                        <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" class="img-fluid" style="max-height: 120px; object-fit: contain;">
-                                    {% endif %}
-                                </div>
-                            {% else %}
-                                <div class="text-center p-3">
-                                    <div class="bg-light rounded-3 mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                                        <i class="bi bi-building display-4 text-muted"></i>
-                                    </div>
-                                </div>
+                {% for partner in ana_nigeria_partners %}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4" data-aos="fade-up">
+                    <div class="card h-100 border-0 shadow-sm partner-card">
+                        <div class="card-body p-4">
+                            <!-- Organisation name -->
+                            <h6 class="card-title fw-bold mb-1">{{ partner.organization }}</h6>
+
+                            <!-- Primary category badge -->
+                            <span class="badge rounded-pill mb-2" style="background-color:var(--primary-accent);font-size:0.7rem;">
+                                {{ partner.primary_category }}
+                            </span>
+
+                            <!-- Contact info -->
+                            {% if partner.contact_person %}
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-person me-1"></i>{{ partner.contact_person }}
+                            </p>
                             {% endif %}
-                            <div class="card-body text-center p-4">
-                                <h6 class="card-title">{{ partner.name }}</h6>
-                                {% if partner.organization_type %}
-                                    <p class="text-muted mb-2 small">{{ partner.organization_type }}</p>
+                            {% if partner.email %}
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-envelope me-1"></i>{{ partner.email }}
+                            </p>
+                            {% endif %}
+
+                            <!-- Status badges -->
+                            <div class="mt-2 d-flex flex-wrap gap-1">
+                                {% if partner.is_integrated_akilimo %}
+                                <span class="badge bg-success" style="font-size:0.65rem;">
+                                    <i class="bi bi-check-circle me-1"></i>Integrated
+                                </span>
                                 {% endif %}
-                                {% if partner.description %}
-                                    <p class="card-text small">{{ partner.description|truncatewords:15 }}</p>
-                                {% endif %}
-                                {% if partner.website %}
-                                    <div class="mt-3">
-                                        <a href="{{ partner.website }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-globe me-1"></i>Visit Website
-                                        </a>
-                                    </div>
+                                {% if partner.is_uploading_data %}
+                                <span class="badge bg-info text-dark" style="font-size:0.65rem;">
+                                    <i class="bi bi-cloud-upload me-1"></i>Uploading
+                                </span>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
+                </div>
                 {% empty %}
-                    <div class="col-12">
-                        <div class="text-center py-5">
-                            <i class="bi bi-building display-1 text-muted"></i>
-                            <h3 class="mt-3 text-muted">No partners available</h3>
-                            <p class="text-muted">Partner organizations will be displayed here when added.</p>
-                        </div>
-                    </div>
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-building display-1 text-muted"></i>
+                    <h3 class="mt-3 text-muted">No partners available</h3>
+                </div>
                 {% endfor %}
             </div>
         </div>
@@ -398,7 +420,7 @@
                 <div class="col-lg-8">
                     <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Become a Strategic Partner</h2>
                     <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                        Join 200+ organizations advancing AKILIMO's evidence-based agricultural innovation in Nigeria. Together, we maximize profitability across value chain networks.
+                        Join {{ ana_partners_total }}+ organisations advancing AKILIMO's evidence-based agricultural innovation in Nigeria. Together, we maximize profitability across value chain networks.
                     </p>
                     <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
                         <a href="{% url 'website:contact' %}" class="btn btn-light btn-lg px-5 py-3">
