@@ -238,10 +238,13 @@ class Command(BaseCommand):
                     pass
             
             def s(val, max_len=None):
-                """Convert to string and optionally truncate for MySQL VARCHAR limits."""
+                """Convert to string, strip non-BMP chars, and truncate for MySQL."""
                 if val is None:
                     return val
                 val = str(val)
+                # Remove characters outside BMP (4-byte emoji/special chars)
+                # that can break MySQL even with utf8mb4 in strict mode
+                val = val.encode('utf-8', errors='ignore').decode('utf-8')
                 return val[:max_len] if max_len else val
 
             # Prepare data for model

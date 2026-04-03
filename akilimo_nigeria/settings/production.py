@@ -24,6 +24,15 @@ ALLOWED_HOSTS = config(
 # Supports both MySQL and PostgreSQL via DATABASE_URL
 DATABASE_URL = config('DATABASE_URL', default=None)
 
+MYSQL_OPTIONS = {
+    'charset': 'utf8mb4',
+    'init_command': (
+        "SET sql_mode='STRICT_TRANS_TABLES',"
+        "character_set_connection=utf8mb4,"
+        "collation_connection=utf8mb4_unicode_ci"
+    ),
+}
+
 if DATABASE_URL:
     # Parse DATABASE_URL for cPanel MySQL
     try:
@@ -31,6 +40,9 @@ if DATABASE_URL:
         DATABASES = {
             'default': dj_database_url.parse(DATABASE_URL)
         }
+        # Inject utf8mb4 options if MySQL
+        if 'mysql' in DATABASES['default'].get('ENGINE', ''):
+            DATABASES['default']['OPTIONS'] = MYSQL_OPTIONS
     except ImportError:
         # Fallback to manual MySQL configuration
         DATABASES = {
@@ -41,10 +53,7 @@ if DATABASE_URL:
                 'PASSWORD': config('DB_PASSWORD'),
                 'HOST': config('DB_HOST', default='localhost'),
                 'PORT': config('DB_PORT', default='3306'),
-                'OPTIONS': {
-                    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                    'charset': 'utf8mb4',
-                },
+                'OPTIONS': MYSQL_OPTIONS,
             }
         }
 else:
@@ -57,10 +66,7 @@ else:
             'PASSWORD': config('DB_PASSWORD'),
             'HOST': config('DB_HOST', default='localhost'),
             'PORT': config('DB_PORT', default='3306'),
-            'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                'charset': 'utf8mb4',
-            },
+            'OPTIONS': MYSQL_OPTIONS,
         }
     }
 

@@ -94,13 +94,14 @@ class HomeView(TemplateView):
 
             # Calculate statistics
             total_participants = queryset.count()
+
+            # States: Nigeria only (queryset is already filtered to Nigeria)
             unique_states = queryset.exclude(
                 admin_level1__isnull=True
             ).exclude(admin_level1='').values('admin_level1').distinct().count()
 
-            unique_partners = queryset.exclude(
-                partner__isnull=True
-            ).exclude(partner='').values('partner').distinct().count()
+            # Partners: count from the official ANA Nigeria Partners table
+            unique_partners = ANANigeriaPartner.objects.filter(is_active=True).count()
 
             unique_events = queryset.exclude(
                 event_type__isnull=True
@@ -624,15 +625,14 @@ def get_live_statistics(request):
         # Calculate statistics
         total_participants = queryset.count()
 
-        # Count unique states
-        unique_states = queryset.exclude(
+        # States: always Nigeria-only regardless of country_filter
+        nigeria_qs = AkilimoParticipant.objects.filter(country__iexact='nigeria')
+        unique_states = nigeria_qs.exclude(
             admin_level1__isnull=True
         ).exclude(admin_level1='').values('admin_level1').distinct().count()
 
-        # Count unique partners
-        unique_partners = queryset.exclude(
-            partner__isnull=True
-        ).exclude(partner='').values('partner').distinct().count()
+        # Partners: count from the official ANA Nigeria Partners table
+        unique_partners = ANANigeriaPartner.objects.filter(is_active=True).count()
 
         # Count participants with phone numbers
         connected_farmers = queryset.exclude(
@@ -682,7 +682,7 @@ def get_live_statistics(request):
                 'icon': 'bi bi-building',
                 'value': format_number(unique_partners),
                 'label': 'Partner Organizations',
-                'description': 'Working together for impact',
+                'description': 'Nigeria ANA partners',
                 'raw_value': unique_partners
             },
             {
