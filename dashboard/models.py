@@ -304,7 +304,7 @@ class AkilimoParticipant(models.Model):
     event_month = models.IntegerField(null=True, blank=True)
     event_type = models.CharField(max_length=100, null=True, blank=True)
     event_format = models.CharField(max_length=50, null=True, blank=True)
-    event_city = models.CharField(max_length=200, null=True, blank=True)
+    event_city = models.CharField(max_length=500, null=True, blank=True)
     event_venue = models.CharField(max_length=500, null=True, blank=True)
     event_geopoint = models.CharField(max_length=100, null=True, blank=True, help_text="GPS coordinates")
     
