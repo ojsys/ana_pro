@@ -26,7 +26,7 @@ class EiAMeliaAPIService:
         url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
         
         try:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = requests.get(url, headers=self.headers, params=params, timeout=120)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
