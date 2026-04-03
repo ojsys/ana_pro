@@ -11,8 +11,9 @@ class Command(BaseCommand):
     help = 'Sync Akilimo participant data from EiA MELIA API to new model structure'
 
     def add_arguments(self, parser):
-        parser.add_argument('--batch-size', type=int, default=3000, help='Number of records per batch')
-        parser.add_argument('--max-records', type=int, default=5000, help='Maximum total records to sync (for testing)')
+        parser.add_argument('--batch-size', type=int, default=1000, help='Number of records per API page/batch')
+        parser.add_argument('--max-records', type=int, default=None,
+                            help='Maximum total records to sync (omit to sync ALL available records)')
         parser.add_argument('--dry-run', action='store_true', help='Show what would be synced without saving')
         parser.add_argument('--force', action='store_true', help='Update existing records')
 
@@ -42,7 +43,7 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write(f'✅ Using API: {api_config.name}')
+        self.stdout.write(f'✅ Using API: {api_config.name} ({api_config.base_url})')
 
         # Create sync log entry
         if not dry_run:
@@ -52,8 +53,8 @@ class Command(BaseCommand):
             )
 
         try:
-            # Initialize API service
-            api_service = EiAMeliaAPIService(api_config.token)
+            # Initialize API service — pass base_url from database config
+            api_service = EiAMeliaAPIService(api_config.token, base_url=api_config.base_url)
             
             # Get first page to understand total records
             first_response = api_service.get_participants_by_usecase('akilimo', page=1, page_size=1)
@@ -61,12 +62,12 @@ class Command(BaseCommand):
             
             self.stdout.write(f'📊 Total records available: {total_available:,}')
             
-            if max_records:
+            if max_records is not None:
                 total_to_sync = min(max_records, total_available)
-                self.stdout.write(f'📝 Will sync: {total_to_sync:,} records (limited)')
+                self.stdout.write(f'📝 Will sync: {total_to_sync:,} records (capped by --max-records)')
             else:
-                total_to_sync = total_available
-                self.stdout.write(f'📝 Will sync: {total_to_sync:,} records (all)')
+                total_to_sync = None  # unlimited — stop when API has no more pages
+                self.stdout.write(f'📝 Will sync: all {total_available:,} available records')
 
             if dry_run:
                 self.stdout.write(self.style.WARNING('🔍 DRY RUN - No data will be saved'))
@@ -87,32 +88,43 @@ class Command(BaseCommand):
             total_updated = 0
             total_skipped = 0
             page = 1
-            
-            while total_processed < total_to_sync:
-                # Calculate current batch size
-                remaining = total_to_sync - total_processed
-                current_batch_size = min(batch_size, remaining)
-                
+            has_next = True
+
+            while has_next:
+                # Stop early if a record cap was requested
+                if total_to_sync is not None and total_processed >= total_to_sync:
+                    break
+
+                # Shrink last batch to honour the cap exactly
+                if total_to_sync is not None:
+                    remaining = total_to_sync - total_processed
+                    current_batch_size = min(batch_size, remaining)
+                else:
+                    current_batch_size = batch_size
+
                 self.stdout.write(f'\n📦 Processing batch {page} ({current_batch_size} records)...')
-                
+
                 try:
                     response = api_service.get_participants_by_usecase(
-                        'akilimo', 
-                        page=page, 
+                        'akilimo',
+                        page=page,
                         page_size=current_batch_size
                     )
-                    
+
                     participants_data = response.get('data', [])
-                    
+
                     if not participants_data:
                         self.stdout.write('⚠️  No more data available')
                         break
-                    
+
+                    # Check if the API signals more pages
+                    has_next = bool(response.get('next'))
+
                     # Process each participant in the batch
                     batch_created = 0
                     batch_updated = 0
                     batch_skipped = 0
-                    
+
                     for participant_data in participants_data:
                         result = self.process_participant(participant_data, force_update)
                         if result == 'created':
@@ -121,17 +133,23 @@ class Command(BaseCommand):
                             batch_updated += 1
                         else:
                             batch_skipped += 1
-                    
+
                     total_processed += len(participants_data)
                     total_created += batch_created
                     total_updated += batch_updated
                     total_skipped += batch_skipped
-                    
-                    self.stdout.write(f'   ✅ Batch complete: {batch_created} created, {batch_updated} updated, {batch_skipped} skipped')
-                    self.stdout.write(f'   📈 Progress: {total_processed:,}/{total_to_sync:,} ({(total_processed/total_to_sync)*100:.1f}%)')
-                    
+
+                    progress_denom = total_to_sync if total_to_sync else total_available
+                    pct = (total_processed / progress_denom * 100) if progress_denom else 0
+                    self.stdout.write(
+                        f'   ✅ Batch complete: {batch_created} created, {batch_updated} updated, {batch_skipped} skipped'
+                    )
+                    self.stdout.write(
+                        f'   📈 Progress: {total_processed:,}/{progress_denom:,} ({pct:.1f}%)'
+                    )
+
                     page += 1
-                    
+
                 except Exception as e:
                     self.stdout.write(f'❌ Error processing batch {page}: {e}')
                     break

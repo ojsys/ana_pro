@@ -13,7 +13,7 @@ from .models import (
     HeroSlide, MissionVision, OperationalPillar, PlatformFeature,
     TrainingProgram, SupportTeam, CallToAction, PageContent
 )
-from dashboard.models import PartnerOrganization, AkilimoParticipant
+from dashboard.models import PartnerOrganization, AkilimoParticipant, ANANigeriaPartner
 
 
 class HomeView(TemplateView):
@@ -292,18 +292,31 @@ class PartnersView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Get all active partner organizations
+
+        # Primary: Nigeria-specific ANA partners from the official list
+        context['ana_nigeria_partners'] = ANANigeriaPartner.objects.filter(
+            is_active=True
+        ).order_by('organization')
+
+        # Counts for summary display
+        context['ana_partners_integrated'] = context['ana_nigeria_partners'].filter(
+            is_integrated_akilimo=True
+        ).count()
+        context['ana_partners_uploading'] = context['ana_nigeria_partners'].filter(
+            is_uploading_data=True
+        ).count()
+
+        # Legacy: all PartnerOrganization records (kept for backward compatibility)
         context['all_partners'] = PartnerOrganization.objects.filter(
             is_active=True
         ).order_by('name')
-        
+
         # Get featured partners
         context['featured_partners'] = PartnerOrganization.objects.filter(
-            is_active=True, 
+            is_active=True,
             is_featured=True
         ).order_by('feature_order', 'name')
-        
+
         # Get partner showcases (legacy)
         context['partner_showcases'] = PartnerShowcase.objects.filter(
             is_active=True

@@ -792,3 +792,125 @@ def create_user_membership(sender, instance, created, **kwargs):
                 'status': 'pending'
             }
         )
+
+
+class ANANigeriaPartner(models.Model):
+    """
+    Nigeria-specific ANA partner organisations imported from the official
+    AKILIMO Nigeria Association partners list.  Each row in the spreadsheet
+    becomes one record here.  A nullable FK to PartnerOrganization keeps all
+    existing participant / dashboard data linked.
+    """
+
+    # ── Basic info ──────────────────────────────────────────────────────────
+    country = models.CharField(max_length=10, default='NG')
+    organization = models.CharField(max_length=300, unique=True)
+    contact_person = models.CharField(max_length=200, blank=True)
+    email = models.EmailField(blank=True)
+    phone_number = models.CharField(max_length=100, blank=True)
+
+    # ── Category flags: Agro-input Supplier ─────────────────────────────────
+    is_fertilizer_company = models.BooleanField(default=False)
+    is_agrochemical_supplier = models.BooleanField(default=False)
+    is_seed_dealer = models.BooleanField(default=False)
+
+    # ── Category flags: Development Org / Production Training Service ────────
+    is_ngo = models.BooleanField(default=False)
+    is_private_extension = models.BooleanField(default=False)
+    is_national_extension_govt = models.BooleanField(default=False)
+    is_farmer_association = models.BooleanField(default=False)
+
+    # ── Category flags: Marketing and Processing Industry ────────────────────
+    is_aggregator_buyer = models.BooleanField(default=False)
+    is_industrial_flour_mill = models.BooleanField(default=False)
+    is_starch_factory = models.BooleanField(default=False)
+    is_local_processing_enterprise = models.BooleanField(default=False)
+
+    # ── Category flags: Digital Advisory Company ─────────────────────────────
+    is_social_enterprise = models.BooleanField(default=False)
+    is_govt_advisory_service = models.BooleanField(default=False)
+
+    # ── Category flags: Credit Provider ─────────────────────────────────────
+    is_microcredit_institution = models.BooleanField(default=False)
+    is_bank = models.BooleanField(default=False)
+    is_cooperative_lending = models.BooleanField(default=False)
+
+    # ── Category flags: Government ───────────────────────────────────────────
+    is_research_institute = models.BooleanField(default=False)
+    is_university = models.BooleanField(default=False)
+
+    # ── Status fields from spreadsheet ──────────────────────────────────────
+    is_uploading_data = models.BooleanField(
+        default=False,
+        help_text="Partner is actively uploading data to the AKILIMO platform"
+    )
+    is_integrated_akilimo = models.BooleanField(
+        default=False,
+        help_text="Partner has fully integrated the AKILIMO advisory service"
+    )
+
+    # ── Link to existing PartnerOrganization (optional) ──────────────────────
+    partner_organization = models.OneToOneField(
+        'PartnerOrganization',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ana_nigeria_partner',
+        help_text="Linked PartnerOrganization record (auto-matched by name)"
+    )
+
+    # ── Metadata ─────────────────────────────────────────────────────────────
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['organization']
+        verbose_name = "ANA Nigeria Partner"
+        verbose_name_plural = "ANA Nigeria Partners"
+
+    def __str__(self):
+        return self.organization
+
+    @property
+    def category_labels(self):
+        """Return a human-readable list of category tags for this partner."""
+        mapping = {
+            'Fertilizer Company': self.is_fertilizer_company,
+            'Agrochemical Supplier': self.is_agrochemical_supplier,
+            'Seed Dealer': self.is_seed_dealer,
+            'NGO': self.is_ngo,
+            'Private Extension': self.is_private_extension,
+            'National Extension (Govt)': self.is_national_extension_govt,
+            'Farmer Association': self.is_farmer_association,
+            'Aggregator / Buyer': self.is_aggregator_buyer,
+            'Industrial Flour Mill': self.is_industrial_flour_mill,
+            'Starch Factory': self.is_starch_factory,
+            'Local Processing Enterprise': self.is_local_processing_enterprise,
+            'Social Enterprise': self.is_social_enterprise,
+            'Govt Advisory Service': self.is_govt_advisory_service,
+            'Microcredit Institution': self.is_microcredit_institution,
+            'Bank': self.is_bank,
+            'Cooperative Lending': self.is_cooperative_lending,
+            'Research Institute': self.is_research_institute,
+            'University': self.is_university,
+        }
+        return [label for label, active in mapping.items() if active]
+
+    @property
+    def primary_category(self):
+        """Return the broadest category label for display."""
+        if any([self.is_fertilizer_company, self.is_agrochemical_supplier, self.is_seed_dealer]):
+            return "Agro-input Supplier"
+        if any([self.is_ngo, self.is_private_extension, self.is_national_extension_govt, self.is_farmer_association]):
+            return "Development Organization"
+        if any([self.is_aggregator_buyer, self.is_industrial_flour_mill, self.is_starch_factory, self.is_local_processing_enterprise]):
+            return "Marketing & Processing"
+        if any([self.is_social_enterprise, self.is_govt_advisory_service]):
+            return "Digital Advisory"
+        if any([self.is_microcredit_institution, self.is_bank, self.is_cooperative_lending]):
+            return "Credit Provider"
+        if any([self.is_research_institute, self.is_university]):
+            return "Government / Research"
+        return "Other"

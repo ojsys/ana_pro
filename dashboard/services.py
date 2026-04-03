@@ -9,10 +9,13 @@ logger = logging.getLogger(__name__)
 class EiAMeliaAPIService:
     """Service class to interact with EiA MELIA API"""
 
-    BASE_URL = "https://my.sfp.cgiar.org/api/v1/melia"
-    
-    def __init__(self, token: str):
+    # Default fallback URL — overridden at runtime by api_config.base_url
+    BASE_URL = "https://my.eia.cgiar.org/api/v1/melia"
+
+    def __init__(self, token: str, base_url: str = None):
         self.token = token
+        if base_url:
+            self.BASE_URL = base_url.rstrip('/')
         self.headers = {
             'Authorization': f'Token {token}',
             'Content-Type': 'application/json'

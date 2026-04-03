@@ -8,7 +8,8 @@ from datetime import date, datetime
 from import_export.admin import ImportExportModelAdmin
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
-    DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing
+    DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing,
+    ANANigeriaPartner
 )
 from .resources import (
     APIConfigurationResource, PartnerOrganizationResource, UserProfileResource,
@@ -885,3 +886,61 @@ class MembershipPricingAdmin(ImportExportModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f'{updated} pricing item(s) deactivated successfully.')
     deactivate_pricing.short_description = 'Deactivate selected pricing'
+
+
+@admin.register(ANANigeriaPartner)
+class ANANigeriaPartnerAdmin(admin.ModelAdmin):
+    list_display = [
+        'organization', 'contact_person', 'email', 'phone_number',
+        'primary_category_display', 'is_uploading_data', 'is_integrated_akilimo',
+        'partner_organization', 'is_active',
+    ]
+    list_filter = [
+        'is_uploading_data', 'is_integrated_akilimo', 'is_active',
+        'is_ngo', 'is_farmer_association', 'is_aggregator_buyer',
+        'is_fertilizer_company', 'is_research_institute', 'is_university',
+    ]
+    search_fields = ['organization', 'contact_person', 'email']
+    readonly_fields = ['primary_category_display', 'created_at', 'updated_at']
+    autocomplete_fields = ['partner_organization']
+
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('country', 'organization', 'contact_person', 'email', 'phone_number', 'partner_organization', 'is_active', 'notes')
+        }),
+        ('Agro-input Supplier', {
+            'classes': ('collapse',),
+            'fields': ('is_fertilizer_company', 'is_agrochemical_supplier', 'is_seed_dealer'),
+        }),
+        ('Development Org / Production Training', {
+            'classes': ('collapse',),
+            'fields': ('is_ngo', 'is_private_extension', 'is_national_extension_govt', 'is_farmer_association'),
+        }),
+        ('Marketing & Processing Industry', {
+            'classes': ('collapse',),
+            'fields': ('is_aggregator_buyer', 'is_industrial_flour_mill', 'is_starch_factory', 'is_local_processing_enterprise'),
+        }),
+        ('Digital Advisory', {
+            'classes': ('collapse',),
+            'fields': ('is_social_enterprise', 'is_govt_advisory_service'),
+        }),
+        ('Credit Provider', {
+            'classes': ('collapse',),
+            'fields': ('is_microcredit_institution', 'is_bank', 'is_cooperative_lending'),
+        }),
+        ('Government / Research', {
+            'classes': ('collapse',),
+            'fields': ('is_research_institute', 'is_university'),
+        }),
+        ('Platform Status', {
+            'fields': ('is_uploading_data', 'is_integrated_akilimo'),
+        }),
+        ('Timestamps', {
+            'classes': ('collapse',),
+            'fields': ('created_at', 'updated_at'),
+        }),
+    )
+
+    def primary_category_display(self, obj):
+        return obj.primary_category
+    primary_category_display.short_description = 'Primary Category'
