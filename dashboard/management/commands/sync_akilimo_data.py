@@ -104,13 +104,36 @@ class Command(BaseCommand):
 
                 self.stdout.write(f'\n📦 Processing batch {page} ({current_batch_size} records)...')
 
-                try:
-                    response = api_service.get_participants_by_usecase(
-                        'akilimo',
-                        page=page,
-                        page_size=current_batch_size
-                    )
+                # Retry up to 3 times on transient errors (502, 503, timeout)
+                max_retries = 3
+                retry_delay = 5  # seconds between retries
+                response = None
 
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        response = api_service.get_participants_by_usecase(
+                            'akilimo',
+                            page=page,
+                            page_size=current_batch_size
+                        )
+                        break  # success — exit retry loop
+                    except Exception as e:
+                        self.stdout.write(
+                            f'   ⚠️  Attempt {attempt}/{max_retries} failed: {e}'
+                        )
+                        if attempt < max_retries:
+                            import time
+                            self.stdout.write(f'   ⏳ Retrying in {retry_delay}s...')
+                            time.sleep(retry_delay)
+                            retry_delay *= 2  # exponential back-off
+                        else:
+                            self.stdout.write(f'❌ Batch {page} failed after {max_retries} attempts — stopping.')
+                            has_next = False
+
+                if response is None:
+                    break
+
+                try:
                     participants_data = response.get('data', [])
 
                     if not participants_data:
