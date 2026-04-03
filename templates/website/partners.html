@@ -117,29 +117,25 @@
                 {% for partner in ana_nigeria_partners %}
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-4" data-aos="fade-up">
                     <div class="card h-100 border-0 shadow-sm partner-card">
-                        <div class="card-body p-4">
-                            <!-- Organisation name -->
-                            <h6 class="card-title fw-bold mb-1">{{ partner.organization }}</h6>
+                        <div class="card-body p-4 d-flex flex-column">
 
-                            <!-- Primary category badge -->
-                            <span class="badge rounded-pill mb-2" style="background-color:var(--primary-accent);font-size:0.7rem;">
+                            <!-- Icon -->
+                            <div class="mb-3">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white" style="width:48px;height:48px;background-color:var(--primary-accent);">
+                                    <i class="bi bi-building fs-5"></i>
+                                </div>
+                            </div>
+
+                            <!-- Organisation name -->
+                            <h6 class="card-title fw-bold mb-2">{{ partner.organization }}</h6>
+
+                            <!-- Primary category -->
+                            <span class="badge rounded-pill mb-3" style="background-color:var(--primary-accent);font-size:0.7rem;width:fit-content;">
                                 {{ partner.primary_category }}
                             </span>
 
-                            <!-- Contact info -->
-                            {% if partner.contact_person %}
-                            <p class="text-muted small mb-1">
-                                <i class="bi bi-person me-1"></i>{{ partner.contact_person }}
-                            </p>
-                            {% endif %}
-                            {% if partner.email %}
-                            <p class="text-muted small mb-1">
-                                <i class="bi bi-envelope me-1"></i>{{ partner.email }}
-                            </p>
-                            {% endif %}
-
                             <!-- Status badges -->
-                            <div class="mt-2 d-flex flex-wrap gap-1">
+                            <div class="mt-auto d-flex flex-wrap gap-1">
                                 {% if partner.is_integrated_akilimo %}
                                 <span class="badge bg-success" style="font-size:0.65rem;">
                                     <i class="bi bi-check-circle me-1"></i>Integrated
@@ -147,10 +143,11 @@
                                 {% endif %}
                                 {% if partner.is_uploading_data %}
                                 <span class="badge bg-info text-dark" style="font-size:0.65rem;">
-                                    <i class="bi bi-cloud-upload me-1"></i>Uploading
+                                    <i class="bi bi-cloud-upload me-1"></i>Uploading Data
                                 </span>
                                 {% endif %}
                             </div>
+
                         </div>
                     </div>
                 </div>
