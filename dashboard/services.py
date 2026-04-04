@@ -10,7 +10,7 @@ class EiAMeliaAPIService:
     """Service class to interact with EiA MELIA API"""
 
     # Default fallback URL — overridden at runtime by api_config.base_url
-    BASE_URL = "https://my.eia.cgiar.org/api/v1/melia"
+    BASE_URL = "https://my.sfp.cgiar.org/api/v1/melia"
 
     def __init__(self, token: str, base_url: str = None):
         self.token = token
