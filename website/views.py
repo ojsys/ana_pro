@@ -148,9 +148,9 @@ class HomeView(TemplateView):
                 },
                 {
                     'icon': 'bi bi-geo-alt-fill',
-                    'value': format_number(unique_states),
-                    'label': 'States Covered',
-                    'description': f'{unique_cities} cities reached'
+                    'value': format_number(unique_cities),
+                    'label': 'Locations',
+                    'description': f'across {unique_states} states'
                 },
                 {
                     'icon': 'bi bi-calendar-event',
@@ -690,10 +690,10 @@ def get_live_statistics(request):
             },
             {
                 'icon': 'bi bi-geo-alt-fill',
-                'value': format_number(unique_states),
-                'label': 'States Covered',
-                'description': f'{unique_cities} cities reached',
-                'raw_value': unique_states
+                'value': format_number(unique_cities),
+                'label': 'Locations',
+                'description': f'across {unique_states} states',
+                'raw_value': unique_cities
             },
             {
                 'icon': 'bi bi-calendar-event',
