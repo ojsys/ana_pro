@@ -241,6 +241,7 @@ class DashboardHomeView(TemplateView):
             # Country filtering
             'selected_country': selected_country,
             'available_countries': list(available_countries),
+            'total_all_participants': AkilimoParticipant.objects.count(),
         })
         
         return context

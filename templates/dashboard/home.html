@@ -20,7 +20,7 @@
             <label for="countrySelect" class="form-label mb-1">Select Country:</label>
             <select id="countrySelect" class="form-select" onchange="changeCountry(this.value)">
                 <option value="all" {% if selected_country == 'all' %}selected{% endif %}>
-                    All Countries ({{ total_participants|intcomma }} participants)
+                    All Countries ({{ total_all_participants|intcomma }} participants)
                 </option>
                 {% for country in available_countries %}
                 <option value="{{ country.country }}" {% if country.country == selected_country %}selected{% endif %}>
