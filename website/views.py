@@ -150,7 +150,7 @@ class HomeView(TemplateView):
                     'icon': 'bi bi-geo-alt-fill',
                     'value': format_number(unique_cities),
                     'label': 'Locations',
-                    'description': f'across {unique_states} states'
+                    'description': f'across {unique_states} cities'
                 },
                 {
                     'icon': 'bi bi-calendar-event',
@@ -692,7 +692,7 @@ def get_live_statistics(request):
                 'icon': 'bi bi-geo-alt-fill',
                 'value': format_number(unique_cities),
                 'label': 'Locations',
-                'description': f'across {unique_states} states',
+                'description': f'across {unique_states} cities',
                 'raw_value': unique_cities
             },
             {
