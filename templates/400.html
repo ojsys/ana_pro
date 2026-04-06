@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>400 – Bad Request | AKILIMO Nigeria Association</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0;padding:0;box-sizing:border-box; }
+        body {
+            font-family:'Inter',sans-serif;min-height:100vh;
+            display:flex;align-items:center;justify-content:center;
+            overflow-x:hidden;
+        }
+        .bg-layer {
+            position:fixed;inset:0;
+            background:linear-gradient(135deg,#E65100 0%,#BF360C 50%,#1B5E20 100%);
+            z-index:0;
+        }
+        .bg-layer::before {
+            content:'';position:absolute;inset:0;
+            background:radial-gradient(ellipse at 70% 30%,rgba(255,255,255,0.07) 0%,transparent 55%);
+        }
+        .circle {
+            position:fixed;border-radius:50%;
+            background:rgba(255,255,255,0.05);
+            animation:float 8s ease-in-out infinite;
+        }
+        .circle-1{width:420px;height:420px;top:-120px;right:-100px;}
+        .circle-2{width:260px;height:260px;bottom:-70px;left:-60px;animation-delay:3.5s;}
+        .circle-3{width:160px;height:160px;top:35%;left:8%;animation-delay:1.8s;}
+        @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-18px);}}
+
+        .error-card {
+            position:relative;z-index:1;
+            background:rgba(255,255,255,0.97);
+            border-radius:24px;
+            padding:3rem 3.5rem;
+            box-shadow:0 30px 80px rgba(0,0,0,0.3);
+            max-width:600px;width:90%;text-align:center;
+        }
+        .error-icon {
+            width:90px;height:90px;
+            background:linear-gradient(135deg,#E65100,#BF360C);
+            border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            margin:0 auto 1.5rem;
+            font-size:2.2rem;color:#fff;
+            box-shadow:0 8px 24px rgba(230,81,0,0.45);
+            animation:wobble 3s ease-in-out infinite;
+        }
+        @keyframes wobble{
+            0%,100%{transform:rotate(0deg);}
+            15%{transform:rotate(-8deg);}
+            30%{transform:rotate(8deg);}
+            45%{transform:rotate(-5deg);}
+            60%{transform:rotate(5deg);}
+            75%{transform:rotate(0deg);}
+        }
+        .error-code {
+            font-family:'Poppins',sans-serif;
+            font-size:8rem;font-weight:700;line-height:1;
+            background:linear-gradient(135deg,#E65100,#BF360C);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+        .divider{height:3px;width:60px;background:linear-gradient(90deg,#E65100,#BF360C);border-radius:2px;margin:1.5rem auto;}
+        .hint-box {
+            background:#FFF3E0;border-left:4px solid #E65100;
+            border-radius:8px;padding:0.85rem 1.2rem;
+            margin-bottom:1.5rem;text-align:left;
+            font-size:0.88rem;color:#5D4037;
+        }
+        .hint-box ul{margin:0.4rem 0 0 1.1rem;padding:0;}
+        .hint-box li{margin-bottom:0.25rem;}
+        .btn-home {
+            background:linear-gradient(135deg,#1B5E20,#4CAF50);
+            color:#fff;border:none;padding:0.85rem 2.5rem;border-radius:50px;
+            font-weight:600;font-size:1rem;text-decoration:none;
+            display:inline-flex;align-items:center;gap:0.5rem;
+            transition:all 0.3s;box-shadow:0 6px 20px rgba(46,125,50,0.35);
+        }
+        .btn-home:hover{color:#fff;transform:translateY(-2px);box-shadow:0 10px 28px rgba(46,125,50,0.45);}
+        .btn-back {
+            color:#E65100;border:2px solid #E65100;
+            padding:0.8rem 2rem;border-radius:50px;
+            font-weight:600;font-size:1rem;text-decoration:none;
+            display:inline-flex;align-items:center;gap:0.5rem;
+            transition:all 0.3s;
+        }
+        .btn-back:hover{background:#E65100;color:#fff;transform:translateY(-2px);}
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+    <div class="circle circle-3"></div>
+
+    <div class="error-card">
+        <div class="error-icon"><i class="bi bi-exclamation-circle-fill"></i></div>
+        <div class="error-code">400</div>
+        <div class="divider"></div>
+        <h2 style="color:#BF360C;font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:0.75rem;">
+            Bad Request
+        </h2>
+        <p class="text-muted mb-3" style="font-size:1.05rem;line-height:1.7;">
+            The server couldn't understand your request. This usually happens when the request is malformed or contains invalid data.
+        </p>
+        <div class="hint-box">
+            <strong>Common causes:</strong>
+            <ul>
+                <li>Submitting a form with missing or invalid fields</li>
+                <li>Following a broken or outdated link</li>
+                <li>Manually modifying the URL with incorrect parameters</li>
+            </ul>
+        </div>
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+            <a href="/" class="btn-home"><i class="bi bi-house-fill"></i> Back to Home</a>
+            <a href="javascript:history.back()" class="btn-back"><i class="bi bi-arrow-left"></i> Go Back</a>
+        </div>
+        <p class="mb-0" style="color:#aaa;font-size:0.8rem;">AKILIMO Nigeria Association &mdash; Error 400</p>
+    </div>
+</body>
+</html>
