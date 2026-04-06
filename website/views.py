@@ -121,9 +121,9 @@ class HomeView(TemplateView):
             # Format numbers
             def format_number(num):
                 if num >= 1000000:
-                    return f"{num/1000000:.1f}M+"
+                    return f"{int(num/1000000)}M+"
                 elif num >= 1000:
-                    return f"{num/1000:.1f}k+"
+                    return f"{int(num/1000)}k+"
                 elif num > 0:
                     return f"{num:,}+"
                 else:
@@ -658,12 +658,12 @@ def get_live_statistics(request):
         male_count = queryset.filter(farmer_gender__icontains='male').exclude(farmer_gender__icontains='female').count()
         female_count = queryset.filter(farmer_gender__icontains='female').count()
 
-        # Format numbers for display (e.g., 1500 -> "1,500+" or "1.5k+")
+        # Format numbers for display (e.g., 1500 -> "1k+", 1500000 -> "1M+")
         def format_number(num):
             if num >= 1000000:
-                return f"{num/1000000:.1f}M+"
+                return f"{int(num/1000000)}M+"
             elif num >= 1000:
-                return f"{num/1000:.1f}k+"
+                return f"{int(num/1000)}k+"
             elif num > 0:
                 return f"{num:,}+"
             else:
