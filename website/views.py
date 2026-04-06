@@ -11,7 +11,7 @@ from .models import (
     Page, NewsArticle, HomePageSection, TeamMember,
     PartnerShowcase, Testimonial, FAQ, ContactInfo, SiteSettings, Statistic,
     HeroSlide, MissionVision, OperationalPillar, PlatformFeature,
-    TrainingProgram, SupportTeam, CallToAction, PageContent
+    TrainingProgram, SupportTeam, CallToAction, PageContent, GalleryImage
 )
 from dashboard.models import PartnerOrganization, AkilimoParticipant, ANANigeriaPartner
 
@@ -73,6 +73,9 @@ class HomeView(TemplateView):
             is_active=True,
             placement__in=['home', 'all']
         ).first()
+
+        # Gallery images
+        context['gallery_images'] = GalleryImage.objects.filter(is_active=True).order_by('order', '-created_at')
 
         return context
 

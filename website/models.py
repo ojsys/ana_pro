@@ -763,3 +763,21 @@ class PageContent(models.Model):
 
     def __str__(self):
         return f"{self.get_page_section_display()}"
+
+
+class GalleryImage(models.Model):
+    """Images for the homepage gallery section"""
+    title = models.CharField(max_length=200, help_text="Image title or caption")
+    image = models.ImageField(upload_to='gallery/', help_text="Gallery image")
+    description = models.TextField(blank=True, help_text="Optional description")
+    order = models.PositiveIntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Gallery Image"
+        verbose_name_plural = "Gallery Images"
+
+    def __str__(self):
+        return self.title

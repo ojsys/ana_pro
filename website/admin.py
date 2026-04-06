@@ -7,7 +7,7 @@ from .models import (
     Page, NewsArticle, HomePageSection, TeamMember, PartnerShowcase,
     Testimonial, FAQ, ContactInfo, SiteSettings, Statistic, HeroSlide,
     MissionVision, OperationalPillar, PlatformFeature, TrainingProgram,
-    SupportTeam, CallToAction, PageContent
+    SupportTeam, CallToAction, PageContent, GalleryImage
 )
 from .resources import (
     PageResource, NewsArticleResource, HomePageSectionResource,
@@ -584,6 +584,21 @@ class PageContentAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(GalleryImage)
+class GalleryImageAdmin(admin.ModelAdmin):
+    list_display = ['title', 'image_preview', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    list_editable = ['order', 'is_active']
+    search_fields = ['title', 'description']
+    readonly_fields = ['image_preview', 'created_at']
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="height:60px;border-radius:4px;">', obj.image.url)
+        return '—'
+    image_preview.short_description = 'Preview'
 
 
 # Admin site customization

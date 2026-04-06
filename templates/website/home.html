@@ -664,6 +664,73 @@
         </section>
     {% endif %}
 
+    <!-- Gallery Section -->
+    {% if gallery_images %}
+    <section class="section-padding bg-light-green">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Photo Gallery</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Moments from our programs, training events and field activities
+            </p>
+
+            <div class="row g-3">
+                {% for image in gallery_images %}
+                <div class="col-lg-4 col-md-6 col-sm-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+                    <div class="gallery-item position-relative overflow-hidden rounded-3 shadow-sm"
+                         style="height: 260px; cursor: pointer;"
+                         data-bs-toggle="modal" data-bs-target="#galleryModal{{ image.id }}">
+                        <img src="{{ image.image.url }}"
+                             alt="{{ image.title }}"
+                             class="w-100 h-100"
+                             style="object-fit: cover; transition: transform 0.4s ease;">
+                        <!-- Hover overlay -->
+                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-end gallery-overlay"
+                             style="background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+                                    opacity: 0; transition: opacity 0.3s ease;">
+                            <div class="p-3 text-white w-100">
+                                <h6 class="mb-0 fw-bold">{{ image.title }}</h6>
+                                {% if image.description %}
+                                    <small style="opacity: 0.85;">{{ image.description|truncatewords:10 }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="position-absolute top-50 start-50 translate-middle gallery-icon"
+                             style="opacity: 0; transition: opacity 0.3s ease;">
+                            <i class="bi bi-zoom-in text-white fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lightbox Modal for this image -->
+                <div class="modal fade" id="galleryModal{{ image.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 bg-dark">
+                            <div class="modal-header border-0 pb-0">
+                                <h6 class="modal-title text-white">{{ image.title }}</h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-2">
+                                <img src="{{ image.image.url }}" alt="{{ image.title }}"
+                                     class="img-fluid w-100 rounded" style="max-height: 75vh; object-fit: contain;">
+                                {% if image.description %}
+                                    <p class="text-white-50 mt-2 mb-0 small px-2">{{ image.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <style>
+        .gallery-item:hover img { transform: scale(1.06); }
+        .gallery-item:hover .gallery-overlay { opacity: 1 !important; }
+        .gallery-item:hover .gallery-icon { opacity: 1 !important; }
+    </style>
+    {% endif %}
+
     <!-- Latest News -->
     {% if featured_news %}
         <section class="section-padding">
