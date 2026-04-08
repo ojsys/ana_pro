@@ -157,6 +157,21 @@
 
 {% block content %}
 
+{% if not conference %}
+<!-- Coming Soon -->
+<div style="min-height:90vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:4rem 1rem;">
+    <div style="text-align:center;color:#fff;max-width:560px;">
+        <div style="font-size:5rem;margin-bottom:1rem;opacity:0.6;"><i class="bi bi-calendar-event"></i></div>
+        <span style="background:rgba(249,168,37,0.15);border:1px solid rgba(249,168,37,0.4);color:var(--conf-gold);font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:0.3rem 1rem;border-radius:50px;display:inline-block;margin-bottom:1.5rem;">Coming Soon</span>
+        <h1 style="font-family:'Poppins',sans-serif;font-weight:800;font-size:clamp(2rem,4vw,3rem);margin-bottom:1rem;">AKILIMO National<br>Conference 2026</h1>
+        <p style="color:rgba(255,255,255,0.65);font-size:1.05rem;line-height:1.7;margin-bottom:2rem;">Details for the AKILIMO National Conference 2026 are being finalised. Check back soon for announcements on the theme, speakers, and registration.</p>
+        <a href="/" style="border:2px solid rgba(255,255,255,0.4);color:#fff;padding:0.8rem 2.5rem;border-radius:50px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;transition:all 0.3s;" onmouseover="this.style.borderColor='var(--conf-gold)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.4)'">
+            <i class="bi bi-arrow-left"></i> Back to ANA Website
+        </a>
+    </div>
+</div>
+{% else %}
+
 <!-- ── Hero ─────────────────────────────────────────────────────────────────── -->
 <section class="hero">
     <div class="hero-bg-circles">
@@ -515,9 +530,12 @@
     </div>
 </section>
 
+{% endif %}{# end if conference #}
+
 {% endblock %}
 
 {% block extra_js %}
+{% if conference %}
 <script>
 // Countdown timer
 const confDate = new Date("{{ conference.start_date|date:'Y-m-d' }}T08:00:00");
@@ -541,4 +559,5 @@ function updateCountdown() {
 updateCountdown();
 setInterval(updateCountdown, 1000);
 </script>
+{% endif %}
 {% endblock %}

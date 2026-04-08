@@ -32,7 +32,8 @@ class ConferenceLandingView(TemplateView):
         context = super().get_context_data(**kwargs)
         conference = get_active_conference()
         if not conference:
-            raise Http404("No active conference found")
+            context['conference'] = None
+            return context
 
         context['conference'] = conference
         context['sub_themes'] = conference.sub_themes.filter(is_active=True)

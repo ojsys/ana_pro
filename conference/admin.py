@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
@@ -7,8 +8,46 @@ from .models import (
 )
 
 
+class DatePickerInput(forms.DateInput):
+    input_type = 'date'
+
+
+class ConferenceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Conference
+        fields = '__all__'
+        widgets = {
+            # Core dates
+            'start_date': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            'end_date': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            # Key deadlines
+            'abstract_deadline': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            'early_bird_deadline': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            'registration_deadline': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            'notification_date': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            'final_paper_deadline': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
+            # Text fields
+            'name': forms.TextInput(attrs={'placeholder': 'e.g. AKILIMO National Conference 2026'}),
+            'theme': forms.TextInput(attrs={'placeholder': 'e.g. Transforming Cassava Systems for Food Security in Nigeria'}),
+            'tagline': forms.TextInput(attrs={'placeholder': 'Short catchy tagline (optional)'}),
+            'edition': forms.TextInput(attrs={'placeholder': 'e.g. 1st, 2nd, Inaugural'}),
+            'venue': forms.TextInput(attrs={'placeholder': 'e.g. International Conference Centre'}),
+            'city': forms.TextInput(attrs={'placeholder': 'e.g. Abuja'}),
+            'state': forms.TextInput(attrs={'placeholder': 'e.g. FCT'}),
+            'contact_email': forms.EmailInput(attrs={'placeholder': 'conference@akilimo-nigeria.org'}),
+            'contact_phone': forms.TextInput(attrs={'placeholder': '+234 800 000 0000'}),
+            'website_url': forms.URLInput(attrs={'placeholder': 'https://conference.akilimo-nigeria.org'}),
+            'description': forms.Textarea(attrs={'placeholder': 'Overview paragraph about the conference — shown on the landing page.', 'rows': 4}),
+            'objectives': forms.Textarea(attrs={'placeholder': 'One objective per line, e.g.:\nShare innovations in cassava value chain\nShowcase AKILIMO tool impact\nStrengthen stakeholder partnerships', 'rows': 5}),
+            'expected_outcomes': forms.Textarea(attrs={'placeholder': 'One outcome per line, e.g.:\nNew partnerships formed\nPolicy recommendations documented', 'rows': 4}),
+            'target_audience': forms.Textarea(attrs={'placeholder': 'e.g. Researchers, farmers, agribusinesses, government agencies, NGOs, students', 'rows': 2}),
+            'key_focus_areas': forms.Textarea(attrs={'placeholder': 'One focus area per line, e.g.:\nCassava value chain innovation\nAKILIMO advisory tools\nDigital agriculture', 'rows': 4}),
+        }
+
+
 @admin.register(Conference)
 class ConferenceAdmin(admin.ModelAdmin):
+    form = ConferenceAdminForm
     list_display = ['name', 'theme', 'start_date', 'end_date', 'city', 'is_active', 'registration_open', 'abstract_submission_open']
     list_filter = ['is_active', 'registration_open', 'abstract_submission_open']
     search_fields = ['name', 'theme', 'city']
