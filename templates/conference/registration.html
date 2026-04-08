@@ -71,7 +71,7 @@
 
                         <div class="mb-4" id="categoryCards">
                             {% for cat in categories %}
-                            <div class="cat-option" data-cat-id="{{ cat.pk }}" data-fee="{{ cat.fee }}" {% if cat.early_bird_fee %}data-early-fee="{{ cat.early_bird_fee }}"{% endif %}>
+                            <div class="cat-option" data-cat-id="{{ cat.pk }}" data-fee="{{ cat.fee|floatformat:0 }}" {% if cat.early_bird_fee %}data-early-fee="{{ cat.early_bird_fee|floatformat:0 }}"{% endif %}>
                                 <div class="d-flex align-items-center gap-3">
                                     {% if cat.icon %}<div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;"><i class="bi {{ cat.icon }}"></i></div>{% endif %}
                                     <div style="flex:1;">
@@ -216,62 +216,84 @@
 
 {% block extra_js %}
 <script>
-const categoryData = {
-    {% for cat in categories %}
-    {{ cat.pk }}: {
-        name: "{{ cat.name }}",
-        fee: {{ cat.fee }},
-        earlyFee: {% if cat.early_bird_fee %}{{ cat.early_bird_fee }}{% else %}null{% endif %},
-        includes: [{% for inc in cat.get_includes_list %}"{{ inc }}"{% if not forloop.last %},{% endif %}{% endfor %}]
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-};
 const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
 
-function fmt(n) { return '₦' + n.toLocaleString('en-NG', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmt(n) {
+    return '\u20a6' + Number(n).toLocaleString('en-NG', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
 
 function selectCategory(catId) {
-    document.querySelectorAll('.cat-option').forEach(el => {
+    // Deselect all cards
+    document.querySelectorAll('.cat-option').forEach(function(el) {
         el.classList.remove('selected');
-        el.querySelector('.cat-includes') && (el.querySelector('.cat-includes').style.display = 'none');
+        var inc = el.querySelector('.cat-includes');
+        if (inc) inc.style.display = 'none';
     });
-    const chosen = document.querySelector(`.cat-option[data-cat-id="${catId}"]`);
-    if (chosen) {
-        chosen.classList.add('selected');
-        chosen.querySelector('.cat-includes') && (chosen.querySelector('.cat-includes').style.display = 'block');
-    }
-    // Set the Django-rendered select field value
-    const sel = document.querySelector('#id_category');
+
+    // Find and select the chosen card
+    var chosen = document.querySelector('.cat-option[data-cat-id="' + catId + '"]');
+    if (!chosen) return;
+
+    chosen.classList.add('selected');
+    var catIncludes = chosen.querySelector('.cat-includes');
+    if (catIncludes) catIncludes.style.display = 'block';
+
+    // Set the hidden Django select value so it submits correctly
+    var sel = document.getElementById('id_category');
     if (sel) sel.value = catId;
 
-    const d = categoryData[catId];
-    if (!d) return;
-    const fee = (isEarlyBird && d.earlyFee) ? d.earlyFee : d.fee;
+    // Read fee directly from data attributes (no JS object lookup)
+    var fee = parseInt(chosen.getAttribute('data-fee'), 10) || 0;
+    var earlyFeeAttr = chosen.getAttribute('data-early-fee');
+    var earlyFee = earlyFeeAttr ? parseInt(earlyFeeAttr, 10) : null;
+    var activeFee = (isEarlyBird && earlyFee) ? earlyFee : fee;
+
+    // Get category name from rendered DOM
+    var nameEl = chosen.querySelector('.cat-name-label');
+    var name = nameEl ? nameEl.textContent.trim() : '';
+
+    // Update Order Summary panel
     document.getElementById('summaryPlaceholder').style.display = 'none';
     document.getElementById('summaryContent').style.display = 'block';
-    document.getElementById('summaryCategory').textContent = d.name;
-    document.getElementById('summaryFee').textContent = fmt(fee);
-    document.getElementById('summaryTotal').textContent = fmt(fee);
-    document.getElementById('earlyBirdNote').style.display = (isEarlyBird && d.earlyFee) ? 'block' : 'none';
+    document.getElementById('summaryCategory').textContent = name;
+    document.getElementById('summaryFee').textContent = fmt(activeFee);
+    document.getElementById('summaryTotal').textContent = fmt(activeFee);
+    document.getElementById('earlyBirdNote').style.display = (isEarlyBird && earlyFee) ? 'block' : 'none';
 
-    const incHtml = d.includes.map(i => `<div style="padding:0.25rem 0;display:flex;align-items:center;gap:0.4rem;"><i class="bi bi-check2-circle" style="color:var(--conf-green-light);"></i>${i}</div>`).join('');
+    // Build includes list from already-rendered list items in the card
+    var incHtml = '';
+    if (catIncludes) {
+        var lis = catIncludes.querySelectorAll('li');
+        lis.forEach(function(li) {
+            var text = li.textContent.trim();
+            incHtml += '<div style="padding:0.25rem 0;display:flex;align-items:center;gap:0.4rem;">'
+                + '<i class="bi bi-check2-circle" style="color:var(--conf-green-light);"></i>'
+                + text + '</div>';
+        });
+    }
     document.getElementById('includesList').innerHTML = incHtml || '<span style="color:#bbb;">Standard conference package</span>';
 }
 
-// Bind category card clicks
-document.querySelectorAll('.cat-option').forEach(el => {
-    el.addEventListener('click', () => selectCategory(el.dataset.catId));
+// Bind clicks on each category card
+document.querySelectorAll('.cat-option').forEach(function(el) {
+    el.addEventListener('click', function() {
+        selectCategory(el.getAttribute('data-cat-id'));
+    });
 });
 
-// Pre-select if URL param
-const urlParams = new URLSearchParams(window.location.search);
-const presel = urlParams.get('category');
+// Pre-select if URL param e.g. ?category=2
+var urlParams = new URLSearchParams(window.location.search);
+var presel = urlParams.get('category');
 if (presel) selectCategory(presel);
 
-// Validate category on submit
+// Prevent submission if no category chosen
 document.getElementById('regForm').addEventListener('submit', function(e) {
-    const sel = document.querySelector('#id_category');
-    if (!sel || !sel.value) { e.preventDefault(); alert('Please select a registration category.'); return; }
+    var sel = document.getElementById('id_category');
+    if (!sel || !sel.value) {
+        e.preventDefault();
+        alert('Please select a registration category.');
+        document.getElementById('categoryCards').scrollIntoView({behavior: 'smooth'});
+    }
 });
 </script>
 {% endblock %}
