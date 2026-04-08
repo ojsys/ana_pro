@@ -87,7 +87,7 @@
 
         {% if invited_speakers %}
         <div class="mb-5">
-            <div class="mb-4"><h2 class="section-heading">Invited Speakers</h2></div>
+            <div class="mb-4"><h2 class="section-heading">Guest Speakers</h2></div>
             <div class="row g-4">
                 {% for speaker in invited_speakers %}
                 <div class="col-lg-3 col-md-4 col-6">
@@ -95,7 +95,7 @@
                         <div class="speaker-photo-wrap">
                             {% if speaker.photo %}<img src="{{ speaker.photo.url }}" class="speaker-photo" alt="{{ speaker.full_name }}">
                             {% else %}<div class="speaker-photo-placeholder"><i class="bi bi-person-fill"></i></div>{% endif %}
-                            <span class="type-badge tb-invited">Invited</span>
+                            <span class="type-badge tb-invited">Guest Speaker</span>
                         </div>
                         <div class="speaker-body">
                             <div class="speaker-name">{{ speaker.full_name }}</div>
