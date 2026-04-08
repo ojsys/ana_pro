@@ -65,11 +65,14 @@
 
                         <!-- Category Selection -->
                         <div class="form-section-title"><i class="bi bi-grid me-2"></i>Select Registration Category</div>
+                        <!-- The actual Django form field — hidden, updated by JS -->
+                        <div style="display:none;">{{ form.category }}</div>
+                        {% if form.category.errors %}<div class="text-danger mb-3" style="font-size:0.82rem;">{{ form.category.errors.0 }}</div>{% endif %}
+
                         <div class="mb-4" id="categoryCards">
                             {% for cat in categories %}
-                            <label class="cat-option d-block" data-cat-id="{{ cat.pk }}" data-fee="{{ cat.fee }}" {% if cat.early_bird_fee %}data-early-fee="{{ cat.early_bird_fee }}"{% endif %}>
+                            <div class="cat-option" data-cat-id="{{ cat.pk }}" data-fee="{{ cat.fee }}" {% if cat.early_bird_fee %}data-early-fee="{{ cat.early_bird_fee }}"{% endif %}>
                                 <div class="d-flex align-items-center gap-3">
-                                    <input type="radio" name="category" value="{{ cat.pk }}" class="d-none" {% if request.GET.category == cat.pk|stringformat:'s' %}checked{% endif %}>
                                     {% if cat.icon %}<div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;"><i class="bi {{ cat.icon }}"></i></div>{% endif %}
                                     <div style="flex:1;">
                                         <div class="d-flex align-items-center gap-2">
@@ -94,12 +97,9 @@
                                     {% endfor %}
                                 </ul>
                                 {% endif %}
-                            </label>
+                            </div>
                             {% endfor %}
                         </div>
-                        {% if form.category.errors %}<div class="text-danger mb-3" style="font-size:0.82rem;">{{ form.category.errors.0 }}</div>{% endif %}
-                        <!-- Hidden category field for form -->
-                        <input type="hidden" name="category" id="selectedCategory" value="{{ request.GET.category }}">
 
                         <!-- Personal Info -->
                         <div class="form-section-title"><i class="bi bi-person me-2"></i>Personal Information</div>
@@ -231,21 +231,18 @@ const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
 function fmt(n) { return '₦' + n.toLocaleString('en-NG', {minimumFractionDigits:0, maximumFractionDigits:0}); }
 
 function selectCategory(catId) {
-    // Update radio
     document.querySelectorAll('.cat-option').forEach(el => {
         el.classList.remove('selected');
         el.querySelector('.cat-includes') && (el.querySelector('.cat-includes').style.display = 'none');
-        const inp = el.querySelector('input[type=radio]');
-        if (inp) inp.checked = false;
     });
     const chosen = document.querySelector(`.cat-option[data-cat-id="${catId}"]`);
     if (chosen) {
         chosen.classList.add('selected');
         chosen.querySelector('.cat-includes') && (chosen.querySelector('.cat-includes').style.display = 'block');
-        const inp = chosen.querySelector('input[type=radio]');
-        if (inp) inp.checked = true;
     }
-    document.getElementById('selectedCategory').value = catId;
+    // Set the Django-rendered select field value
+    const sel = document.querySelector('#id_category');
+    if (sel) sel.value = catId;
 
     const d = categoryData[catId];
     if (!d) return;
@@ -271,13 +268,10 @@ const urlParams = new URLSearchParams(window.location.search);
 const presel = urlParams.get('category');
 if (presel) selectCategory(presel);
 
-// Override category field in form with hidden field
+// Validate category on submit
 document.getElementById('regForm').addEventListener('submit', function(e) {
-    const selCat = document.getElementById('selectedCategory').value;
-    if (!selCat) { e.preventDefault(); alert('Please select a registration category.'); return; }
-    // Set the actual form select too
-    const sel = document.querySelector('select[name=category]');
-    if (sel) sel.value = selCat;
+    const sel = document.querySelector('#id_category');
+    if (!sel || !sel.value) { e.preventDefault(); alert('Please select a registration category.'); return; }
 });
 </script>
 {% endblock %}
