@@ -1,0 +1,283 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Register — {{ conference.name }}{% endblock %}
+{% block nav_abstract %}{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:4rem 0 3rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.8rem,3.5vw,2.5rem); }
+.form-card { background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:2.5rem;border:1px solid #f0f0f0; }
+.form-section-title { font-family:'Poppins',sans-serif;font-weight:700;font-size:0.9rem;color:var(--conf-green-mid);text-transform:uppercase;letter-spacing:1.5px;padding-bottom:0.75rem;border-bottom:2px solid var(--conf-surface);margin-bottom:1.5rem;margin-top:0.5rem; }
+.cat-option { border:2px solid #e0e0e0;border-radius:14px;padding:1.25rem;cursor:pointer;transition:all 0.3s;margin-bottom:0.75rem; }
+.cat-option:hover, .cat-option.selected { border-color:var(--conf-green-light);background:#f1f8e9; }
+.cat-option.selected { border-color:var(--conf-green); }
+.cat-name-label { font-family:'Poppins',sans-serif;font-weight:700;font-size:0.95rem;color:var(--conf-dark); }
+.cat-fee-label { font-family:'Poppins',sans-serif;font-weight:800;font-size:1.4rem;color:var(--conf-green); }
+.cat-desc-label { font-size:0.78rem;color:#888; }
+.price-summary { background:var(--conf-surface);border-radius:14px;padding:1.5rem;border:2px solid var(--conf-green-light);position:sticky;top:80px; }
+.price-summary h5 { font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:var(--conf-dark);margin-bottom:1rem; }
+.price-line { display:flex;justify-content:space-between;font-size:0.88rem;color:#666;margin-bottom:0.4rem; }
+.price-total { display:flex;justify-content:space-between;font-family:'Poppins',sans-serif;font-weight:800;font-size:1.3rem;color:var(--conf-green);border-top:2px solid #ddd;padding-top:0.75rem;margin-top:0.75rem; }
+.btn-pay { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border:none;padding:1rem 2rem;border-radius:50px;font-weight:700;font-size:1rem;width:100%;transition:all 0.3s;margin-top:1rem; }
+.btn-pay:hover { opacity:0.9;transform:translateY(-2px); }
+.early-bird-badge { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;font-size:0.72rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:50px;margin-left:0.5rem; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
+            <i class="bi bi-ticket-perforated-fill me-1"></i> Conference Registration
+        </div>
+        <h1>Register for the Conference</h1>
+        <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
+            Secure your place at AKILIMO National Conference 2026. Payment is processed securely via Paystack.
+        </p>
+        {% if is_early_bird and conference.early_bird_deadline %}
+        <div style="background:rgba(249,168,37,0.15);border:1px solid rgba(249,168,37,0.3);display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.2rem;border-radius:50px;margin-top:0.75rem;">
+            <i class="bi bi-lightning-charge-fill" style="color:var(--conf-gold);"></i>
+            <span style="color:#fff;font-size:0.85rem;font-weight:600;">Early bird pricing active — ends {{ conference.early_bird_deadline|date:"j F Y" }}</span>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:4rem 0;">
+    <div class="container">
+        {% if registration_closed %}
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x" style="font-size:4rem;color:#ddd;"></i>
+            <h4 style="color:#555;margin-top:1rem;font-family:'Poppins',sans-serif;">Registration is Currently Closed</h4>
+            <p style="color:#888;">Please check back later or contact us for more information.</p>
+        </div>
+        {% else %}
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-3">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <form method="post" id="regForm">
+                        {% csrf_token %}
+
+                        <!-- Category Selection -->
+                        <div class="form-section-title"><i class="bi bi-grid me-2"></i>Select Registration Category</div>
+                        <div class="mb-4" id="categoryCards">
+                            {% for cat in categories %}
+                            <label class="cat-option d-block" data-cat-id="{{ cat.pk }}" data-fee="{{ cat.fee }}" {% if cat.early_bird_fee %}data-early-fee="{{ cat.early_bird_fee }}"{% endif %}>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="radio" name="category" value="{{ cat.pk }}" class="d-none" {% if request.GET.category == cat.pk|stringformat:'s' %}checked{% endif %}>
+                                    {% if cat.icon %}<div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;"><i class="bi {{ cat.icon }}"></i></div>{% endif %}
+                                    <div style="flex:1;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="cat-name-label">{{ cat.name }}</span>
+                                            {% if is_early_bird and cat.early_bird_fee %}<span class="early-bird-badge"><i class="bi bi-lightning-charge-fill me-1"></i>Early Bird</span>{% endif %}
+                                        </div>
+                                        {% if cat.description %}<div class="cat-desc-label">{{ cat.description }}</div>{% endif %}
+                                    </div>
+                                    <div class="text-end" style="flex-shrink:0;">
+                                        {% if is_early_bird and cat.early_bird_fee %}
+                                        <div class="cat-fee-label" style="color:var(--conf-gold-dark);">₦{{ cat.early_bird_fee|floatformat:0|intcomma }}</div>
+                                        <div style="font-size:0.78rem;color:#bbb;text-decoration:line-through;">₦{{ cat.fee|floatformat:0|intcomma }}</div>
+                                        {% else %}
+                                        <div class="cat-fee-label">₦{{ cat.fee|floatformat:0|intcomma }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if cat.get_includes_list %}
+                                <ul style="list-style:none;padding:0.75rem 0 0 3.5rem;margin:0;display:none;" class="cat-includes">
+                                    {% for inc in cat.get_includes_list %}
+                                    <li style="font-size:0.78rem;color:#555;padding:0.2rem 0;display:flex;align-items:center;gap:0.4rem;"><i class="bi bi-check2-circle" style="color:var(--conf-green-light);"></i>{{ inc }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.category.errors %}<div class="text-danger mb-3" style="font-size:0.82rem;">{{ form.category.errors.0 }}</div>{% endif %}
+                        <!-- Hidden category field for form -->
+                        <input type="hidden" name="category" id="selectedCategory" value="{{ request.GET.category }}">
+
+                        <!-- Personal Info -->
+                        <div class="form-section-title"><i class="bi bi-person me-2"></i>Personal Information</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">First Name <span class="text-danger">*</span></label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.first_name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Last Name <span class="text-danger">*</span></label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.last_name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Email Address <span class="text-danger">*</span></label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.email.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Phone Number <span class="text-danger">*</span></label>
+                                {{ form.phone }}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Organization / Institution <span class="text-danger">*</span></label>
+                                {{ form.organization }}
+                                {% if form.organization.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.organization.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Position / Title</label>
+                                {{ form.position }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">State</label>
+                                {{ form.state_of_origin }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Abstract Reference <span style="font-weight:400;color:#999;">(if applicable)</span></label>
+                                {{ form.abstract_reference }}
+                            </div>
+                        </div>
+
+                        <!-- Preferences -->
+                        <div class="form-section-title"><i class="bi bi-sliders me-2"></i>Preferences</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Dietary Requirements</label>
+                                {{ form.dietary_requirements }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">T-Shirt Size</label>
+                                {{ form.t_shirt_size }}
+                            </div>
+                        </div>
+
+                        <!-- Terms -->
+                        <div class="mb-4 p-3" style="background:#f9f9f9;border-radius:10px;">
+                            <div class="form-check">
+                                {{ form.terms_accepted }}
+                                <label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}" style="font-size:0.88rem;color:#444;">
+                                    I agree to the conference terms and conditions, and confirm that my registration details are accurate. <span class="text-danger">*</span>
+                                </label>
+                            </div>
+                            {% if form.terms_accepted.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.terms_accepted.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <button type="submit" class="btn-pay" id="payBtn">
+                            <i class="bi bi-credit-card me-2"></i> Proceed to Payment
+                        </button>
+                        <div style="text-align:center;margin-top:0.75rem;font-size:0.78rem;color:#aaa;">
+                            <i class="bi bi-shield-check me-1"></i> Secured by Paystack &nbsp;·&nbsp; 256-bit SSL
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Price Summary -->
+            <div class="col-lg-4">
+                <div class="price-summary">
+                    <h5><i class="bi bi-receipt me-2"></i>Order Summary</h5>
+                    <div id="summaryPlaceholder" style="color:#aaa;font-size:0.85rem;text-align:center;padding:1rem 0;">
+                        <i class="bi bi-cursor-fill" style="display:block;font-size:1.5rem;margin-bottom:0.5rem;"></i>
+                        Select a category to see pricing
+                    </div>
+                    <div id="summaryContent" style="display:none;">
+                        <div class="price-line"><span id="summaryCategory">Category</span></div>
+                        <div class="price-line"><span>Registration Fee</span><span id="summaryFee">—</span></div>
+                        <div class="price-total"><span>Total</span><span id="summaryTotal">—</span></div>
+                        <div id="earlyBirdNote" style="display:none;background:#fff8e1;border-radius:8px;padding:0.6rem 0.8rem;margin-top:0.75rem;font-size:0.78rem;color:#e65100;">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Early bird rate applied
+                        </div>
+                    </div>
+                    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #ddd;">
+                        <div style="font-size:0.72rem;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Payment includes</div>
+                        <div style="font-size:0.8rem;color:#666;" id="includesList"></div>
+                    </div>
+                </div>
+
+                <div style="background:#fff;border-radius:14px;padding:1.25rem;border:1px solid #e0e0e0;margin-top:1rem;">
+                    <h6 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:0.85rem;color:var(--conf-dark);margin-bottom:0.75rem;">Need Help?</h6>
+                    {% if conference.contact_email %}
+                    <p style="font-size:0.8rem;color:#666;margin-bottom:0.25rem;"><i class="bi bi-envelope me-1"></i> {{ conference.contact_email }}</p>
+                    {% endif %}
+                    {% if conference.contact_phone %}
+                    <p style="font-size:0.8rem;color:#666;margin:0;"><i class="bi bi-telephone me-1"></i> {{ conference.contact_phone }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const categoryData = {
+    {% for cat in categories %}
+    {{ cat.pk }}: {
+        name: "{{ cat.name }}",
+        fee: {{ cat.fee }},
+        earlyFee: {% if cat.early_bird_fee %}{{ cat.early_bird_fee }}{% else %}null{% endif %},
+        includes: [{% for inc in cat.get_includes_list %}"{{ inc }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
+
+function fmt(n) { return '₦' + n.toLocaleString('en-NG', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+
+function selectCategory(catId) {
+    // Update radio
+    document.querySelectorAll('.cat-option').forEach(el => {
+        el.classList.remove('selected');
+        el.querySelector('.cat-includes') && (el.querySelector('.cat-includes').style.display = 'none');
+        const inp = el.querySelector('input[type=radio]');
+        if (inp) inp.checked = false;
+    });
+    const chosen = document.querySelector(`.cat-option[data-cat-id="${catId}"]`);
+    if (chosen) {
+        chosen.classList.add('selected');
+        chosen.querySelector('.cat-includes') && (chosen.querySelector('.cat-includes').style.display = 'block');
+        const inp = chosen.querySelector('input[type=radio]');
+        if (inp) inp.checked = true;
+    }
+    document.getElementById('selectedCategory').value = catId;
+
+    const d = categoryData[catId];
+    if (!d) return;
+    const fee = (isEarlyBird && d.earlyFee) ? d.earlyFee : d.fee;
+    document.getElementById('summaryPlaceholder').style.display = 'none';
+    document.getElementById('summaryContent').style.display = 'block';
+    document.getElementById('summaryCategory').textContent = d.name;
+    document.getElementById('summaryFee').textContent = fmt(fee);
+    document.getElementById('summaryTotal').textContent = fmt(fee);
+    document.getElementById('earlyBirdNote').style.display = (isEarlyBird && d.earlyFee) ? 'block' : 'none';
+
+    const incHtml = d.includes.map(i => `<div style="padding:0.25rem 0;display:flex;align-items:center;gap:0.4rem;"><i class="bi bi-check2-circle" style="color:var(--conf-green-light);"></i>${i}</div>`).join('');
+    document.getElementById('includesList').innerHTML = incHtml || '<span style="color:#bbb;">Standard conference package</span>';
+}
+
+// Bind category card clicks
+document.querySelectorAll('.cat-option').forEach(el => {
+    el.addEventListener('click', () => selectCategory(el.dataset.catId));
+});
+
+// Pre-select if URL param
+const urlParams = new URLSearchParams(window.location.search);
+const presel = urlParams.get('category');
+if (presel) selectCategory(presel);
+
+// Override category field in form with hidden field
+document.getElementById('regForm').addEventListener('submit', function(e) {
+    const selCat = document.getElementById('selectedCategory').value;
+    if (!selCat) { e.preventDefault(); alert('Please select a registration category.'); return; }
+    // Set the actual form select too
+    const sel = document.querySelector('select[name=category]');
+    if (sel) sel.value = selCat;
+});
+</script>
+{% endblock %}

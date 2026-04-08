@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'import_export',  # Django import-export for CSV/Excel export
     'website',
     'dashboard',
+    'conference',
 ]
 
 MIDDLEWARE = [

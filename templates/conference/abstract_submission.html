@@ -1,0 +1,210 @@
+{% extends 'conference/base.html' %}
+{% block title %}Submit Abstract — {{ conference.name }}{% endblock %}
+{% block nav_abstract %}active{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:4rem 0 3rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.8rem,3.5vw,2.5rem); }
+.form-card { background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:2.5rem;border:1px solid #f0f0f0; }
+.form-section-title { font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:var(--conf-green-mid);text-transform:uppercase;letter-spacing:1.5px;padding-bottom:0.75rem;border-bottom:2px solid var(--conf-surface);margin-bottom:1.5rem; }
+.word-counter { font-size:0.78rem;color:#999;text-align:right; }
+.word-counter.over { color:#e53935;font-weight:700; }
+.guidelines-card { background:var(--conf-surface);border-radius:16px;padding:1.75rem;border-left:4px solid var(--conf-green-light); }
+.guidelines-card h6 { font-family:'Poppins',sans-serif;font-weight:700;color:var(--conf-dark);margin-bottom:1rem; }
+.guidelines-card ul { padding-left:1.2rem; }
+.guidelines-card li { font-size:0.85rem;color:#555;line-height:1.7;margin-bottom:0.3rem; }
+.deadline-badge { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border-radius:12px;padding:1rem 1.5rem;text-align:center; }
+.btn-submit { background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));color:#fff;border:none;padding:0.9rem 3rem;border-radius:50px;font-weight:700;font-size:1rem;width:100%;transition:all 0.3s; }
+.btn-submit:hover { opacity:0.9;transform:translateY(-2px); }
+.has-error .form-control, .has-error .form-select { border-color:#e53935; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
+            <i class="bi bi-file-earmark-text me-1"></i> Abstract Submission
+        </div>
+        <h1>Submit Your Abstract</h1>
+        <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
+            Share your research and innovations at AKILIMO National Conference 2026. Submissions reviewed on a rolling basis.
+        </p>
+        {% if conference.abstract_deadline %}
+        <div style="background:rgba(249,168,37,0.15);border:1px solid rgba(249,168,37,0.3);display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.2rem;border-radius:50px;margin-top:0.75rem;">
+            <i class="bi bi-clock-fill" style="color:var(--conf-gold);"></i>
+            <span style="color:#fff;font-size:0.85rem;font-weight:600;">Submission deadline: {{ conference.abstract_deadline|date:"j F Y" }}</span>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:4rem 0;">
+    <div class="container">
+        {% if submission_closed %}
+        <div class="text-center py-5">
+            <i class="bi bi-lock-fill" style="font-size:4rem;color:#ddd;"></i>
+            <h4 style="color:#555;margin-top:1rem;font-family:'Poppins',sans-serif;">Abstract Submission is Closed</h4>
+            <p style="color:#888;">The submission window for this conference has ended. Thank you for your interest.</p>
+            <a href="{% url 'conference:landing' %}" style="color:var(--conf-green-mid);font-weight:600;">← Back to Conference Home</a>
+        </div>
+        {% else %}
+        <div class="row g-4">
+            <!-- Form -->
+            <div class="col-lg-8">
+                {% if messages %}
+                {% for msg in messages %}
+                <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-3">{{ msg }}</div>
+                {% endfor %}
+                {% endif %}
+
+                <div class="form-card">
+                    <form method="post" enctype="multipart/form-data" id="abstractForm">
+                        {% csrf_token %}
+
+                        <!-- Author Info -->
+                        <div class="form-section-title"><i class="bi bi-person me-2"></i>Author Information</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Presenting Author <span class="text-danger">*</span></label>
+                                {{ form.author_name }}
+                                {% if form.author_name.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.author_name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Co-Author(s)</label>
+                                {{ form.co_authors }}
+                                <div style="font-size:0.72rem;color:#999;margin-top:0.25rem;">Separate names with semicolons (;)</div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Institution / Organization <span class="text-danger">*</span></label>
+                                {{ form.institution }}
+                                {% if form.institution.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.institution.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Email Address <span class="text-danger">*</span></label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.email.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Phone Number</label>
+                                {{ form.phone }}
+                            </div>
+                        </div>
+
+                        <!-- Abstract Details -->
+                        <div class="form-section-title"><i class="bi bi-file-text me-2"></i>Abstract Details</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Abstract Title <span class="text-danger">*</span></label>
+                                {{ form.title }}
+                                {% if form.title.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.title.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Thematic Area <span class="text-danger">*</span></label>
+                                {{ form.thematic_area }}
+                                {% if form.thematic_area.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.thematic_area.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Preferred Presentation Format <span class="text-danger">*</span></label>
+                                {{ form.presentation_format }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Abstract Body <span class="text-danger">*</span> <span style="font-weight:400;color:#999;">(max 300 words)</span></label>
+                                {{ form.abstract_text }}
+                                <div class="word-counter" id="wordCounter">0 / 300 words</div>
+                                {% if form.abstract_text.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.abstract_text.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Keywords <span class="text-danger">*</span> <span style="font-weight:400;color:#999;">(3–8, comma-separated)</span></label>
+                                {{ form.keywords }}
+                                {% if form.keywords.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.keywords.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Upload File <span style="font-weight:400;color:#999;">(optional)</span></label>
+                                {{ form.abstract_file }}
+                                <div style="font-size:0.72rem;color:#999;margin-top:0.25rem;">Word or PDF, max 5MB</div>
+                            </div>
+                        </div>
+
+                        <!-- Declaration -->
+                        <div class="form-section-title"><i class="bi bi-shield-check me-2"></i>Declaration</div>
+                        <div class="mb-4 p-3" style="background:#f9f9f9;border-radius:10px;">
+                            <div class="form-check">
+                                {{ form.declaration }}
+                                <label class="form-check-label" for="{{ form.declaration.id_for_label }}" style="font-size:0.88rem;color:#444;">
+                                    {{ form.declaration.label }}
+                                </label>
+                            </div>
+                            {% if form.declaration.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.declaration.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            <i class="bi bi-send-fill me-2"></i> Submit Abstract
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar guidelines -->
+            <div class="col-lg-4">
+                {% if conference.abstract_deadline %}
+                <div class="deadline-badge mb-4">
+                    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;opacity:0.85;margin-bottom:0.25rem;">Submission Deadline</div>
+                    <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.3rem;">{{ conference.abstract_deadline|date:"j F Y" }}</div>
+                </div>
+                {% endif %}
+
+                <div class="guidelines-card mb-4">
+                    <h6><i class="bi bi-info-circle me-2"></i>Submission Guidelines</h6>
+                    <ul>
+                        <li>Maximum <strong>300 words</strong> for abstract body</li>
+                        <li>Minimum <strong>3 keywords</strong>, comma-separated</li>
+                        <li>Structure: Introduction · Methodology · Results · Conclusion</li>
+                        <li>File upload (Word/PDF) optional but recommended</li>
+                        <li>One presenter per abstract</li>
+                        <li>Multiple submissions allowed from the same author</li>
+                    </ul>
+                </div>
+
+                <div class="guidelines-card mb-4" style="border-color:var(--conf-gold);">
+                    <h6><i class="bi bi-star me-2"></i>Evaluation Criteria</h6>
+                    <ul>
+                        <li>Relevance to conference theme</li>
+                        <li>Scientific rigor and methodology</li>
+                        <li>Innovation and practical impact</li>
+                        <li>Clarity of presentation</li>
+                        <li>Applicability to Nigerian agriculture</li>
+                    </ul>
+                </div>
+
+                {% if conference.thematic_areas.all %}
+                <div class="guidelines-card" style="border-color:#1565c0;">
+                    <h6><i class="bi bi-diagram-3 me-2"></i>Thematic Areas</h6>
+                    <ul>
+                        {% for area in conference.thematic_areas.all %}
+                        <li>{{ area.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const textarea = document.getElementById('id_abstract_text');
+const counter = document.getElementById('wordCounter');
+if (textarea && counter) {
+    function updateCount() {
+        const words = textarea.value.trim().split(/\s+/).filter(w => w.length > 0).length;
+        counter.textContent = words + ' / 300 words';
+        counter.className = 'word-counter' + (words > 300 ? ' over' : '');
+    }
+    textarea.addEventListener('input', updateCount);
+    updateCount();
+}
+</script>
+{% endblock %}

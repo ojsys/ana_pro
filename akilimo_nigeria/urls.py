@@ -34,6 +34,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('dashboard/', include('dashboard.urls')),
+    path('conference/', include('conference.urls')),
     path('', include('website.urls')),
 ]
 

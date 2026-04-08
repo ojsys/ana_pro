@@ -1,0 +1,153 @@
+{% extends 'conference/base.html' %}
+{% block title %}Programme — {{ conference.name }}{% endblock %}
+{% block nav_program %}active{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:4rem 0 3rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.8rem,3.5vw,2.5rem); }
+.day-tab { border:none;background:none;font-family:'Poppins',sans-serif;font-weight:700;font-size:0.88rem;color:#888;padding:0.75rem 1.5rem;border-bottom:3px solid transparent;cursor:pointer;transition:all 0.2s;white-space:nowrap; }
+.day-tab.active, .day-tab:hover { color:var(--conf-green);border-color:var(--conf-green); }
+.session-row { display:flex;gap:0;border-radius:14px;overflow:hidden;margin-bottom:0.75rem;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.06);transition:all 0.2s; }
+.session-row:hover { box-shadow:0 4px 20px rgba(0,0,0,0.1);transform:translateX(3px); }
+.session-time { background:var(--conf-surface);padding:1.25rem;min-width:110px;text-align:center;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center; }
+.time-from { font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:var(--conf-green); }
+.time-to { font-size:0.72rem;color:#aaa; }
+.session-content { padding:1.25rem 1.5rem;flex:1; }
+.session-title { font-family:'Poppins',sans-serif;font-weight:700;font-size:0.95rem;color:var(--conf-dark);margin-bottom:0.25rem; }
+.session-meta { font-size:0.78rem;color:#888; }
+.session-type-dot { width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:0.4rem;flex-shrink:0; }
+.dot-keynote { background:var(--conf-gold); }
+.dot-panel { background:#1565c0; }
+.dot-technical { background:var(--conf-green-light); }
+.dot-workshop { background:#7b1fa2; }
+.dot-break { background:#bdbdbd; }
+.dot-lunch { background:#ff8f00; }
+.dot-opening, .dot-closing { background:var(--conf-gold-dark); }
+.dot-networking { background:#0097a7; }
+.dot-poster { background:#c62828; }
+.session-break { background:#f9f9f9;border:1px dashed #ddd;opacity:0.8; }
+.type-pill { font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:0.15rem 0.6rem;border-radius:50px;display:inline-block; }
+.pill-keynote { background:#fff8e1;color:var(--conf-gold-dark); }
+.pill-panel { background:#e3f2fd;color:#1565c0; }
+.pill-technical { background:#e8f5e9;color:var(--conf-green-mid); }
+.pill-workshop { background:#f3e5f5;color:#7b1fa2; }
+.pill-break, .pill-lunch { background:#f5f5f5;color:#888; }
+.pill-opening, .pill-closing { background:#fff3e0;color:var(--conf-gold-dark); }
+.pill-networking { background:#e0f7fa;color:#00796b; }
+.legend-dot { width:12px;height:12px;border-radius:50%;display:inline-block; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
+            <i class="bi bi-calendar2-week me-1"></i> Conference Programme
+        </div>
+        <h1>Conference Programme</h1>
+        <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
+            {{ conference.start_date|date:"j F" }}–{{ conference.end_date|date:"j F Y" }} &nbsp;·&nbsp; {{ conference.venue }}, {{ conference.city }}
+        </p>
+    </div>
+</section>
+
+<div style="background:#f9f9f9;min-height:70vh;padding:3rem 0;">
+    <div class="container">
+
+        {% if program_days %}
+        <!-- Day Tabs -->
+        <div style="background:#fff;border-radius:16px;padding:0.5rem;box-shadow:0 2px 10px rgba(0,0,0,0.06);margin-bottom:2rem;overflow-x:auto;display:flex;gap:0;white-space:nowrap;">
+            {% for day in program_days %}
+            <button class="day-tab {% if forloop.first %}active{% endif %}"
+                    onclick="switchDay('day{{ forloop.counter }}')"
+                    id="tab-day{{ forloop.counter }}">
+                <span style="display:block;font-size:0.68rem;color:#aaa;font-weight:400;text-transform:uppercase;letter-spacing:1px;">Day {{ forloop.counter }}</span>
+                {{ day.date|date:"l" }} <br>
+                <span style="font-size:0.72rem;font-weight:400;color:inherit;">{{ day.date|date:"j M Y" }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex flex-wrap gap-3 mb-3" style="font-size:0.75rem;color:#666;">
+            <span><span class="legend-dot dot-keynote"></span> Keynote</span>
+            <span><span class="legend-dot dot-panel"></span> Panel</span>
+            <span><span class="legend-dot dot-technical"></span> Technical Session</span>
+            <span><span class="legend-dot dot-workshop"></span> Workshop</span>
+            <span><span class="legend-dot dot-networking"></span> Networking</span>
+            <span><span class="legend-dot dot-break"></span> Break</span>
+        </div>
+
+        <!-- Day Content Panels -->
+        {% for day in program_days %}
+        <div id="day{{ forloop.counter }}" class="day-panel" style="{% if not forloop.first %}display:none;{% endif %}">
+            {% if day.theme %}
+            <div style="background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));border-radius:12px;padding:1rem 1.5rem;margin-bottom:1.5rem;color:#fff;">
+                <div style="font-size:0.72rem;opacity:0.8;text-transform:uppercase;letter-spacing:1.5px;">Day Theme</div>
+                <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;margin-top:0.2rem;">{{ day.theme }}</div>
+            </div>
+            {% endif %}
+
+            {% if day.sessions.all %}
+            {% for session in day.sessions.all %}
+            <div class="session-row {% if session.is_break %}session-break{% endif %}">
+                <div class="session-time">
+                    <div class="time-from">{{ session.start_time|time:"H:i" }}</div>
+                    <div class="time-to">{{ session.end_time|time:"H:i" }}</div>
+                </div>
+                <div class="session-content">
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+                        <span class="session-type-dot dot-{{ session.session_type }}"></span>
+                        <span class="type-pill pill-{{ session.session_type }}">{{ session.get_session_type_display }}</span>
+                        {% if session.venue %}
+                        <span style="font-size:0.7rem;color:#aaa;"><i class="bi bi-geo-alt me-1"></i>{{ session.venue }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="session-title">{{ session.title }}</div>
+                    {% if session.speakers.all %}
+                    <div class="session-meta">
+                        <i class="bi bi-mic me-1"></i>
+                        {% for sp in session.speakers.all %}{{ sp.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if session.moderator %}
+                    <div class="session-meta"><i class="bi bi-person-badge me-1"></i>Moderator: {{ session.moderator }}</div>
+                    {% endif %}
+                    {% if session.description %}
+                    <div style="font-size:0.78rem;color:#888;margin-top:0.4rem;line-height:1.6;">{{ session.description }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="text-align:center;padding:3rem;color:#ccc;">
+                <i class="bi bi-calendar2" style="font-size:2.5rem;display:block;margin-bottom:0.5rem;"></i>
+                Sessions will be published soon
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-calendar2-week" style="font-size:4rem;color:#ddd;"></i>
+            <h4 style="color:#aaa;margin-top:1rem;font-family:'Poppins',sans-serif;">Programme Coming Soon</h4>
+            <p style="color:#bbb;">The detailed conference programme will be published here shortly.</p>
+            <a href="{% url 'conference:register' %}" style="background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));color:#fff;padding:0.75rem 2rem;border-radius:50px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:0.5rem;margin-top:1rem;">
+                <i class="bi bi-ticket-perforated-fill"></i> Register Now
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchDay(dayId) {
+    document.querySelectorAll('.day-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(dayId).style.display = 'block';
+    document.getElementById('tab-' + dayId).classList.add('active');
+}
+</script>
+{% endblock %}

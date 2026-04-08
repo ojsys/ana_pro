@@ -1,0 +1,145 @@
+{% extends 'conference/base.html' %}
+{% block title %}Speakers — {{ conference.name }}{% endblock %}
+{% block nav_speakers %}active{% endblock %}
+
+{% block extra_css %}
+.speakers-hero {
+    background: linear-gradient(135deg, #0D1B0F 0%, #1B4020 60%, #2E7D32 100%);
+    padding: 5rem 0 3.5rem;
+}
+.speakers-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(2rem,4vw,3rem); }
+.speaker-card {
+    background:#fff;border-radius:20px;overflow:hidden;
+    box-shadow:0 4px 20px rgba(0,0,0,0.08);transition:all 0.3s;height:100%;
+}
+.speaker-card:hover { transform:translateY(-6px);box-shadow:0 16px 48px rgba(0,0,0,0.14); }
+.speaker-photo-wrap { position:relative; }
+.speaker-photo { width:100%;aspect-ratio:4/5;object-fit:cover; }
+.speaker-photo-placeholder { width:100%;aspect-ratio:4/5;background:linear-gradient(135deg,#1B5E20,#4CAF50);display:flex;align-items:center;justify-content:center;font-size:5rem;color:rgba(255,255,255,0.4); }
+.type-badge {
+    position:absolute;top:1rem;left:1rem;
+    font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    padding:0.25rem 0.8rem;border-radius:50px;
+}
+.tb-keynote { background:var(--conf-gold);color:#fff; }
+.tb-invited { background:var(--conf-green-light);color:#fff; }
+.tb-panelist { background:#1565c0;color:#fff; }
+.tb-moderator { background:#6a1b9a;color:#fff; }
+.speaker-body { padding:1.5rem; }
+.speaker-name { font-family:'Poppins',sans-serif;font-weight:700;font-size:1.05rem;color:var(--conf-dark);margin-bottom:0.2rem; }
+.speaker-pos { font-size:0.8rem;color:#888;margin-bottom:0.75rem; }
+.speaker-topic { font-size:0.82rem;color:var(--conf-green-mid);font-weight:600;margin-bottom:0.75rem; }
+.speaker-bio { font-size:0.82rem;color:#666;line-height:1.7; }
+.section-heading {
+    font-family:'Poppins',sans-serif;font-weight:800;font-size:1.5rem;
+    color:var(--conf-dark);border-left:5px solid var(--conf-gold);padding-left:1rem;
+}
+{% endblock %}
+
+{% block content %}
+<section class="speakers-hero">
+    <div class="container">
+        <div class="hero-eyebrow" style="background:rgba(249,168,37,0.12);border:1px solid rgba(249,168,37,0.3);display:inline-block;color:var(--conf-gold);font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:0.3rem 1rem;border-radius:50px;margin-bottom:1rem;">
+            <i class="bi bi-mic-fill me-1"></i> Conference Speakers
+        </div>
+        <h1>Meet the Speakers</h1>
+        <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:1.05rem;line-height:1.7;">
+            Leading experts, researchers, and innovators sharing insights on cassava transformation and AKILIMO's impact across Nigeria.
+        </p>
+    </div>
+</section>
+
+<div style="background:#fff;padding:4rem 0;">
+    <div class="container">
+
+        {% if keynote_speakers %}
+        <div class="mb-5">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <h2 class="section-heading">Keynote Speakers</h2>
+            </div>
+            <div class="row g-4">
+                {% for speaker in keynote_speakers %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="speaker-card">
+                        <div class="speaker-photo-wrap">
+                            {% if speaker.photo %}<img src="{{ speaker.photo.url }}" class="speaker-photo" alt="{{ speaker.full_name }}">
+                            {% else %}<div class="speaker-photo-placeholder"><i class="bi bi-person-fill"></i></div>{% endif %}
+                            <span class="type-badge tb-keynote">Keynote</span>
+                        </div>
+                        <div class="speaker-body">
+                            <div class="speaker-name">{{ speaker.full_name }}</div>
+                            <div class="speaker-pos">{{ speaker.position }}{% if speaker.organization %} · {{ speaker.organization }}{% endif %}</div>
+                            {% if speaker.topic %}<div class="speaker-topic"><i class="bi bi-chat-quote me-1"></i>{{ speaker.topic }}</div>{% endif %}
+                            {% if speaker.bio %}<div class="speaker-bio">{{ speaker.bio|truncatechars:250 }}</div>{% endif %}
+                            {% if speaker.linkedin_url or speaker.twitter_url %}
+                            <div class="mt-2 d-flex gap-2">
+                                {% if speaker.linkedin_url %}<a href="{{ speaker.linkedin_url }}" target="_blank" style="color:#0077b5;font-size:1.1rem;"><i class="bi bi-linkedin"></i></a>{% endif %}
+                                {% if speaker.twitter_url %}<a href="{{ speaker.twitter_url }}" target="_blank" style="color:#1da1f2;font-size:1.1rem;"><i class="bi bi-twitter-x"></i></a>{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if invited_speakers %}
+        <div class="mb-5">
+            <div class="mb-4"><h2 class="section-heading">Invited Speakers</h2></div>
+            <div class="row g-4">
+                {% for speaker in invited_speakers %}
+                <div class="col-lg-3 col-md-4 col-6">
+                    <div class="speaker-card">
+                        <div class="speaker-photo-wrap">
+                            {% if speaker.photo %}<img src="{{ speaker.photo.url }}" class="speaker-photo" alt="{{ speaker.full_name }}">
+                            {% else %}<div class="speaker-photo-placeholder"><i class="bi bi-person-fill"></i></div>{% endif %}
+                            <span class="type-badge tb-invited">Invited</span>
+                        </div>
+                        <div class="speaker-body">
+                            <div class="speaker-name">{{ speaker.full_name }}</div>
+                            <div class="speaker-pos">{{ speaker.position }}{% if speaker.organization %} · {{ speaker.organization }}{% endif %}</div>
+                            {% if speaker.topic %}<div class="speaker-topic" style="font-size:0.78rem;">{{ speaker.topic|truncatechars:80 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if panelists %}
+        <div>
+            <div class="mb-4"><h2 class="section-heading">Panelists</h2></div>
+            <div class="row g-4">
+                {% for speaker in panelists %}
+                <div class="col-lg-3 col-md-4 col-6">
+                    <div class="speaker-card">
+                        <div class="speaker-photo-wrap">
+                            {% if speaker.photo %}<img src="{{ speaker.photo.url }}" class="speaker-photo" alt="{{ speaker.full_name }}">
+                            {% else %}<div class="speaker-photo-placeholder"><i class="bi bi-person-fill"></i></div>{% endif %}
+                            <span class="type-badge tb-panelist">Panelist</span>
+                        </div>
+                        <div class="speaker-body">
+                            <div class="speaker-name">{{ speaker.full_name }}</div>
+                            <div class="speaker-pos">{{ speaker.position }}{% if speaker.organization %} · {{ speaker.organization }}{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not keynote_speakers and not invited_speakers and not panelists %}
+        <div class="text-center py-5">
+            <i class="bi bi-people" style="font-size:4rem;color:#ddd;"></i>
+            <h4 style="color:#aaa;margin-top:1rem;font-family:'Poppins',sans-serif;">Speakers will be announced soon</h4>
+            <p style="color:#bbb;">Check back for updates on our confirmed speakers.</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Registration Confirmed — {{ conference.name }}{% endblock %}
+
+{% block extra_css %}
+.ticket {
+    background:#fff;border-radius:24px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.12);max-width:620px;width:100%;
+}
+.ticket-header {
+    background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);
+    padding:2rem 2.5rem;color:#fff;
+}
+.ticket-body { padding:2.5rem; }
+.ticket-row { display:flex;justify-content:space-between;align-items:flex-start;padding:0.65rem 0;border-bottom:1px dashed #eee; }
+.ticket-row:last-child { border-bottom:none; }
+.ticket-label { font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600; }
+.ticket-value { font-size:0.9rem;color:#222;font-weight:600;text-align:right;max-width:60%; }
+.ticket-id-box { background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:12px;padding:1rem 1.5rem;text-align:center;margin-bottom:1.5rem; }
+.ticket-id { font-family:'Poppins',sans-serif;font-weight:800;font-size:1.8rem;color:#fff;letter-spacing:2px; }
+.confirmed-badge { background:rgba(76,175,80,0.15);border:1px solid #4CAF50;color:#1B5E20;border-radius:50px;padding:0.3rem 1rem;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem; }
+{% endblock %}
+
+{% block content %}
+<div style="min-height:85vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f9f9f9;padding:4rem 1rem;">
+    <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,0.35);">
+            <i class="bi bi-check2-all"></i>
+        </div>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;">Registration Confirmed!</h2>
+        <p style="color:#666;margin-top:0.5rem;">A confirmation email has been sent to your inbox. Welcome to AKILIMO National Conference 2026!</p>
+    </div>
+
+    {% if registration %}
+    <div class="ticket">
+        <div class="ticket-header">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;opacity:0.7;margin-bottom:0.5rem;">AKILIMO National Conference 2026</div>
+            <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.2rem;">Attendance Ticket</div>
+            <div style="margin-top:0.75rem;"><span class="confirmed-badge"><i class="bi bi-patch-check-fill"></i> Confirmed</span></div>
+        </div>
+        <div class="ticket-body">
+            <div class="ticket-id-box">
+                <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.25rem;">Ticket ID</div>
+                <div class="ticket-id">{{ registration.ticket_id }}</div>
+            </div>
+
+            <div class="ticket-row">
+                <span class="ticket-label">Full Name</span>
+                <span class="ticket-value">{{ registration.full_name }}</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Email</span>
+                <span class="ticket-value">{{ registration.email }}</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Organization</span>
+                <span class="ticket-value">{{ registration.organization }}</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Category</span>
+                <span class="ticket-value">{{ registration.category.name }}</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Amount Paid</span>
+                <span class="ticket-value" style="color:#1B5E20;">₦{{ registration.amount|floatformat:0|intcomma }}</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Payment Status</span>
+                <span class="ticket-value"><span style="background:#e8f5e9;color:#1B5E20;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Confirmed</span></span>
+            </div>
+            {% if conference %}
+            <div class="ticket-row">
+                <span class="ticket-label">Conference</span>
+                <span class="ticket-value">{{ conference.start_date|date:"j M" }}–{{ conference.end_date|date:"j M Y" }}, {{ conference.city }}</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Venue</span>
+                <span class="ticket-value">{{ conference.venue }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top:1.5rem;display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;">
+        <button onclick="window.print()" style="border:2px solid #1B5E20;color:#1B5E20;padding:0.75rem 1.75rem;border-radius:50px;font-weight:600;font-size:0.9rem;background:none;cursor:pointer;">
+            <i class="bi bi-printer me-1"></i> Print Ticket
+        </button>
+        <a href="{% url 'conference:landing' %}" style="background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff;padding:0.75rem 1.75rem;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.9rem;">
+            <i class="bi bi-house-fill me-1"></i> Back to Conference Home
+        </a>
+    </div>
+
+    <div style="margin-top:1rem;font-size:0.78rem;color:#aaa;text-align:center;">
+        Verify this ticket at: <a href="{% url 'conference:ticket_verify' registration.ticket_id %}" style="color:var(--conf-green-mid);">conference.anaNigeria.org/ticket/{{ registration.ticket_id }}/</a>
+    </div>
+    {% else %}
+    <p style="color:#888;">No registration found in this session.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Verify Ticket {{ ticket_id }} — {{ conference.name }}{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;background:#f9f9f9;padding:4rem 1rem;">
+    <div style="max-width:520px;width:100%;">
+        {% if registration %}
+        <div style="background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.1);">
+            <div style="background:linear-gradient(135deg,#1B5E20,#4CAF50);padding:2rem 2.5rem;text-align:center;color:#fff;">
+                <div style="font-size:4rem;margin-bottom:0.5rem;"><i class="bi bi-patch-check-fill"></i></div>
+                <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.3rem;">Valid Ticket</div>
+                <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.8rem;letter-spacing:2px;margin-top:0.5rem;">{{ ticket_id }}</div>
+            </div>
+            <div style="padding:2rem;">
+                <table style="width:100%;font-size:0.88rem;">
+                    <tr style="border-bottom:1px solid #eee;"><td style="padding:0.6rem 0;color:#aaa;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;width:40%;">Name</td><td style="font-weight:600;color:#222;">{{ registration.full_name }}</td></tr>
+                    <tr style="border-bottom:1px solid #eee;"><td style="padding:0.6rem 0;color:#aaa;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Organization</td><td style="font-weight:600;color:#222;">{{ registration.organization }}</td></tr>
+                    <tr style="border-bottom:1px solid #eee;"><td style="padding:0.6rem 0;color:#aaa;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Category</td><td style="font-weight:600;color:#222;">{{ registration.category.name }}</td></tr>
+                    <tr style="border-bottom:1px solid #eee;"><td style="padding:0.6rem 0;color:#aaa;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Registered</td><td style="font-weight:600;color:#222;">{{ registration.registered_at|date:"j M Y H:i" }}</td></tr>
+                    <tr><td style="padding:0.6rem 0;color:#aaa;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Check-in</td>
+                        <td>{% if registration.checked_in %}<span style="background:#e8f5e9;color:#1B5E20;padding:0.2rem 0.7rem;border-radius:50px;font-weight:700;font-size:0.78rem;"><i class="bi bi-check-circle-fill me-1"></i>Checked In</span>{% else %}<span style="background:#fff8e1;color:#e65100;padding:0.2rem 0.7rem;border-radius:50px;font-weight:700;font-size:0.78rem;">Not yet</span>{% endif %}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div style="background:#fff;border-radius:24px;padding:3.5rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.08);">
+            <div style="font-size:4rem;color:#e53935;margin-bottom:1rem;"><i class="bi bi-x-circle-fill"></i></div>
+            <h3 style="font-family:'Poppins',sans-serif;font-weight:800;color:#e53935;">Invalid Ticket</h3>
+            <p style="color:#888;margin-top:0.5rem;">No confirmed registration found for ticket <strong>{{ ticket_id }}</strong>.</p>
+            <a href="{% url 'conference:landing' %}" style="color:var(--conf-green-mid);font-weight:600;display:inline-block;margin-top:1rem;">← Back to Conference</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

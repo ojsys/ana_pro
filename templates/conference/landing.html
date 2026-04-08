@@ -1,0 +1,544 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ conference.name }} — {{ conference.theme }}{% endblock %}
+
+{% block nav_home %}active{% endblock %}
+
+{% block extra_css %}
+.hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; align-items: center;
+    background: linear-gradient(135deg, #0D1B0F 0%, #1B4020 40%, #2E7D32 100%);
+    overflow: hidden;
+}
+.hero-bg-circles .c {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+    animation: floatUp 12s ease-in-out infinite;
+}
+@keyframes floatUp { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-30px);} }
+.hero-eyebrow {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--conf-gold); background: rgba(249,168,37,0.12);
+    border: 1px solid rgba(249,168,37,0.3);
+    display: inline-block; padding: 0.35rem 1.1rem; border-radius: 50px;
+    margin-bottom: 1.5rem;
+}
+.hero-title {
+    font-family: 'Poppins', sans-serif; font-weight: 800;
+    font-size: clamp(2.2rem, 5vw, 3.8rem); color: #fff; line-height: 1.15;
+    margin-bottom: 0.5rem;
+}
+.hero-title span { color: var(--conf-gold); }
+.hero-theme {
+    font-size: clamp(1rem, 2vw, 1.3rem); color: rgba(255,255,255,0.75);
+    font-style: italic; margin-bottom: 1.5rem; line-height: 1.6;
+    border-left: 4px solid var(--conf-gold); padding-left: 1rem;
+}
+.hero-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem; }
+.hero-meta-item { display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.75); font-size: 0.9rem; }
+.hero-meta-item i { color: var(--conf-gold); font-size: 1rem; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; }
+.btn-hero-primary {
+    background: linear-gradient(135deg, var(--conf-gold-dark), var(--conf-gold));
+    color: #fff; font-weight: 700; font-size: 1rem;
+    padding: 0.85rem 2.2rem; border-radius: 50px; border: none;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;
+    box-shadow: 0 8px 24px rgba(230,81,0,0.4); transition: all 0.3s;
+}
+.btn-hero-primary:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 12px 32px rgba(230,81,0,0.5); }
+.btn-hero-outline {
+    color: #fff; border: 2px solid rgba(255,255,255,0.4);
+    padding: 0.82rem 2rem; border-radius: 50px; font-weight: 600; font-size: 1rem;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;
+    transition: all 0.3s;
+}
+.btn-hero-outline:hover { color: #fff; border-color: var(--conf-gold); background: rgba(249,168,37,0.1); }
+
+/* Countdown */
+.countdown-strip {
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
+    border: 1px solid rgba(249,168,37,0.25);
+    border-radius: 16px; padding: 1.5rem 2rem;
+    display: inline-flex; gap: 2rem; align-items: center; flex-wrap: wrap;
+}
+.countdown-item { text-align: center; }
+.countdown-number {
+    font-family: 'Poppins', sans-serif; font-size: 2.5rem;
+    font-weight: 700; color: var(--conf-gold); line-height: 1;
+}
+.countdown-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1.5px; }
+.countdown-sep { font-size: 2rem; color: rgba(249,168,37,0.4); align-self: flex-start; padding-top: 0.2rem; }
+
+/* Stats bar */
+.stats-bar {
+    background: #fff;
+    border-bottom: 1px solid #e8f5e9;
+    padding: 1.2rem 0;
+}
+.stat-item { text-align: center; padding: 0.5rem 1rem; }
+.stat-item .val { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.6rem; color: var(--conf-green); }
+.stat-item .lbl { font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+.stat-divider { border-left: 1px solid #e0e0e0; height: 40px; align-self: center; }
+
+/* Theme card */
+.theme-card {
+    background: #fff; border-radius: 16px;
+    padding: 1.75rem; border: 1px solid #e8f5e9;
+    transition: all 0.3s; height: 100%;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+.theme-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(46,125,50,0.15); border-color: var(--conf-green-light); }
+.theme-icon {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--conf-green), var(--conf-green-light));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; color: #fff; margin-bottom: 1rem;
+}
+.theme-card h6 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--conf-dark); margin-bottom: 0.5rem; }
+.theme-card p { font-size: 0.83rem; color: #666; line-height: 1.6; margin: 0; }
+
+/* Speaker card */
+.speaker-card {
+    background: #fff; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07); transition: all 0.3s;
+    text-align: center;
+}
+.speaker-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); }
+.speaker-photo {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+}
+.speaker-photo-placeholder {
+    width: 100%; aspect-ratio: 1;
+    background: linear-gradient(135deg, var(--conf-green), var(--conf-green-light));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; color: rgba(255,255,255,0.6);
+}
+.speaker-body { padding: 1.2rem; }
+.speaker-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--conf-dark); margin-bottom: 0.2rem; }
+.speaker-org { font-size: 0.78rem; color: #888; margin-bottom: 0.5rem; }
+.speaker-badge {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 0.2rem 0.7rem; border-radius: 50px;
+}
+.badge-keynote { background: #fff3e0; color: var(--conf-gold-dark); }
+.badge-invited { background: #e8f5e9; color: var(--conf-green-mid); }
+.badge-panelist { background: #e3f2fd; color: #1565c0; }
+
+/* Registration cards */
+.reg-card {
+    border-radius: 16px; padding: 2rem;
+    border: 2px solid #e0e0e0; background: #fff;
+    transition: all 0.3s; height: 100%;
+}
+.reg-card:hover, .reg-card.featured { border-color: var(--conf-green-light); box-shadow: 0 12px 32px rgba(46,125,50,0.12); }
+.reg-card.featured { border-color: var(--conf-gold); }
+.reg-card .cat-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--conf-dark); }
+.reg-card .cat-fee { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2rem; color: var(--conf-green); }
+.reg-card .cat-fee small { font-size: 0.85rem; font-weight: 400; color: #999; }
+.reg-card .inc-list { list-style: none; padding: 0; margin: 1rem 0; }
+.reg-card .inc-list li { font-size: 0.84rem; color: #555; padding: 0.3rem 0; display: flex; align-items: center; gap: 0.5rem; }
+.reg-card .inc-list li i { color: var(--conf-green-light); }
+.btn-register-card {
+    background: linear-gradient(135deg, var(--conf-green), var(--conf-green-light));
+    color: #fff; border: none; padding: 0.75rem 1.5rem;
+    border-radius: 50px; font-weight: 700; width: 100%;
+    text-decoration: none; display: block; text-align: center;
+    transition: all 0.3s;
+}
+.btn-register-card:hover { color: #fff; opacity: 0.9; transform: translateY(-2px); }
+.btn-register-card.gold {
+    background: linear-gradient(135deg, var(--conf-gold-dark), var(--conf-gold));
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ─────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-bg-circles">
+        <div class="c" style="width:600px;height:600px;top:-200px;right:-150px;animation-delay:0s;"></div>
+        <div class="c" style="width:350px;height:350px;bottom:-100px;left:-80px;animation-delay:4s;"></div>
+        <div class="c" style="width:220px;height:220px;top:40%;left:55%;animation-delay:2s;"></div>
+    </div>
+    <div class="container position-relative" style="z-index:1;padding-top:4rem;padding-bottom:4rem;">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <div class="hero-eyebrow">
+                    <i class="bi bi-calendar-event me-1"></i>
+                    {{ conference.start_date|date:"j M" }}–{{ conference.end_date|date:"j M Y" }}
+                    &nbsp;·&nbsp; {{ conference.city }}, Nigeria
+                </div>
+                <h1 class="hero-title">
+                    AKILIMO<br>
+                    <span>National Conference</span><br>
+                    2026
+                </h1>
+                <p class="hero-theme">"{{ conference.theme }}"</p>
+                <div class="hero-meta">
+                    <div class="hero-meta-item"><i class="bi bi-geo-alt-fill"></i> {{ conference.venue }}, {{ conference.city }}</div>
+                    <div class="hero-meta-item"><i class="bi bi-calendar3"></i> {{ conference.start_date|date:"l, j F Y" }}</div>
+                    {% if conference.edition %}<div class="hero-meta-item"><i class="bi bi-award"></i> {{ conference.edition }} Edition</div>{% endif %}
+                </div>
+                <div class="hero-actions">
+                    {% if conference.registration_open %}
+                    <a href="{% url 'conference:register' %}" class="btn-hero-primary">
+                        <i class="bi bi-ticket-perforated-fill"></i> Register Now
+                    </a>
+                    {% endif %}
+                    {% if conference.abstract_submission_open %}
+                    <a href="{% url 'conference:abstract_submit' %}" class="btn-hero-outline">
+                        <i class="bi bi-file-text"></i> Submit Abstract
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'conference:program' %}" class="btn-hero-outline">
+                        <i class="bi bi-calendar2-week"></i> View Programme
+                    </a>
+                </div>
+
+                <!-- Countdown -->
+                {% if conference.days_until > 0 %}
+                <div class="countdown-strip" id="countdown-strip">
+                    <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1.5px;">Conference starts in</div>
+                    <div class="countdown-item"><div class="countdown-number" id="cd-days">--</div><div class="countdown-label">Days</div></div>
+                    <div class="countdown-sep">:</div>
+                    <div class="countdown-item"><div class="countdown-number" id="cd-hours">--</div><div class="countdown-label">Hours</div></div>
+                    <div class="countdown-sep">:</div>
+                    <div class="countdown-item"><div class="countdown-number" id="cd-mins">--</div><div class="countdown-label">Mins</div></div>
+                    <div class="countdown-sep">:</div>
+                    <div class="countdown-item"><div class="countdown-number" id="cd-secs">--</div><div class="countdown-label">Secs</div></div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-5 d-none d-lg-block">
+                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:2rem;backdrop-filter:blur(8px);">
+                    <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:1.2rem;">Quick Facts</div>
+                    <div class="d-flex flex-column gap-3">
+                        {% if conference.abstract_deadline %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(249,168,37,0.15);display:flex;align-items:center;justify-content:center;color:var(--conf-gold);flex-shrink:0;"><i class="bi bi-file-earmark-text"></i></div>
+                            <div><div style="color:rgba(255,255,255,0.5);font-size:0.72rem;">Abstract Deadline</div><div style="color:#fff;font-weight:600;font-size:0.9rem;">{{ conference.abstract_deadline|date:"j F Y" }}</div></div>
+                        </div>
+                        {% endif %}
+                        {% if conference.early_bird_deadline %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(76,175,80,0.15);display:flex;align-items:center;justify-content:center;color:var(--conf-green-light);flex-shrink:0;"><i class="bi bi-lightning-charge-fill"></i></div>
+                            <div><div style="color:rgba(255,255,255,0.5);font-size:0.72rem;">Early Bird Closes</div><div style="color:#fff;font-weight:600;font-size:0.9rem;">{{ conference.early_bird_deadline|date:"j F Y" }}</div></div>
+                        </div>
+                        {% endif %}
+                        {% if conference.notification_date %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(33,150,243,0.15);display:flex;align-items:center;justify-content:center;color:#64b5f6;flex-shrink:0;"><i class="bi bi-bell-fill"></i></div>
+                            <div><div style="color:rgba(255,255,255,0.5);font-size:0.72rem;">Author Notification</div><div style="color:#fff;font-weight:600;font-size:0.9rem;">{{ conference.notification_date|date:"j F Y" }}</div></div>
+                        </div>
+                        {% endif %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(249,168,37,0.15);display:flex;align-items:center;justify-content:center;color:var(--conf-gold);flex-shrink:0;"><i class="bi bi-star-fill"></i></div>
+                            <div><div style="color:rgba(255,255,255,0.5);font-size:0.72rem;">Conference Date</div><div style="color:#fff;font-weight:600;font-size:0.9rem;">{{ conference.start_date|date:"j F" }}–{{ conference.end_date|date:"j F Y" }}</div></div>
+                        </div>
+                        {% if conference.contact_email %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);flex-shrink:0;"><i class="bi bi-envelope-fill"></i></div>
+                            <div><div style="color:rgba(255,255,255,0.5);font-size:0.72rem;">Enquiries</div><div style="color:#fff;font-weight:600;font-size:0.9rem;">{{ conference.contact_email }}</div></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Stats Bar ─────────────────────────────────────────────────────────────── -->
+<div class="stats-bar">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-center align-items-center gap-0">
+            <div class="stat-item">
+                <div class="val">{{ total_registrations|intcomma }}+</div>
+                <div class="lbl">Registered</div>
+            </div>
+            <div class="stat-divider d-none d-md-block mx-3"></div>
+            <div class="stat-item">
+                <div class="val">{{ total_abstracts|intcomma }}</div>
+                <div class="lbl">Abstracts</div>
+            </div>
+            <div class="stat-divider d-none d-md-block mx-3"></div>
+            <div class="stat-item">
+                <div class="val">{{ conference.speakers.count }}</div>
+                <div class="lbl">Speakers</div>
+            </div>
+            <div class="stat-divider d-none d-md-block mx-3"></div>
+            <div class="stat-item">
+                <div class="val">{{ conference.sub_themes.count }}</div>
+                <div class="lbl">Sub-Themes</div>
+            </div>
+            <div class="stat-divider d-none d-md-block mx-3"></div>
+            <div class="stat-item">
+                <div class="val">3</div>
+                <div class="lbl">Days</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── About ─────────────────────────────────────────────────────────────────── -->
+{% if conference.description %}
+<section style="padding:5rem 0;background:#fff;">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-6">
+                <span class="section-badge">About the Conference</span>
+                <h2 class="section-title">{{ conference.name }}</h2>
+                <div class="section-divider"></div>
+                <p style="font-size:1.05rem;line-height:1.8;color:#555;">{{ conference.description }}</p>
+
+                {% if conference.target_audience %}
+                <div style="background:var(--conf-surface);border-radius:12px;padding:1.25rem 1.5rem;margin-top:1.5rem;">
+                    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--conf-green-mid);font-weight:700;margin-bottom:0.5rem;">Who Should Attend</div>
+                    <p style="color:#555;font-size:0.9rem;margin:0;">{{ conference.target_audience }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-6">
+                {% if conference.get_objectives_list %}
+                <div style="margin-bottom:2rem;">
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--conf-dark);margin-bottom:1rem;">Conference Objectives</h5>
+                    <ul style="list-style:none;padding:0;">
+                        {% for obj in conference.get_objectives_list %}
+                        <li style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid #f0f0f0;">
+                            <i class="bi bi-check-circle-fill" style="color:var(--conf-green-light);margin-top:2px;flex-shrink:0;"></i>
+                            <span style="font-size:0.9rem;color:#555;line-height:1.6;">{{ obj }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if conference.get_outcomes_list %}
+                <div>
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--conf-dark);margin-bottom:1rem;">Expected Outcomes</h5>
+                    <ul style="list-style:none;padding:0;">
+                        {% for out in conference.get_outcomes_list %}
+                        <li style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.4rem 0;">
+                            <i class="bi bi-arrow-right-circle-fill" style="color:var(--conf-gold);margin-top:2px;flex-shrink:0;"></i>
+                            <span style="font-size:0.9rem;color:#555;line-height:1.6;">{{ out }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── Sub-Themes ─────────────────────────────────────────────────────────────── -->
+{% if sub_themes %}
+<section style="padding:5rem 0;background:var(--conf-surface);">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-badge">Sub-Themes</span>
+            <h2 class="section-title">Conference Focus Areas</h2>
+            <div class="section-divider mx-auto"></div>
+            <p style="color:#666;max-width:600px;margin:0 auto;">Explore the thematic areas driving this year's conference agenda.</p>
+        </div>
+        <div class="row g-4">
+            {% for theme in sub_themes %}
+            <div class="col-lg-4 col-md-6">
+                <div class="theme-card">
+                    <div class="theme-icon">
+                        <i class="bi {{ theme.icon|default:'bi-diagram-3' }}"></i>
+                    </div>
+                    <h6>{{ theme.title }}</h6>
+                    {% if theme.description %}<p>{{ theme.description }}</p>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── Speakers ─────────────────────────────────────────────────────────────── -->
+{% if featured_speakers %}
+<section style="padding:5rem 0;background:#fff;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-badge gold">Speakers</span>
+            <h2 class="section-title">Featured Speakers</h2>
+            <div class="section-divider gold mx-auto"></div>
+            <p style="color:#666;max-width:600px;margin:0 auto;">Hear from leading experts in cassava research, agribusiness, and innovation.</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            {% for speaker in featured_speakers %}
+            <div class="col-lg-3 col-md-4 col-6">
+                <div class="speaker-card">
+                    {% if speaker.photo %}
+                    <img src="{{ speaker.photo.url }}" class="speaker-photo" alt="{{ speaker.full_name }}">
+                    {% else %}
+                    <div class="speaker-photo-placeholder"><i class="bi bi-person-fill"></i></div>
+                    {% endif %}
+                    <div class="speaker-body">
+                        <div class="speaker-name">{{ speaker.full_name }}</div>
+                        <div class="speaker-org">{{ speaker.position }}, {{ speaker.organization }}</div>
+                        {% if speaker.topic %}<div style="font-size:0.75rem;color:#888;margin-bottom:0.5rem;font-style:italic;">{{ speaker.topic|truncatechars:60 }}</div>{% endif %}
+                        <span class="speaker-badge {% if speaker.speaker_type == 'keynote' %}badge-keynote{% elif speaker.speaker_type == 'panelist' %}badge-panelist{% else %}badge-invited{% endif %}">
+                            {{ speaker.get_speaker_type_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'conference:speakers' %}" class="btn-hero-outline" style="display:inline-flex;">
+                <i class="bi bi-people"></i> View All Speakers
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── Registration ─────────────────────────────────────────────────────────── -->
+{% if registration_categories %}
+<section style="padding:5rem 0;background:linear-gradient(135deg,#0D1B0F,#1B4020);" id="register">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-badge gold">Registration</span>
+            <h2 class="section-title" style="color:#fff;">Secure Your Place</h2>
+            <div class="section-divider gold mx-auto"></div>
+            {% if conference.early_bird_deadline %}
+            <div style="background:rgba(249,168,37,0.15);border:1px solid rgba(249,168,37,0.3);display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.2rem;border-radius:50px;margin-bottom:1rem;">
+                <i class="bi bi-lightning-charge-fill" style="color:var(--conf-gold);"></i>
+                <span style="color:#fff;font-size:0.85rem;font-weight:600;">Early bird pricing ends {{ conference.early_bird_deadline|date:"j F Y" }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="row g-4 justify-content-center">
+            {% for cat in registration_categories %}
+            <div class="col-lg-3 col-md-6">
+                <div class="reg-card {% if forloop.counter == 2 %}featured{% endif %}">
+                    {% if cat.icon %}<div style="font-size:2rem;margin-bottom:0.75rem;color:var(--conf-green-mid);"><i class="bi {{ cat.icon }}"></i></div>{% endif %}
+                    <div class="cat-name">{{ cat.name }}</div>
+                    {% if cat.description %}<div style="font-size:0.8rem;color:#888;margin-bottom:0.5rem;">{{ cat.description }}</div>{% endif %}
+                    <div class="cat-fee">₦{{ cat.fee|floatformat:0|intcomma }} <small>/person</small></div>
+                    {% if cat.early_bird_fee %}
+                    <div style="font-size:0.8rem;color:var(--conf-gold-dark);font-weight:600;">Early bird: ₦{{ cat.early_bird_fee|floatformat:0|intcomma }}</div>
+                    {% endif %}
+                    <ul class="inc-list">
+                        {% for item in cat.get_includes_list %}
+                        <li><i class="bi bi-check2-circle"></i> {{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% if cat.slots_available is not None %}
+                    <div style="font-size:0.78rem;color:#e65100;margin-bottom:0.75rem;font-weight:600;">
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ cat.slots_available }} slots left
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'conference:register' %}?category={{ cat.pk }}" class="btn-register-card {% if forloop.counter == 2 %}gold{% endif %}">
+                        Register — {{ cat.name }}
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── Key Messages ──────────────────────────────────────────────────────────── -->
+{% if key_messages %}
+<section style="padding:4rem 0;background:var(--conf-surface);">
+    <div class="container">
+        <div class="text-center mb-4">
+            <span class="section-badge">Why Attend</span>
+            <h2 class="section-title">From Our Leadership</h2>
+            <div class="section-divider mx-auto"></div>
+        </div>
+        <div class="row g-4">
+            {% for msg in key_messages %}
+            <div class="col-lg-6">
+                <div style="background:#fff;border-radius:16px;padding:2rem;border-left:4px solid {% if msg.is_quote %}var(--conf-gold){% else %}var(--conf-green-light){% endif %};box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+                    {% if msg.is_quote %}<i class="bi bi-quote" style="font-size:2rem;color:var(--conf-gold);opacity:0.4;display:block;margin-bottom:0.5rem;"></i>{% endif %}
+                    <p style="font-size:0.95rem;color:#444;line-height:1.8;margin:0;">{{ msg.message }}</p>
+                    {% if msg.source %}<div style="margin-top:0.75rem;font-size:0.8rem;color:#999;font-weight:600;">— {{ msg.source }}</div>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── Sponsors ──────────────────────────────────────────────────────────────── -->
+{% if sponsors %}
+<section style="padding:4rem 0;background:#fff;">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h5 style="font-family:'Poppins',sans-serif;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:2px;font-size:0.8rem;">Our Sponsors & Partners</h5>
+        </div>
+        <div class="d-flex flex-wrap justify-content-center align-items-center gap-4">
+            {% for sponsor in sponsors %}
+            <div style="padding:0.75rem 1.5rem;border:1px solid #eee;border-radius:12px;transition:all 0.3s;" onmouseover="this.style.borderColor='#4CAF50'" onmouseout="this.style.borderColor='#eee'">
+                {% if sponsor.logo %}
+                <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}" style="height:50px;object-fit:contain;filter:grayscale(30%);">
+                {% else %}
+                <span style="font-size:0.85rem;font-weight:600;color:#888;">{{ sponsor.name }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── CTA Band ───────────────────────────────────────────────────────────────── -->
+<section style="background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));padding:3.5rem 0;">
+    <div class="container text-center">
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:1.8rem;margin-bottom:0.5rem;">Don't Miss AKILIMO National Conference 2026</h2>
+        <p style="color:rgba(255,255,255,0.85);margin-bottom:1.75rem;font-size:1rem;">Join researchers, farmers, agribusinesses, and policymakers shaping the future of cassava in Nigeria.</p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            {% if conference.registration_open %}
+            <a href="{% url 'conference:register' %}" style="background:#fff;color:var(--conf-gold-dark);font-weight:700;padding:0.85rem 2.5rem;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;">
+                <i class="bi bi-ticket-perforated-fill"></i> Register Now
+            </a>
+            {% endif %}
+            {% if conference.abstract_submission_open %}
+            <a href="{% url 'conference:abstract_submit' %}" style="border:2px solid rgba(255,255,255,0.8);color:#fff;font-weight:600;padding:0.82rem 2rem;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;">
+                <i class="bi bi-file-text"></i> Submit Abstract
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Countdown timer
+const confDate = new Date("{{ conference.start_date|date:'Y-m-d' }}T08:00:00");
+function updateCountdown() {
+    const now = new Date();
+    const diff = confDate - now;
+    if (diff <= 0) {
+        document.getElementById('countdown-strip') && (document.getElementById('countdown-strip').innerHTML = '<span style="color:var(--conf-gold);font-weight:700;">Conference is Live!</span>');
+        return;
+    }
+    const days  = Math.floor(diff / (1000*60*60*24));
+    const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+    const mins  = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const secs  = Math.floor((diff % (1000*60)) / 1000);
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('cd-days')  && (document.getElementById('cd-days').textContent  = pad(days));
+    document.getElementById('cd-hours') && (document.getElementById('cd-hours').textContent = pad(hours));
+    document.getElementById('cd-mins')  && (document.getElementById('cd-mins').textContent  = pad(mins));
+    document.getElementById('cd-secs')  && (document.getElementById('cd-secs').textContent  = pad(secs));
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+</script>
+{% endblock %}

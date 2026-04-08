@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AKILIMO National Conference 2026{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --conf-green: #1B5E20;
+            --conf-green-mid: #2E7D32;
+            --conf-green-light: #4CAF50;
+            --conf-gold: #F9A825;
+            --conf-gold-dark: #E65100;
+            --conf-dark: #0D1B0F;
+            --conf-surface: #F1F8E9;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; color: #1a1a1a; background: #fff; }
+
+        /* ── Navbar ── */
+        .conf-nav {
+            background: rgba(13,27,15,0.97);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid var(--conf-gold);
+            padding: 0.6rem 0;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .conf-nav .navbar-brand {
+            color: #fff !important;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700; font-size: 1rem;
+            line-height: 1.2;
+        }
+        .conf-nav .navbar-brand span { color: var(--conf-gold); display: block; font-size: 0.7rem; font-weight: 400; letter-spacing: 1px; }
+        .conf-nav .nav-link {
+            color: rgba(255,255,255,0.85) !important;
+            font-size: 0.88rem; font-weight: 500; padding: 0.4rem 0.9rem !important;
+            transition: color 0.2s;
+        }
+        .conf-nav .nav-link:hover, .conf-nav .nav-link.active { color: var(--conf-gold) !important; }
+        .btn-register-nav {
+            background: linear-gradient(135deg, var(--conf-gold), var(--conf-gold-dark));
+            color: #fff !important; border-radius: 50px;
+            padding: 0.4rem 1.4rem !important; font-weight: 700 !important;
+            font-size: 0.85rem !important;
+        }
+        .btn-register-nav:hover { opacity: 0.9; color: #fff !important; }
+
+        /* ── Breadcrumb bar ── */
+        .conf-breadcrumb {
+            background: var(--conf-surface);
+            border-bottom: 1px solid #dcedc8;
+            padding: 0.5rem 0; font-size: 0.82rem; color: #666;
+        }
+        .conf-breadcrumb a { color: var(--conf-green-mid); text-decoration: none; }
+
+        /* ── Section utility ── */
+        .section-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--conf-green), var(--conf-green-light));
+            color: #fff; font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            padding: 0.3rem 1rem; border-radius: 50px; margin-bottom: 0.75rem;
+        }
+        .section-badge.gold {
+            background: linear-gradient(135deg, var(--conf-gold-dark), var(--conf-gold));
+        }
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700; font-size: 2rem; color: var(--conf-dark);
+        }
+        .section-divider {
+            height: 4px; width: 60px; border-radius: 2px;
+            background: linear-gradient(90deg, var(--conf-green), var(--conf-green-light));
+            margin: 0.75rem auto 1.5rem;
+        }
+        .section-divider.gold {
+            background: linear-gradient(90deg, var(--conf-gold-dark), var(--conf-gold));
+        }
+
+        /* ── Footer ── */
+        .conf-footer {
+            background: var(--conf-dark);
+            color: rgba(255,255,255,0.7);
+            padding: 3rem 0 1.5rem;
+            font-size: 0.88rem;
+        }
+        .conf-footer h6 {
+            color: var(--conf-gold); font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 1rem; font-size: 0.8rem;
+        }
+        .conf-footer a { color: rgba(255,255,255,0.6); text-decoration: none; transition: color 0.2s; display: block; margin-bottom: 0.4rem; }
+        .conf-footer a:hover { color: var(--conf-gold); }
+        .conf-footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 2rem; padding-top: 1.5rem;
+            text-align: center; color: rgba(255,255,255,0.4); font-size: 0.78rem;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="conf-nav navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'conference:landing' %}">
+            AKILIMO National Conference
+            <span>2026 &nbsp;·&nbsp; Nigeria</span>
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#confNav">
+            <span style="color:#fff;font-size:1.4rem;"><i class="bi bi-list"></i></span>
+        </button>
+        <div class="collapse navbar-collapse" id="confNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+                <li class="nav-item"><a class="nav-link {% block nav_home %}{% endblock %}" href="{% url 'conference:landing' %}">Home</a></li>
+                <li class="nav-item"><a class="nav-link {% block nav_speakers %}{% endblock %}" href="{% url 'conference:speakers' %}">Speakers</a></li>
+                <li class="nav-item"><a class="nav-link {% block nav_program %}{% endblock %}" href="{% url 'conference:program' %}">Programme</a></li>
+                <li class="nav-item"><a class="nav-link {% block nav_abstract %}{% endblock %}" href="{% url 'conference:abstract_submit' %}">Submit Abstract</a></li>
+                <li class="nav-item ms-lg-2">
+                    <a class="nav-link btn-register-nav" href="{% url 'conference:register' %}">
+                        <i class="bi bi-ticket-perforated-fill me-1"></i> Register
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<!-- Footer -->
+<footer class="conf-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <h6>AKILIMO National Conference 2026</h6>
+                <p style="color:rgba(255,255,255,0.55);line-height:1.7;font-size:0.85rem;">
+                    {% if conference %}{{ conference.theme }}{% else %}Advancing Cassava Innovation Across Nigeria{% endif %}
+                </p>
+                {% if conference %}
+                <p style="color:var(--conf-gold);font-size:0.85rem;margin-top:0.75rem;">
+                    <i class="bi bi-geo-alt-fill me-1"></i>{{ conference.venue }}, {{ conference.city }}
+                </p>
+                <p style="color:rgba(255,255,255,0.5);font-size:0.82rem;">
+                    <i class="bi bi-calendar3 me-1"></i>{{ conference.start_date|date:"j M" }}–{{ conference.end_date|date:"j M Y" }}
+                </p>
+                {% endif %}
+            </div>
+            <div class="col-lg-2 col-6">
+                <h6>Quick Links</h6>
+                <a href="{% url 'conference:landing' %}">Home</a>
+                <a href="{% url 'conference:speakers' %}">Speakers</a>
+                <a href="{% url 'conference:program' %}">Programme</a>
+                <a href="{% url 'conference:abstract_submit' %}">Submit Abstract</a>
+                <a href="{% url 'conference:register' %}">Register</a>
+            </div>
+            <div class="col-lg-3 col-6">
+                <h6>Important Dates</h6>
+                {% if conference %}
+                {% if conference.abstract_deadline %}
+                <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:var(--conf-gold);font-size:0.5rem;"></i>Abstract Deadline: {{ conference.abstract_deadline|date:"j M Y" }}</p>
+                {% endif %}
+                {% if conference.early_bird_deadline %}
+                <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:var(--conf-gold);font-size:0.5rem;"></i>Early Bird: {{ conference.early_bird_deadline|date:"j M Y" }}</p>
+                {% endif %}
+                {% if conference.notification_date %}
+                <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:var(--conf-gold);font-size:0.5rem;"></i>Notification: {{ conference.notification_date|date:"j M Y" }}</p>
+                {% endif %}
+                <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:#4CAF50;font-size:0.5rem;"></i>Conference: {{ conference.start_date|date:"j M Y" }}</p>
+                {% endif %}
+            </div>
+            <div class="col-lg-3">
+                <h6>Contact</h6>
+                {% if conference and conference.contact_email %}
+                <p style="color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-envelope me-1"></i>{{ conference.contact_email }}</p>
+                {% endif %}
+                {% if conference and conference.contact_phone %}
+                <p style="color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-telephone me-1"></i>{{ conference.contact_phone }}</p>
+                {% endif %}
+                <a href="/" style="margin-top:1rem;display:inline-block;">
+                    <span style="color:var(--conf-green-light);font-size:0.83rem;"><i class="bi bi-arrow-left me-1"></i>Back to ANA Website</span>
+                </a>
+            </div>
+        </div>
+        <div class="conf-footer-bottom">
+            &copy; {% now "Y" %} AKILIMO Nigeria Association. All rights reserved. &nbsp;|&nbsp;
+            Conference Portal
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

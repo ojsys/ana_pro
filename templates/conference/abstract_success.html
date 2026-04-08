@@ -1,0 +1,37 @@
+{% extends 'conference/base.html' %}
+{% block title %}Abstract Submitted — {{ conference.name }}{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;background:#f9f9f9;padding:4rem 1rem;">
+    <div style="background:#fff;border-radius:24px;padding:3.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.08);">
+        <div style="width:90px;height:90px;background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2.5rem;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,0.35);">
+            <i class="bi bi-check2-circle"></i>
+        </div>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;margin-bottom:0.5rem;">Abstract Submitted!</h2>
+        <p style="color:#666;font-size:1rem;line-height:1.7;margin-bottom:1.5rem;">
+            Thank you for your submission. Our review committee will evaluate your abstract and notify you of the outcome.
+        </p>
+        {% if reference %}
+        <div style="background:#f1f8e9;border:2px dashed #4CAF50;border-radius:12px;padding:1.25rem 2rem;margin-bottom:1.5rem;">
+            <div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.25rem;">Your Reference Number</div>
+            <div style="font-family:'Poppins',sans-serif;font-size:1.8rem;font-weight:800;color:#1B5E20;">{{ reference }}</div>
+            <div style="font-size:0.78rem;color:#999;margin-top:0.25rem;">Please save this for your records</div>
+        </div>
+        {% endif %}
+        {% if conference and conference.notification_date %}
+        <div style="background:#fff8e1;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;font-size:0.85rem;color:#e65100;">
+            <i class="bi bi-bell-fill me-1"></i>
+            Expect notification by <strong>{{ conference.notification_date|date:"j F Y" }}</strong>
+        </div>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+            <a href="{% url 'conference:abstract_submit' %}" style="border:2px solid #1B5E20;color:#1B5E20;padding:0.75rem 1.75rem;border-radius:50px;font-weight:600;text-decoration:none;font-size:0.9rem;">
+                <i class="bi bi-plus-circle me-1"></i> Submit Another
+            </a>
+            <a href="{% url 'conference:register' %}" style="background:linear-gradient(135deg,#E65100,#F9A825);color:#fff;padding:0.75rem 1.75rem;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.9rem;">
+                <i class="bi bi-ticket-perforated-fill me-1"></i> Register Now
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
