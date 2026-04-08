@@ -95,6 +95,15 @@ class AbstractSubmissionView(FormView):
         context = super().get_context_data(**kwargs)
         conference = self.get_conference()
         context['conference'] = conference
+        context['abstract_structure'] = [
+            'Title (centered)',
+            'Author(s) & Affiliations',
+            'Corresponding author email & phone (WhatsApp)',
+            'Objectives',
+            'Methodology',
+            'Major Findings',
+            'Conclusion',
+        ]
         if not conference.abstract_submission_open:
             context['submission_closed'] = True
         return context

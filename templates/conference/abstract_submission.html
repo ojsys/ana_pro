@@ -171,7 +171,7 @@
                     <div class="info-block">
                         <h5 style="color:var(--conf-gold);">Abstract Structure at a Glance</h5>
                         <div style="display:grid;gap:0.6rem;margin-top:0.5rem;">
-                            {% for item in "Title|Author(s) & Affiliations|Corresponding email & phone|Objectives|Methodology|Major Findings|Conclusion"|split:"|" %}
+                            {% for item in abstract_structure %}
                             <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;background:rgba(255,255,255,0.06);border-radius:8px;font-size:0.85rem;">
                                 <i class="bi bi-arrow-right-short" style="color:var(--conf-gold);font-size:1.1rem;flex-shrink:0;"></i>
                                 {{ item }}
