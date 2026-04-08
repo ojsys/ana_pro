@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, FormView, DetailView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
 
@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 def get_active_conference():
     """Helper: get the currently active conference"""
     return Conference.objects.filter(is_active=True).first()
+
+
+def _no_conference_redirect():
+    """Redirect to landing when no conference is configured"""
+    return redirect('conference:landing')
 
 
 # ─── Landing ──────────────────────────────────────────────────────────────────
@@ -54,12 +59,14 @@ class ConferenceLandingView(TemplateView):
 class SpeakersView(TemplateView):
     template_name = 'conference/speakers.html'
 
+    def get(self, request, *args, **kwargs):
+        if not get_active_conference():
+            return _no_conference_redirect()
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         conference = get_active_conference()
-        if not conference:
-            raise Http404
-
         context['conference'] = conference
         context['keynote_speakers'] = conference.speakers.filter(is_active=True, speaker_type='keynote').order_by('order')
         context['invited_speakers'] = conference.speakers.filter(is_active=True, speaker_type='invited').order_by('order')
@@ -73,7 +80,12 @@ class AbstractSubmissionView(FormView):
     template_name = 'conference/abstract_submission.html'
 
     def get_conference(self):
-        return get_object_or_404(Conference, is_active=True)
+        return get_active_conference()
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.get_conference():
+            return _no_conference_redirect()
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
         conference = self.get_conference()
@@ -125,7 +137,12 @@ class RegistrationView(FormView):
     template_name = 'conference/registration.html'
 
     def get_conference(self):
-        return get_object_or_404(Conference, is_active=True)
+        return get_active_conference()
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.get_conference():
+            return _no_conference_redirect()
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
         conference = self.get_conference()
@@ -267,12 +284,14 @@ def ticket_verify(request, ticket_id):
 class ProgramView(TemplateView):
     template_name = 'conference/program.html'
 
+    def get(self, request, *args, **kwargs):
+        if not get_active_conference():
+            return _no_conference_redirect()
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         conference = get_active_conference()
-        if not conference:
-            raise Http404
-
         context['conference'] = conference
         context['program_days'] = conference.program_days.filter(
             is_active=True
