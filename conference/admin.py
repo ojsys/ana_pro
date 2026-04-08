@@ -27,7 +27,7 @@ class ConferenceAdminForm(forms.ModelForm):
             'notification_date': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
             'final_paper_deadline': DatePickerInput(attrs={'placeholder': 'YYYY-MM-DD'}),
             # Text fields
-            'name': forms.TextInput(attrs={'placeholder': 'e.g. AKILIMO National Conference 2026'}),
+            'name': forms.TextInput(attrs={'placeholder': 'e.g. AKILIMO International Conference 2026'}),
             'theme': forms.TextInput(attrs={'placeholder': 'e.g. Transforming Cassava Systems for Food Security in Nigeria'}),
             'tagline': forms.TextInput(attrs={'placeholder': 'Short catchy tagline (optional)'}),
             'edition': forms.TextInput(attrs={'placeholder': 'e.g. 1st, 2nd, Inaugural'}),

@@ -196,11 +196,11 @@ class Command(BaseCommand):
         # ── 4. Registration Categories ────────────────────────────────────────
         categories = [
             {
-                'name': 'Early Bird (Nigerian)',
-                'description': 'Available until 30th April 2026. Nigerian participants.',
-                'icon': 'bi-lightning-charge-fill',
-                'fee': 15000,
-                'early_bird_fee': 10000,
+                'name': 'Student',
+                'description': 'For registered students (valid student ID required).',
+                'icon': 'bi-mortarboard',
+                'fee': 5000,
+                'early_bird_fee': None,   # No early bird for students
                 'includes': (
                     'Full 3-day conference access\n'
                     'Conference bag and materials\n'
@@ -212,11 +212,11 @@ class Command(BaseCommand):
                 'order': 1,
             },
             {
-                'name': 'Regular (Nigerian)',
-                'description': 'Standard registration for Nigerian participants after early bird deadline.',
+                'name': 'Regular',
+                'description': 'Standard registration. Early bird rate available until 30th April 2026.',
                 'icon': 'bi-person-badge',
                 'fee': 15000,
-                'early_bird_fee': None,
+                'early_bird_fee': 10000,
                 'includes': (
                     'Full 3-day conference access\n'
                     'Conference bag and materials\n'
@@ -228,11 +228,11 @@ class Command(BaseCommand):
                 'order': 2,
             },
             {
-                'name': 'International Participant',
-                'description': 'For participants outside Nigeria. Fee in USD equivalent.',
+                'name': 'International',
+                'description': 'For participants outside Nigeria. Early bird: $15 | Late: $20.',
                 'icon': 'bi-globe',
-                'fee': 30000,          # ₦30,000 placeholder (approx $20 at ~₦1,500/$)
-                'early_bird_fee': 22500,  # approx $15
+                'fee': 30000,         # ₦30,000 (~$20) — update to exact naira equivalent
+                'early_bird_fee': 22500,  # ₦22,500 (~$15) — update to exact naira equivalent
                 'includes': (
                     'Full 3-day conference access\n'
                     'Conference bag and materials\n'
@@ -242,21 +242,6 @@ class Command(BaseCommand):
                     'Access to all plenary and technical sessions'
                 ),
                 'order': 3,
-            },
-            {
-                'name': 'Student / Early Career',
-                'description': 'For registered students and early-career researchers (proof required).',
-                'icon': 'bi-mortarboard',
-                'fee': 5000,
-                'early_bird_fee': None,
-                'includes': (
-                    'Full 3-day conference access\n'
-                    'Conference materials\n'
-                    'Morning tea/coffee and lunch daily\n'
-                    'Book of abstracts\n'
-                    'Certificate of participation'
-                ),
-                'order': 4,
             },
         ]
 

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='Conference',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(default='AKILIMO National Conference 2026', max_length=200)),
+                ('name', models.CharField(default='AKILIMO International Conference 2026', max_length=200)),
                 ('slug', models.SlugField(blank=True, unique=True)),
                 ('theme', models.CharField(max_length=300)),
                 ('tagline', models.CharField(blank=True, max_length=300)),

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AKILIMO National Conference 2026{% endblock %}</title>
+    <title>{% block title %}AKILIMO International Conference 2026{% endblock %}</title>
 
     {% if site_settings.favicon %}
     <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
@@ -120,7 +120,7 @@
             <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_title|default:'ANA' }}" style="height:36px;width:auto;object-fit:contain;">
             {% endif %}
             <span>
-                AKILIMO National Conference
+                AKILIMO International Conference
                 <span>2026 &nbsp;·&nbsp; Nigeria</span>
             </span>
         </a>
@@ -153,7 +153,7 @@
                 {% if site_settings.logo %}
                 <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_title|default:'ANA' }}" style="height:44px;width:auto;object-fit:contain;margin-bottom:0.75rem;filter:brightness(0) invert(1);opacity:0.85;">
                 {% endif %}
-                <h6>AKILIMO National Conference 2026</h6>
+                <h6>AKILIMO International Conference 2026</h6>
                 <p style="color:rgba(255,255,255,0.55);line-height:1.7;font-size:0.85rem;">
                     {% if conference %}{{ conference.theme }}{% else %}Advancing Cassava Innovation Across Nigeria{% endif %}
                 </p>

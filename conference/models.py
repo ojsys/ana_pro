@@ -6,7 +6,7 @@ from django.utils.text import slugify
 
 class Conference(models.Model):
     """The main conference event"""
-    name = models.CharField(max_length=200, default="AKILIMO National Conference 2026")
+    name = models.CharField(max_length=200, default="AKILIMO International Conference 2026")
     slug = models.SlugField(unique=True, blank=True)
     theme = models.CharField(max_length=300)
     tagline = models.CharField(max_length=300, blank=True)
