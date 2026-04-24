@@ -1,5 +1,5 @@
 {% extends 'conference/base.html' %}
-{% load humanize %}
+{% load humanize content_editor %}
 
 {% block title %}{{ conference.name }} — {{ conference.theme }}{% endblock %}
 
@@ -355,10 +355,10 @@
 <section style="padding:5rem 0;background:var(--conf-surface);">
     <div class="container">
         <div class="text-center mb-5">
-            <span class="section-badge">Sub-Themes</span>
-            <h2 class="section-title">Conference Focus Areas</h2>
+            <span class="section-badge">{% editable "landing.subthemes_badge" "Sub-Themes" %}</span>
+            <h2 class="section-title">{% editable "landing.subthemes_title" "Conference Focus Areas" %}</h2>
             <div class="section-divider mx-auto"></div>
-            <p style="color:#666;max-width:600px;margin:0 auto;">Explore the thematic areas driving this year's conference agenda.</p>
+            <p style="color:#666;max-width:600px;margin:0 auto;">{% editable "landing.subthemes_intro" "Explore the thematic areas driving this year's conference agenda." %}</p>
         </div>
         <div class="row g-4">
             {% for theme in sub_themes %}
@@ -382,10 +382,10 @@
 <section style="padding:5rem 0;background:#fff;">
     <div class="container">
         <div class="text-center mb-5">
-            <span class="section-badge gold">Speakers</span>
-            <h2 class="section-title">Featured Speakers</h2>
+            <span class="section-badge gold">{% editable "landing.speakers_badge" "Speakers" %}</span>
+            <h2 class="section-title">{% editable "landing.speakers_title" "Featured Speakers" %}</h2>
             <div class="section-divider gold mx-auto"></div>
-            <p style="color:#666;max-width:600px;margin:0 auto;">Hear from leading experts in cassava research, agribusiness, and innovation.</p>
+            <p style="color:#666;max-width:600px;margin:0 auto;">{% editable "landing.speakers_intro" "Hear from leading experts in cassava research, agribusiness, and innovation." %}</p>
         </div>
         <div class="row g-4 justify-content-center">
             {% for speaker in featured_speakers %}
@@ -422,8 +422,8 @@
 <section style="padding:5rem 0;background:linear-gradient(135deg,#0D1B0F,#1B4020);" id="register">
     <div class="container">
         <div class="text-center mb-5">
-            <span class="section-badge gold">Registration</span>
-            <h2 class="section-title" style="color:#fff;">Secure Your Place</h2>
+            <span class="section-badge gold">{% editable "landing.reg_badge" "Registration" %}</span>
+            <h2 class="section-title" style="color:#fff;">{% editable "landing.reg_title" "Secure Your Place" %}</h2>
             <div class="section-divider gold mx-auto"></div>
             {% if conference.early_bird_deadline %}
             <div style="background:rgba(249,168,37,0.15);border:1px solid rgba(249,168,37,0.3);display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.2rem;border-radius:50px;margin-bottom:1rem;">
@@ -469,8 +469,8 @@
 <section style="padding:4rem 0;background:var(--conf-surface);">
     <div class="container">
         <div class="text-center mb-4">
-            <span class="section-badge">Why Attend</span>
-            <h2 class="section-title">From Our Leadership</h2>
+            <span class="section-badge">{% editable "landing.messages_badge" "Why Attend" %}</span>
+            <h2 class="section-title">{% editable "landing.messages_title" "From Our Leadership" %}</h2>
             <div class="section-divider mx-auto"></div>
         </div>
         <div class="row g-4">
@@ -493,7 +493,7 @@
 <section style="padding:4rem 0;background:#fff;">
     <div class="container">
         <div class="text-center mb-4">
-            <h5 style="font-family:'Poppins',sans-serif;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:2px;font-size:0.8rem;">Our Sponsors & Partners</h5>
+            <h5 style="font-family:'Poppins',sans-serif;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:2px;font-size:0.8rem;">{% editable "landing.sponsors_heading" "Our Sponsors & Partners" %}</h5>
         </div>
         <div class="d-flex flex-wrap justify-content-center align-items-center gap-4">
             {% for sponsor in sponsors %}
@@ -513,8 +513,8 @@
 <!-- ── CTA Band ───────────────────────────────────────────────────────────────── -->
 <section style="background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));padding:3.5rem 0;">
     <div class="container text-center">
-        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:1.8rem;margin-bottom:0.5rem;">Don't Miss AKILIMO International Conference 2026</h2>
-        <p style="color:rgba(255,255,255,0.85);margin-bottom:1.75rem;font-size:1rem;">Join researchers, farmers, agribusinesses, and policymakers shaping the future of cassava in Nigeria.</p>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:1.8rem;margin-bottom:0.5rem;">{% editable "landing.cta_title" "Don't Miss AKILIMO International Conference 2026" %}</h2>
+        <p style="color:rgba(255,255,255,0.85);margin-bottom:1.75rem;font-size:1rem;">{% editable "landing.cta_desc" "Join researchers, farmers, agribusinesses, and policymakers shaping the future of cassava in Nigeria." %}</p>
         <div class="d-flex flex-wrap justify-content-center gap-3">
             {% if conference.registration_open %}
             <a href="{% url 'conference:register' %}" style="background:#fff;color:var(--conf-gold-dark);font-weight:700;padding:0.85rem 2.5rem;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;">

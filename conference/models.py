@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -424,3 +425,21 @@ class KeyMessage(models.Model):
 
     def __str__(self):
         return self.message[:80]
+
+
+class ContentBlock(models.Model):
+    """Stores inline-editable text blocks for frontend editing."""
+    key = models.CharField(max_length=200, unique=True, db_index=True)
+    content = models.TextField()
+    updated_by = models.ForeignKey(
+        get_user_model(), on_delete=models.SET_NULL, null=True, blank=True
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['key']
+        verbose_name = "Content Block"
+        verbose_name_plural = "Content Blocks"
+
+    def __str__(self):
+        return self.key

@@ -14,4 +14,5 @@ urlpatterns = [
     path('ticket/<str:ticket_id>/', views.ticket_verify, name='ticket_verify'),
     path('programme/', views.ProgramView.as_view(), name='program'),
     path('api/category-fee/<int:category_id>/', views.category_fee_api, name='category_fee_api'),
+    path('content/save/', views.save_content_block, name='save_content'),
 ]

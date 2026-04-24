@@ -1,4 +1,5 @@
 {% extends 'conference/base.html' %}
+{% load content_editor %}
 {% block title %}Speakers — {{ conference.name }}{% endblock %}
 {% block nav_speakers %}active{% endblock %}
 
@@ -42,9 +43,9 @@
         <div class="hero-eyebrow" style="background:rgba(249,168,37,0.12);border:1px solid rgba(249,168,37,0.3);display:inline-block;color:var(--conf-gold);font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:0.3rem 1rem;border-radius:50px;margin-bottom:1rem;">
             <i class="bi bi-mic-fill me-1"></i> Conference Speakers
         </div>
-        <h1>Meet the Speakers</h1>
+        <h1>{% editable "speakers.hero_title" "Meet the Speakers" %}</h1>
         <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:1.05rem;line-height:1.7;">
-            Leading experts, researchers, and innovators sharing insights on cassava transformation and AKILIMO's impact across Nigeria.
+            {% editable "speakers.hero_desc" "Leading experts, researchers, and innovators sharing insights on cassava transformation and AKILIMO's impact across Nigeria." %}
         </p>
     </div>
 </section>

@@ -4,7 +4,8 @@ from django.utils.html import format_html
 from django.utils import timezone
 from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
-    RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor, KeyMessage
+    RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
+    KeyMessage, ContentBlock,
 )
 
 
@@ -254,3 +255,15 @@ class KeyMessageAdmin(admin.ModelAdmin):
     def message_short(self, obj):
         return obj.message[:80]
     message_short.short_description = "Message"
+
+
+@admin.register(ContentBlock)
+class ContentBlockAdmin(admin.ModelAdmin):
+    list_display = ['key', 'content_preview', 'updated_by', 'updated_at']
+    search_fields = ['key', 'content']
+    readonly_fields = ['updated_by', 'updated_at']
+
+    def content_preview(self, obj):
+        from django.utils.html import strip_tags
+        return strip_tags(obj.content)[:80]
+    content_preview.short_description = "Content"

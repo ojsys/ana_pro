@@ -1,16 +1,19 @@
+import json
 import uuid
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, FormView, DetailView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.conf import settings
 
 from .models import (
     Conference, Speaker, AbstractSubmission, RegistrationCategory,
-    Registration, ProgramDay, Sponsor, KeyMessage
+    Registration, ProgramDay, Sponsor, KeyMessage, ContentBlock
 )
 from .forms import AbstractSubmissionForm, RegistrationForm
 from dashboard.paystack_service import PaystackService
@@ -306,6 +309,28 @@ class ProgramView(TemplateView):
             is_active=True
         ).prefetch_related('sessions__speakers')
         return context
+
+
+# ─── Frontend content editor (staff only) ─────────────────────────────────────
+
+@staff_member_required
+@require_POST
+def save_content_block(request):
+    """Save an inline-edited content block. Staff only."""
+    try:
+        data = json.loads(request.body)
+        key = data.get('key', '').strip()
+        content = data.get('content', '')
+        if not key:
+            return JsonResponse({'error': 'Key is required'}, status=400)
+        ContentBlock.objects.update_or_create(
+            key=key,
+            defaults={'content': content, 'updated_by': request.user},
+        )
+        return JsonResponse({'success': True})
+    except (json.JSONDecodeError, Exception) as exc:
+        logger.error('Content block save error: %s', exc)
+        return JsonResponse({'error': str(exc)}, status=500)
 
 
 # ─── Category fee API (for dynamic price display on registration form) ─────────

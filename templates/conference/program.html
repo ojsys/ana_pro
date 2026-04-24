@@ -1,4 +1,5 @@
 {% extends 'conference/base.html' %}
+{% load content_editor %}
 {% block title %}Programme — {{ conference.name }}{% endblock %}
 {% block nav_program %}active{% endblock %}
 
@@ -43,7 +44,7 @@
         <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
             <i class="bi bi-calendar2-week me-1"></i> Conference Programme
         </div>
-        <h1>Conference Programme</h1>
+        <h1>{% editable "program.hero_title" "Conference Programme" %}</h1>
         <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
             {{ conference.start_date|date:"j F" }}–{{ conference.end_date|date:"j F Y" }} &nbsp;·&nbsp; {{ conference.venue }}, {{ conference.city }}
         </p>

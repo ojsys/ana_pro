@@ -1,4 +1,5 @@
 {% extends 'conference/base.html' %}
+{% load content_editor %}
 {% block title %}Submit Abstract — {{ conference.name }}{% endblock %}
 {% block nav_abstract %}active{% endblock %}
 
@@ -43,10 +44,9 @@
         <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
             <i class="bi bi-file-earmark-text me-1"></i> Call for Abstracts / Full Papers
         </div>
-        <h1>Submit Your Abstract</h1>
+        <h1>{% editable "abstract.hero_title" "Submit Your Abstract" %}</h1>
         <p style="color:rgba(255,255,255,0.65);max-width:650px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
-            Share your research and innovations at AKILIMO International Conference 2026.
-            Read the full guidelines below before submitting.
+            {% editable "abstract.hero_desc" "Share your research and innovations at AKILIMO International Conference 2026. Read the full guidelines below before submitting." %}
         </p>
         {% if conference.abstract_deadline %}
         <div style="background:rgba(249,168,37,0.15);border:1px solid rgba(249,168,37,0.3);display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.2rem;border-radius:50px;margin-top:0.75rem;">
