@@ -195,6 +195,16 @@
     margin-bottom: 1.5rem;
 }
 
+/* CKEditor layout */
+.django-ckeditor-widget {
+    display: block !important;
+    width: 100%;
+}
+.django-ckeditor-widget .cke {
+    width: 100% !important;
+    border-radius: 8px;
+}
+
 .form-label {
     font-weight: 500;
     color: var(--text-primary);
@@ -405,4 +415,38 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script>
+(function () {
+    function initCKEditors() {
+        if (typeof CKEDITOR === 'undefined') return;
+        document.querySelectorAll('textarea[data-type="ckeditortype"]').forEach(function (t) {
+            if (t.getAttribute('data-processed') !== '1' && t.id && t.id.indexOf('__prefix__') === -1) {
+                t.setAttribute('data-processed', '1');
+                var config = {};
+                try { config = JSON.parse(t.getAttribute('data-config')); } catch (e) { console.warn('CKEditor config parse error', e); }
+                var ext = [];
+                try { ext = JSON.parse(t.getAttribute('data-external-plugin-resources') || '[]'); } catch (e) {}
+                ext.forEach(function (p) { CKEDITOR.plugins.addExternal(p[0], p[1], p[2]); });
+                CKEDITOR.replace(t.id, config);
+            }
+        });
+    }
+
+    window.addEventListener('load', function () {
+        if (typeof CKEDITOR !== 'undefined') {
+            initCKEditors();
+        } else {
+            /* CKEditor JS did not load from local static files — fall back to CDN */
+            var s = document.createElement('script');
+            s.src = 'https://cdn.ckeditor.com/4.22.1/full/ckeditor.js';
+            s.onload = initCKEditors;
+            document.head.appendChild(s);
+        }
+    });
+})();
+</script>
 {% endblock %}
