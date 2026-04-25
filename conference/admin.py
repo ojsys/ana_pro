@@ -55,31 +55,37 @@ class ConferenceAdmin(admin.ModelAdmin):
     list_editable = ['is_active', 'registration_open', 'abstract_submission_open']
     fieldsets = (
         ('Basic Info', {
-            'fields': ('name', 'slug', 'theme', 'tagline', 'edition')
+            'fields': ('name', 'slug', 'theme', 'tagline', 'edition'),
+            'description': 'Core identity of the conference.',
+        }),
+        ('Status & Registration', {
+            'fields': ('is_active', 'registration_open', 'abstract_submission_open'),
+            'description': 'Toggle these to open or close the conference, registration, and abstract submission.',
         }),
         ('Dates & Venue', {
-            'fields': ('start_date', 'end_date', 'venue', 'city', 'state', 'country')
+            'fields': ('start_date', 'end_date', 'venue', 'city', 'state', 'country'),
         }),
-        ('Content', {
-            'fields': ('description', 'objectives', 'expected_outcomes', 'target_audience', 'key_focus_areas'),
-            'classes': ('collapse',),
-        }),
-        ('Media', {
-            'fields': ('hero_image', 'banner_image', 'organizer_logo'),
-            'classes': ('collapse',),
-        }),
-        ('Key Dates', {
+        ('Key Deadlines', {
             'fields': (
-                'abstract_deadline', 'notification_date', 'final_paper_deadline',
-                'early_bird_deadline', 'registration_deadline',
+                'abstract_deadline', 'early_bird_deadline',
+                'notification_date', 'registration_deadline', 'final_paper_deadline',
             ),
+            'description': 'Leave blank any dates that do not apply.',
         }),
-        ('Status', {
-            'fields': ('is_active', 'registration_open', 'abstract_submission_open')
+        ('Content (shown on the About section of the conference page)', {
+            'fields': ('description', 'target_audience', 'objectives', 'expected_outcomes', 'key_focus_areas'),
+            'description': (
+                'description → main paragraph | '
+                'objectives → one per line | '
+                'expected_outcomes → one per line | '
+                'target_audience → who should attend'
+            ),
         }),
         ('Contact', {
             'fields': ('contact_email', 'contact_phone', 'website_url'),
-            'classes': ('collapse',),
+        }),
+        ('Media', {
+            'fields': ('hero_image', 'banner_image', 'organizer_logo'),
         }),
     )
 

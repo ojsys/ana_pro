@@ -23,6 +23,7 @@ from .models import (ParticipantRecord, AkilimoParticipant, DashboardMetrics,
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
 from .services import AkilimoDataService
 from .decorators import require_active_subscription
+from conference.models import Conference, Registration as ConferenceRegistration, AbstractSubmission
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +244,25 @@ class DashboardHomeView(TemplateView):
             'available_countries': list(available_countries),
             'total_all_participants': AkilimoParticipant.objects.count(),
         })
-        
+
+        # Conference overview widget
+        active_conference = Conference.objects.filter(is_active=True).first()
+        if active_conference:
+            context['active_conference'] = active_conference
+            context['conf_registrations'] = ConferenceRegistration.objects.filter(
+                conference=active_conference, payment_status='confirmed'
+            ).count()
+            context['conf_pending'] = ConferenceRegistration.objects.filter(
+                conference=active_conference, payment_status='pending'
+            ).count()
+            context['conf_abstracts'] = AbstractSubmission.objects.filter(
+                conference=active_conference
+            ).count()
+            context['conf_abstracts_pending'] = AbstractSubmission.objects.filter(
+                conference=active_conference, status='pending'
+            ).count()
+            context['conf_speakers'] = active_conference.speakers.filter(is_active=True).count()
+
         return context
 
 @api_view(['GET'])

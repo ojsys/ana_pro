@@ -125,6 +125,107 @@
     </div>
 </div>
 
+<!-- ── Conference Overview Widget ─────────────────────────────────────────── -->
+{% if active_conference %}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="chart-card" style="border-left:4px solid #F9A825;">
+            <div class="chart-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h5 class="chart-title" style="margin-bottom:0.25rem;">
+                        <span class="material-icons" style="vertical-align:middle;color:#F9A825;margin-right:6px;font-size:1.2rem;">event</span>
+                        {{ active_conference.name }}
+                    </h5>
+                    <p style="margin:0;font-size:0.85rem;color:#666;font-style:italic;">"{{ active_conference.theme }}"</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    {% if active_conference.registration_open %}
+                    <span style="background:#e8f5e9;color:#2E7D32;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:50px;letter-spacing:0.5px;">● Registration Open</span>
+                    {% else %}
+                    <span style="background:#fce4ec;color:#c62828;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:50px;">● Registration Closed</span>
+                    {% endif %}
+                    {% if active_conference.abstract_submission_open %}
+                    <span style="background:#e3f2fd;color:#1565c0;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:50px;">● Abstracts Open</span>
+                    {% else %}
+                    <span style="background:#f3e5f5;color:#6a1b9a;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:50px;">● Abstracts Closed</span>
+                    {% endif %}
+                    <a href="/admin/conference/conference/{{ active_conference.pk }}/change/" style="background:#1B5E20;color:#fff;font-size:0.78rem;font-weight:700;padding:5px 14px;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                        <span class="material-icons" style="font-size:0.9rem;">edit</span> Edit Conference
+                    </a>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <!-- Stats -->
+                <div class="col-lg-7">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div style="background:#f9f9f9;border-radius:12px;padding:1rem;text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:800;color:#1B5E20;font-family:'Poppins',sans-serif;">{{ conf_registrations }}</div>
+                                <div style="font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Confirmed</div>
+                                <div style="font-size:0.7rem;color:#aaa;">{{ conf_pending }} pending</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div style="background:#f9f9f9;border-radius:12px;padding:1rem;text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:800;color:#1565c0;font-family:'Poppins',sans-serif;">{{ conf_abstracts }}</div>
+                                <div style="font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Abstracts</div>
+                                <div style="font-size:0.7rem;color:#aaa;">{{ conf_abstracts_pending }} pending review</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div style="background:#f9f9f9;border-radius:12px;padding:1rem;text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:800;color:#E65100;font-family:'Poppins',sans-serif;">{{ conf_speakers }}</div>
+                                <div style="font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Speakers</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div style="background:#f9f9f9;border-radius:12px;padding:1rem;text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:800;color:#555;font-family:'Poppins',sans-serif;">{{ active_conference.days_until }}</div>
+                                <div style="font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Days Away</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dates row -->
+                    <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:1rem;font-size:0.82rem;color:#555;">
+                        <span><span class="material-icons" style="font-size:0.95rem;vertical-align:middle;color:#F9A825;">calendar_today</span> {{ active_conference.start_date|date:"j M" }}–{{ active_conference.end_date|date:"j M Y" }}</span>
+                        <span><span class="material-icons" style="font-size:0.95rem;vertical-align:middle;color:#F9A825;">location_on</span> {{ active_conference.venue }}, {{ active_conference.city }}</span>
+                        {% if active_conference.abstract_deadline %}
+                        <span><span class="material-icons" style="font-size:0.95rem;vertical-align:middle;color:#1565c0;">description</span> Abstract deadline: {{ active_conference.abstract_deadline|date:"j M Y" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Quick links -->
+                <div class="col-lg-5">
+                    <div style="background:#f9f9f9;border-radius:12px;padding:1rem;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:0.75rem;">Quick Admin Links</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <a href="/admin/conference/speaker/" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#1B5E20;">mic</span> Manage Speakers
+                            </a>
+                            <a href="/admin/conference/abstractsubmission/" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#1565c0;">description</span> Review Abstracts
+                            </a>
+                            <a href="/admin/conference/registration/" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#E65100;">confirmation_number</span> Registrations
+                            </a>
+                            <a href="/admin/conference/subtheme/" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#7b1fa2;">category</span> Sub-Themes
+                            </a>
+                            <a href="/conference/" target="_blank" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#F9A825;">open_in_new</span> View Conference Site
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Enhanced Charts Section -->
 <div class="row g-4 mb-5">
     <!-- Gender Distribution -->
