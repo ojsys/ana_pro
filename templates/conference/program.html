@@ -36,6 +36,10 @@
 .pill-opening, .pill-closing { background:#fff3e0;color:var(--conf-gold-dark); }
 .pill-networking { background:#e0f7fa;color:#00796b; }
 .legend-dot { width:12px;height:12px;border-radius:50%;display:inline-block; }
+.session-desc { font-size:0.78rem;color:#888;margin-top:0.4rem;line-height:1.6; }
+.session-desc ol, .session-desc ul { padding-left:1.2rem;margin:0.25rem 0; }
+.session-desc li { margin-bottom:0.15rem; }
+.session-desc span[style] { font-size:0.78rem !important;font-family:inherit !important; }
 {% endblock %}
 
 {% block content %}
@@ -114,7 +118,7 @@
                     <div class="session-meta"><i class="bi bi-person-badge me-1"></i>Moderator: {{ session.moderator }}</div>
                     {% endif %}
                     {% if session.description %}
-                    <div style="font-size:0.78rem;color:#888;margin-top:0.4rem;line-height:1.6;">{{ session.description }}</div>
+                    <div class="session-desc">{{ session.description|safe }}</div>
                     {% endif %}
                 </div>
             </div>
