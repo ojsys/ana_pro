@@ -2,11 +2,16 @@ from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
+from ckeditor.widgets import CKEditorWidget
 from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
     KeyMessage, ContentBlock,
 )
+
+# Standard rich-text toolbar used across conference admin forms
+_RICH = CKEditorWidget(attrs={'rows': 10}, config_name='default')
+_RICH_SM = CKEditorWidget(attrs={'rows': 6}, config_name='default')
 
 
 class DatePickerInput(forms.DateInput):
@@ -38,11 +43,11 @@ class ConferenceAdminForm(forms.ModelForm):
             'contact_email': forms.EmailInput(attrs={'placeholder': 'conference@akilimo-nigeria.org'}),
             'contact_phone': forms.TextInput(attrs={'placeholder': '+234 800 000 0000'}),
             'website_url': forms.URLInput(attrs={'placeholder': 'https://conference.akilimo-nigeria.org'}),
-            'description': forms.Textarea(attrs={'placeholder': 'Overview paragraph about the conference — shown on the landing page.', 'rows': 4}),
-            'objectives': forms.Textarea(attrs={'placeholder': 'One objective per line, e.g.:\nShare innovations in cassava value chain\nShowcase AKILIMO tool impact\nStrengthen stakeholder partnerships', 'rows': 5}),
-            'expected_outcomes': forms.Textarea(attrs={'placeholder': 'One outcome per line, e.g.:\nNew partnerships formed\nPolicy recommendations documented', 'rows': 4}),
-            'target_audience': forms.Textarea(attrs={'placeholder': 'e.g. Researchers, farmers, agribusinesses, government agencies, NGOs, students', 'rows': 2}),
-            'key_focus_areas': forms.Textarea(attrs={'placeholder': 'One focus area per line, e.g.:\nCassava value chain innovation\nAKILIMO advisory tools\nDigital agriculture', 'rows': 4}),
+            'description':       CKEditorWidget(config_name='default'),
+            'objectives':        CKEditorWidget(config_name='default'),
+            'expected_outcomes': CKEditorWidget(config_name='default'),
+            'target_audience':   CKEditorWidget(config_name='default'),
+            'key_focus_areas':   CKEditorWidget(config_name='default'),
         }
 
 
@@ -90,16 +95,32 @@ class ConferenceAdmin(admin.ModelAdmin):
     )
 
 
+class SubThemeAdminForm(forms.ModelForm):
+    description = forms.CharField(required=False, widget=CKEditorWidget(config_name='default'))
+    class Meta:
+        model = SubTheme
+        fields = '__all__'
+
+
 @admin.register(SubTheme)
 class SubThemeAdmin(admin.ModelAdmin):
+    form = SubThemeAdminForm
     list_display = ['title', 'conference', 'order', 'is_active']
     list_filter = ['conference', 'is_active']
     list_editable = ['order', 'is_active']
     ordering = ['conference', 'order']
 
 
+class SpeakerAdminForm(forms.ModelForm):
+    bio = forms.CharField(required=False, widget=CKEditorWidget(config_name='default'))
+    class Meta:
+        model = Speaker
+        fields = '__all__'
+
+
 @admin.register(Speaker)
 class SpeakerAdmin(admin.ModelAdmin):
+    form = SpeakerAdminForm
     list_display = ['full_name', 'organization', 'speaker_type', 'topic', 'is_featured', 'is_active', 'photo_preview']
     list_filter = ['conference', 'speaker_type', 'is_featured', 'is_active']
     search_fields = ['full_name', 'organization', 'topic']
@@ -120,8 +141,16 @@ class AbstractThematicAreaAdmin(admin.ModelAdmin):
     list_editable = ['order', 'is_active']
 
 
+class AbstractSubmissionAdminForm(forms.ModelForm):
+    reviewer_notes = forms.CharField(required=False, widget=CKEditorWidget(config_name='default'))
+    class Meta:
+        model = AbstractSubmission
+        fields = '__all__'
+
+
 @admin.register(AbstractSubmission)
 class AbstractSubmissionAdmin(admin.ModelAdmin):
+    form = AbstractSubmissionAdminForm
     list_display = ['reference_number', 'title_short', 'author_name', 'institution', 'thematic_area', 'presentation_format', 'status', 'word_count_display', 'submitted_at']
     list_filter = ['conference', 'status', 'thematic_area', 'presentation_format']
     search_fields = ['reference_number', 'title', 'author_name', 'institution', 'email']
@@ -252,14 +281,23 @@ class SponsorAdmin(admin.ModelAdmin):
     list_editable = ['tier', 'order', 'is_active']
 
 
+class KeyMessageAdminForm(forms.ModelForm):
+    message = forms.CharField(widget=CKEditorWidget(config_name='default'))
+    class Meta:
+        model = KeyMessage
+        fields = '__all__'
+
+
 @admin.register(KeyMessage)
 class KeyMessageAdmin(admin.ModelAdmin):
+    form = KeyMessageAdminForm
     list_display = ['message_short', 'conference', 'source', 'is_quote', 'order', 'is_active']
     list_filter = ['conference', 'is_quote', 'is_active']
     list_editable = ['order', 'is_active']
 
     def message_short(self, obj):
-        return obj.message[:80]
+        from django.utils.html import strip_tags
+        return strip_tags(obj.message)[:80]
     message_short.short_description = "Message"
 
 

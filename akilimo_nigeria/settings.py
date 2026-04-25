@@ -248,3 +248,22 @@ PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
+# CKEditor configuration
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+            ['Link', 'Unlink'],
+            ['Blockquote'],
+            ['Source'],
+        ],
+        'height': 280,
+        'width': '100%',
+        'removePlugins': 'elementspath',
+        'resize_enabled': True,
+        'extraAllowedContent': 'p ul ol li strong em u s blockquote a[href,target]',
+    },
+}
+

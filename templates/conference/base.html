@@ -314,6 +314,39 @@
 
 {% if request.user.is_staff %}
 <!-- Admin frontend editor toolbar -->
+<style>
+#conf-fmt-bar {
+    position: fixed; z-index: 99999;
+    background: #1a1a2e; border-radius: 10px;
+    padding: 5px 8px; display: none; align-items: center; gap: 3px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    pointer-events: auto;
+}
+#conf-fmt-bar button {
+    background: none; border: none; color: rgba(255,255,255,0.75);
+    width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+    font-size: 0.8rem; font-weight: 700; font-family: 'Inter',sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+#conf-fmt-bar button:hover { background: rgba(255,255,255,0.12); color: #fff; }
+#conf-fmt-bar button.active { background: #1976d2; color: #fff; }
+#conf-fmt-bar .fmt-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.12); margin: 0 2px; }
+</style>
+
+<!-- Floating format bar (appears on text selection in edit mode) -->
+<div id="conf-fmt-bar">
+    <button onclick="fmt('bold')" title="Bold"><b>B</b></button>
+    <button onclick="fmt('italic')" title="Italic"><i>I</i></button>
+    <button onclick="fmt('underline')" title="Underline"><u>U</u></button>
+    <div class="fmt-sep"></div>
+    <button onclick="fmt('insertUnorderedList')" title="Bullet list"><i class="bi bi-list-ul"></i></button>
+    <button onclick="fmt('insertOrderedList')" title="Numbered list"><i class="bi bi-list-ol"></i></button>
+    <div class="fmt-sep"></div>
+    <button onclick="fmt('removeFormat')" title="Clear formatting" style="font-size:0.72rem;">Tx</button>
+</div>
+
 <div id="conf-editor-toolbar">
     <div class="toolbar-panel">
         <span class="edit-indicator"></span>
@@ -331,7 +364,65 @@
     const SAVE_URL = "{% url 'conference:save_content' %}";
     const CSRF    = "{{ csrf_token }}";
     let editMode  = false;
+    let activeBlock = null;
+    const fmtBar = document.getElementById('conf-fmt-bar');
 
+    /* ── Format bar ─────────────────────────────────────────────────── */
+    window.fmt = function (cmd) {
+        document.execCommand(cmd, false, null);
+        if (activeBlock) {
+            updateFmtBar();
+            /* Save immediately after formatting */
+            saveBlock(activeBlock.dataset.editableKey, activeBlock.innerHTML);
+        }
+    };
+
+    function updateFmtBar() {
+        ['bold','italic','underline'].forEach(function (cmd) {
+            var btn = fmtBar.querySelector('[onclick="fmt(\'' + cmd + '\')"]');
+            if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+        });
+    }
+
+    function positionFmtBar() {
+        var sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !editMode) { fmtBar.style.display = 'none'; return; }
+        /* Only show when selection is inside an editable block */
+        var node = sel.anchorNode;
+        while (node && node !== document.body) {
+            if (node.classList && node.classList.contains('editable-block')) break;
+            node = node.parentNode;
+        }
+        if (!node || node === document.body) { fmtBar.style.display = 'none'; return; }
+
+        var range = sel.getRangeAt(0);
+        var rect  = range.getBoundingClientRect();
+        var barW  = fmtBar.offsetWidth || 210;
+        var left  = Math.max(8, Math.min(rect.left + window.scrollX + rect.width / 2 - barW / 2, window.innerWidth - barW - 8));
+        var top   = rect.top + window.scrollY - fmtBar.offsetHeight - 8;
+        if (top < window.scrollY + 8) top = rect.bottom + window.scrollY + 8;
+
+        fmtBar.style.left    = left + 'px';
+        fmtBar.style.top     = top  + 'px';
+        fmtBar.style.display = 'flex';
+        updateFmtBar();
+    }
+
+    document.addEventListener('selectionchange', function () {
+        if (!editMode) return;
+        /* Small delay so selection is settled */
+        clearTimeout(fmtBar._selTimer);
+        fmtBar._selTimer = setTimeout(positionFmtBar, 80);
+    });
+
+    /* Hide bar when clicking outside editable blocks or the bar itself */
+    document.addEventListener('mousedown', function (e) {
+        if (!fmtBar.contains(e.target) && !(e.target.closest && e.target.closest('.editable-block'))) {
+            fmtBar.style.display = 'none';
+        }
+    });
+
+    /* ── Edit mode toggle ───────────────────────────────────────────── */
     window.confEditorToggle = function () {
         editMode = !editMode;
         document.body.classList.toggle('conf-edit-mode', editMode);
@@ -340,56 +431,53 @@
 
         document.querySelectorAll('.editable-block').forEach(function (el) {
             el.contentEditable = editMode ? 'true' : 'false';
-            if (!editMode) el.blur();
+            if (!editMode) { el.blur(); }
         });
 
-        if (editMode) {
-            showToast('Edit mode activated — click any highlighted text to edit', 'info', 3000);
-        }
+        if (!editMode) { fmtBar.style.display = 'none'; activeBlock = null; }
+        if (editMode) showToast('Edit mode — select text for formatting options', 'info', 3500);
     };
 
+    /* ── Save ───────────────────────────────────────────────────────── */
     function saveBlock(key, content) {
         showToast('Saving…', 'info');
         fetch(SAVE_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF,
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
             body: JSON.stringify({ key: key, content: content }),
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            if (data.success) {
-                showToast('Saved', 'success', 2000);
-            } else {
-                showToast('Error: ' + (data.error || 'unknown'), 'error', 4000);
-            }
+            if (data.success) showToast('Saved', 'success', 2000);
+            else showToast('Error: ' + (data.error || 'unknown'), 'error', 4000);
         })
-        .catch(function () {
-            showToast('Network error — could not save', 'error', 4000);
-        });
+        .catch(function () { showToast('Network error — could not save', 'error', 4000); });
     }
 
+    /* ── Toast ──────────────────────────────────────────────────────── */
     function showToast(msg, type, duration) {
         var el = document.getElementById('conf-editor-toast');
         el.textContent = msg;
         el.className = 'show ' + (type || '');
         clearTimeout(el._timer);
-        el._timer = setTimeout(function () {
-            el.className = '';
-        }, duration || 2500);
+        el._timer = setTimeout(function () { el.className = ''; }, duration || 2500);
     }
 
+    /* ── Per-block events ───────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.editable-block').forEach(function (el) {
             var original = '';
 
             el.addEventListener('focus', function () {
-                original = this.innerHTML;
+                original   = this.innerHTML;
+                activeBlock = this;
             });
 
-            el.addEventListener('blur', function () {
+            el.addEventListener('blur', function (e) {
+                /* Don't save if focus moved to the format bar */
+                var related = e.relatedTarget;
+                if (related && fmtBar.contains(related)) return;
+                activeBlock = null;
                 if (this.innerHTML !== original) {
                     saveBlock(this.dataset.editableKey, this.innerHTML);
                     original = this.innerHTML;
@@ -397,15 +485,7 @@
             });
 
             el.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    this.innerHTML = original;
-                    this.blur();
-                }
-                /* Prevent Enter from creating block elements — keep it inline */
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    document.execCommand('insertLineBreak');
-                }
+                if (e.key === 'Escape') { this.innerHTML = original; this.blur(); }
             });
         });
     });

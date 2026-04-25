@@ -60,8 +60,14 @@
 #speakerModal .modal-body { padding-top:0.5rem; }
 #speakerModal .modal-bio {
     font-size:0.93rem;color:#444;line-height:1.85;
-    white-space:pre-wrap;word-break:break-word;
+    word-break:break-word;
 }
+#speakerModal .modal-bio p { margin-bottom:0.6rem; }
+#speakerModal .modal-bio p:last-child { margin-bottom:0; }
+#speakerModal .modal-bio ul, #speakerModal .modal-bio ol { padding-left:1.4rem;margin-bottom:0.6rem; }
+#speakerModal .modal-bio li { margin-bottom:0.3rem;line-height:1.7; }
+#speakerModal .modal-bio strong { font-weight:700; }
+#speakerModal .modal-bio em { font-style:italic; }
 #speakerModal .modal-pos { font-size:0.85rem;color:#888;margin-bottom:1rem; }
 #speakerModal .modal-topic {
     background:var(--conf-surface);border-left:3px solid var(--conf-green-light);
@@ -101,6 +107,7 @@
             </div>
             <div class="row g-4">
                 {% for speaker in keynote_speakers %}
+                {% if speaker.bio %}<template id="bio-{{ speaker.pk }}">{{ speaker.bio|safe }}</template>{% endif %}
                 <div class="col-lg-4 col-md-6">
                     <div class="speaker-card">
                         <div class="speaker-photo-wrap">
@@ -113,12 +120,12 @@
                             <div class="speaker-pos">{{ speaker.position }}{% if speaker.organization %} · {{ speaker.organization }}{% endif %}</div>
                             {% if speaker.topic %}<div class="speaker-topic"><i class="bi bi-chat-quote me-1"></i>{{ speaker.topic }}</div>{% endif %}
                             {% if speaker.bio %}
-                            <div class="speaker-bio-preview">{{ speaker.bio }}</div>
+                            <div class="speaker-bio-preview conf-rich-body">{{ speaker.bio|safe }}</div>
                             <button class="btn-read-bio"
                                 data-name="{{ speaker.full_name|escapejs }}"
                                 data-pos="{{ speaker.position|escapejs }}{% if speaker.organization %} · {{ speaker.organization|escapejs }}{% endif %}"
                                 data-topic="{{ speaker.topic|escapejs }}"
-                                data-bio="{{ speaker.bio|escapejs }}"
+                                data-bio-id="{{ speaker.pk }}"
                                 data-photo="{% if speaker.photo %}{{ speaker.photo.url }}{% endif %}"
                                 data-badge="keynote"
                                 data-linkedin="{{ speaker.linkedin_url }}"
@@ -146,6 +153,7 @@
             <div class="mb-4"><h2 class="section-heading">Guest Speakers</h2></div>
             <div class="row g-4">
                 {% for speaker in invited_speakers %}
+                {% if speaker.bio %}<template id="bio-{{ speaker.pk }}">{{ speaker.bio|safe }}</template>{% endif %}
                 <div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="speaker-card speaker-card-sm">
                         <div class="speaker-photo-wrap">
@@ -158,12 +166,12 @@
                             <div class="speaker-pos">{{ speaker.position }}{% if speaker.organization %} · {{ speaker.organization }}{% endif %}</div>
                             {% if speaker.topic %}<div class="speaker-topic" style="font-size:0.78rem;"><i class="bi bi-chat-quote me-1"></i>{{ speaker.topic }}</div>{% endif %}
                             {% if speaker.bio %}
-                            <div class="speaker-bio-preview" style="-webkit-line-clamp:2;">{{ speaker.bio }}</div>
+                            <div class="speaker-bio-preview conf-rich-body" style="-webkit-line-clamp:2;">{{ speaker.bio|safe }}</div>
                             <button class="btn-read-bio"
                                 data-name="{{ speaker.full_name|escapejs }}"
                                 data-pos="{{ speaker.position|escapejs }}{% if speaker.organization %} · {{ speaker.organization|escapejs }}{% endif %}"
                                 data-topic="{{ speaker.topic|escapejs }}"
-                                data-bio="{{ speaker.bio|escapejs }}"
+                                data-bio-id="{{ speaker.pk }}"
                                 data-photo="{% if speaker.photo %}{{ speaker.photo.url }}{% endif %}"
                                 data-badge="invited"
                                 data-linkedin="{{ speaker.linkedin_url }}"
@@ -185,6 +193,7 @@
             <div class="mb-4"><h2 class="section-heading">Panelists</h2></div>
             <div class="row g-4">
                 {% for speaker in panelists %}
+                {% if speaker.bio %}<template id="bio-{{ speaker.pk }}">{{ speaker.bio|safe }}</template>{% endif %}
                 <div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="speaker-card speaker-card-sm">
                         <div class="speaker-photo-wrap">
@@ -197,12 +206,12 @@
                             <div class="speaker-pos">{{ speaker.position }}{% if speaker.organization %} · {{ speaker.organization }}{% endif %}</div>
                             {% if speaker.topic %}<div class="speaker-topic" style="font-size:0.78rem;"><i class="bi bi-chat-quote me-1"></i>{{ speaker.topic }}</div>{% endif %}
                             {% if speaker.bio %}
-                            <div class="speaker-bio-preview" style="-webkit-line-clamp:2;">{{ speaker.bio }}</div>
+                            <div class="speaker-bio-preview conf-rich-body" style="-webkit-line-clamp:2;">{{ speaker.bio|safe }}</div>
                             <button class="btn-read-bio"
                                 data-name="{{ speaker.full_name|escapejs }}"
                                 data-pos="{{ speaker.position|escapejs }}{% if speaker.organization %} · {{ speaker.organization|escapejs }}{% endif %}"
                                 data-topic="{{ speaker.topic|escapejs }}"
-                                data-bio="{{ speaker.bio|escapejs }}"
+                                data-bio-id="{{ speaker.pk }}"
                                 data-photo="{% if speaker.photo %}{{ speaker.photo.url }}{% endif %}"
                                 data-badge="panelist"
                                 data-linkedin="{{ speaker.linkedin_url }}"
@@ -276,11 +285,17 @@ function openSpeakerModal(btn) {
     var name    = btn.dataset.name    || '';
     var pos     = btn.dataset.pos     || '';
     var topic   = btn.dataset.topic   || '';
-    var bio     = btn.dataset.bio     || '';
     var photo   = btn.dataset.photo   || '';
     var badge   = btn.dataset.badge   || 'invited';
     var linkedin = btn.dataset.linkedin || '';
     var twitter  = btn.dataset.twitter  || '';
+
+    // Read bio HTML from the hidden <template> element to preserve rich text
+    var bioHtml = '';
+    if (btn.dataset.bioId) {
+        var tpl = document.getElementById('bio-' + btn.dataset.bioId);
+        if (tpl) bioHtml = tpl.innerHTML;
+    }
 
     // Photo
     var photoWrap = document.getElementById('modal-photo-wrap');
@@ -298,7 +313,7 @@ function openSpeakerModal(btn) {
     // Text fields
     document.getElementById('modal-name').textContent = name;
     document.getElementById('modal-pos').textContent  = pos;
-    document.getElementById('modal-bio').textContent  = bio;
+    document.getElementById('modal-bio').innerHTML = bioHtml;
 
     // Topic
     var topicEl = document.getElementById('modal-topic');
