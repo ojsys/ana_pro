@@ -250,8 +250,16 @@ class RegistrationAdmin(admin.ModelAdmin):
     full_name.short_description = "Name"
 
 
+class ProgramSessionAdminForm(forms.ModelForm):
+    description = forms.CharField(required=False, widget=CKEditorWidget(config_name='default'))
+    class Meta:
+        model = ProgramSession
+        fields = '__all__'
+
+
 class ProgramSessionInline(admin.StackedInline):
     model = ProgramSession
+    form = ProgramSessionAdminForm
     extra = 1
     fields = ['title', 'session_type', 'start_time', 'end_time', 'venue', 'speakers', 'moderator', 'description', 'order', 'is_active']
     filter_horizontal = ['speakers']
@@ -267,6 +275,7 @@ class ProgramDayAdmin(admin.ModelAdmin):
 
 @admin.register(ProgramSession)
 class ProgramSessionAdmin(admin.ModelAdmin):
+    form = ProgramSessionAdminForm
     list_display = ['title', 'day', 'session_type', 'start_time', 'end_time', 'venue', 'order']
     list_filter = ['day__conference', 'session_type']
     search_fields = ['title', 'moderator']
