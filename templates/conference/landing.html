@@ -101,28 +101,46 @@
 .theme-card h6 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--conf-dark); margin-bottom: 0.5rem; }
 .theme-card p { font-size: 0.83rem; color: #666; line-height: 1.6; margin: 0; }
 
-/* Speaker card */
+/* Speaker card — equal-height cards with pinned sections */
 .speaker-card {
     background: #fff; border-radius: 16px; overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.07); transition: all 0.3s;
     text-align: center;
+    display: flex; flex-direction: column; height: 100%;
 }
 .speaker-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); }
 .speaker-photo {
-    width: 100%; aspect-ratio: 1; object-fit: cover;
+    width: 100%; aspect-ratio: 1; object-fit: cover; flex-shrink: 0;
 }
 .speaker-photo-placeholder {
-    width: 100%; aspect-ratio: 1;
+    width: 100%; aspect-ratio: 1; flex-shrink: 0;
     background: linear-gradient(135deg, var(--conf-green), var(--conf-green-light));
     display: flex; align-items: center; justify-content: center;
     font-size: 3rem; color: rgba(255,255,255,0.6);
 }
-.speaker-body { padding: 1.2rem; }
-.speaker-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--conf-dark); margin-bottom: 0.2rem; }
-.speaker-org { font-size: 0.78rem; color: #888; margin-bottom: 0.5rem; }
+.speaker-body {
+    padding: 1.2rem;
+    display: flex; flex-direction: column; flex: 1;
+}
+.speaker-name {
+    font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--conf-dark);
+    margin-bottom: 0.2rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.speaker-org {
+    font-size: 0.78rem; color: #888; margin-bottom: 0.5rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.speaker-topic-sm {
+    font-size: 0.75rem; color: #999; font-style: italic; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    flex: 1; /* absorbs leftover space so the badge stays at the bottom */
+    margin-bottom: 0.6rem;
+}
 .speaker-badge {
     font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
     padding: 0.2rem 0.7rem; border-radius: 50px;
+    margin-top: auto; align-self: center; display: inline-block;
 }
 .badge-keynote { background: #fff3e0; color: var(--conf-gold-dark); }
 .badge-invited { background: #e8f5e9; color: var(--conf-green-mid); }
@@ -389,9 +407,9 @@
             <div class="section-divider gold mx-auto"></div>
             <p style="color:#666;max-width:600px;margin:0 auto;">{% editable "landing.speakers_intro" "Hear from leading experts in cassava research, agribusiness, and innovation." %}</p>
         </div>
-        <div class="row g-4 justify-content-center">
+        <div class="row g-4 justify-content-center align-items-stretch">
             {% for speaker in featured_speakers %}
-            <div class="col-lg-3 col-md-4 col-6">
+            <div class="col-lg-3 col-md-4 col-6 d-flex">
                 <div class="speaker-card">
                     {% if speaker.photo %}
                     <img src="{{ speaker.photo.url }}" class="speaker-photo" alt="{{ speaker.full_name }}">
@@ -400,8 +418,8 @@
                     {% endif %}
                     <div class="speaker-body">
                         <div class="speaker-name">{{ speaker.full_name }}</div>
-                        <div class="speaker-org">{{ speaker.position }}, {{ speaker.organization }}</div>
-                        {% if speaker.topic %}<div style="font-size:0.75rem;color:#888;margin-bottom:0.5rem;font-style:italic;">{{ speaker.topic|truncatechars:60 }}</div>{% endif %}
+                        <div class="speaker-org">{{ speaker.position }}{% if speaker.organization %}, {{ speaker.organization }}{% endif %}</div>
+                        <div class="speaker-topic-sm">{{ speaker.topic|truncatechars:70 }}</div>
                         <span class="speaker-badge {% if speaker.speaker_type == 'keynote' %}badge-keynote{% elif speaker.speaker_type == 'panelist' %}badge-panelist{% else %}badge-invited{% endif %}">
                             {{ speaker.get_speaker_type_display }}
                         </span>
