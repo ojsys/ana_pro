@@ -1,5 +1,5 @@
 {% extends 'conference/base.html' %}
-{% load humanize content_editor l10n %}
+{% load humanize content_editor %}
 {% block title %}Register — {{ conference.name }}{% endblock %}
 {% block nav_abstract %}{% endblock %}
 
@@ -267,12 +267,7 @@
 <script>
 const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
 
-// Fee data as plain numbers \u2014 no locale formatting that would break parseInt
-const categoryFees = {
-    {% for cat in categories %}
-    "{{ cat.pk }}": { fee: {% localize off %}{{ cat.fee }}{% endlocalize %}, earlyFee: {% if cat.early_bird_fee %}{% localize off %}{{ cat.early_bird_fee }}{% endlocalize %}{% else %}null{% endif %} }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-};
+const categoryFees = {{ category_fees_json|safe }};
 
 function fmt(n) {
     // Manual comma formatting \u2014 avoids Intl locale compatibility issues
