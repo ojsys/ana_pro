@@ -267,13 +267,6 @@
 <script>
 const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
 
-const categoryFees = {{ category_fees_json|safe }};
-
-function fmt(n) {
-    // Manual comma formatting \u2014 avoids Intl locale compatibility issues
-    return '\u20a6' + parseInt(n, 10).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
 function selectCategory(catId) {
     // Deselect all cards
     document.querySelectorAll('.cat-option').forEach(function(el) {
@@ -294,11 +287,10 @@ function selectCategory(catId) {
     var sel = document.getElementById('id_category');
     if (sel) sel.value = catId;
 
-    // Read fee from the pre-built JS object (clean numbers, no locale parsing issues)
-    var catData = categoryFees[catId] || {};
-    var fee = catData.fee || 0;
-    var earlyFee = catData.earlyFee || null;
-    var activeFee = (isEarlyBird && earlyFee) ? earlyFee : fee;
+    // Read fee text directly from the already-rendered card label (avoids all locale/JS issues)
+    var feeLabelEl = chosen.querySelector('.cat-fee-label');
+    var feeText = feeLabelEl ? feeLabelEl.textContent.trim() : '—';
+    var isEarlyBirdCard = !!chosen.querySelector('.early-bird-badge');
 
     // Get category name from rendered DOM
     var nameEl = chosen.querySelector('.cat-name-label');
@@ -308,9 +300,9 @@ function selectCategory(catId) {
     document.getElementById('summaryPlaceholder').style.display = 'none';
     document.getElementById('summaryContent').style.display = 'block';
     document.getElementById('summaryCategory').textContent = name;
-    document.getElementById('summaryFee').textContent = fmt(activeFee);
-    document.getElementById('summaryTotal').textContent = fmt(activeFee);
-    document.getElementById('earlyBirdNote').style.display = (isEarlyBird && earlyFee) ? 'block' : 'none';
+    document.getElementById('summaryFee').textContent = feeText;
+    document.getElementById('summaryTotal').textContent = feeText;
+    document.getElementById('earlyBirdNote').style.display = isEarlyBirdCard ? 'block' : 'none';
 
     // Build includes list from already-rendered list items in the card
     var incHtml = '';

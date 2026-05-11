@@ -164,15 +164,7 @@ class RegistrationView(FormView):
         context = super().get_context_data(**kwargs)
         conference = self.get_conference()
         context['conference'] = conference
-        categories = conference.registration_categories.filter(is_active=True)
-        context['categories'] = categories
-        context['category_fees_json'] = json.dumps({
-            str(cat.pk): {
-                'fee': int(cat.fee),
-                'earlyFee': int(cat.early_bird_fee) if cat.early_bird_fee else None,
-            }
-            for cat in categories
-        })
+        context['categories'] = conference.registration_categories.filter(is_active=True)
         context['is_early_bird'] = (
             conference.early_bird_deadline and
             timezone.now().date() <= conference.early_bird_deadline
