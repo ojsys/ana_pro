@@ -1,5 +1,5 @@
 {% extends 'conference/base.html' %}
-{% load humanize content_editor %}
+{% load humanize content_editor l10n %}
 {% block title %}Register — {{ conference.name }}{% endblock %}
 {% block nav_abstract %}{% endblock %}
 
@@ -267,8 +267,16 @@
 <script>
 const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
 
+// Fee data as plain numbers \u2014 no locale formatting that would break parseInt
+const categoryFees = {
+    {% for cat in categories %}
+    "{{ cat.pk }}": { fee: {% localize off %}{{ cat.fee|floatformat:0 }}{% endlocalize %}, earlyFee: {% if cat.early_bird_fee %}{% localize off %}{{ cat.early_bird_fee|floatformat:0 }}{% endlocalize %}{% else %}null{% endif %} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
 function fmt(n) {
-    return '\u20a6' + Number(n).toLocaleString('en-NG', {minimumFractionDigits:0, maximumFractionDigits:0});
+    // Manual comma formatting \u2014 avoids Intl locale compatibility issues
+    return '\u20a6' + parseInt(n, 10).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 function selectCategory(catId) {
@@ -291,11 +299,10 @@ function selectCategory(catId) {
     var sel = document.getElementById('id_category');
     if (sel) sel.value = catId;
 
-    // Read fee directly from data attributes (no JS object lookup)
-    // Strip locale commas (e.g. "5,000") before parsing to avoid parseInt stopping at the comma
-    var fee = parseInt((chosen.getAttribute('data-fee') || '0').replace(/,/g, ''), 10) || 0;
-    var earlyFeeAttr = chosen.getAttribute('data-early-fee');
-    var earlyFee = earlyFeeAttr ? parseInt(earlyFeeAttr.replace(/,/g, ''), 10) : null;
+    // Read fee from the pre-built JS object (clean numbers, no locale parsing issues)
+    var catData = categoryFees[catId] || {};
+    var fee = catData.fee || 0;
+    var earlyFee = catData.earlyFee || null;
     var activeFee = (isEarlyBird && earlyFee) ? earlyFee : fee;
 
     // Get category name from rendered DOM
