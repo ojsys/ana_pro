@@ -270,7 +270,7 @@ const isEarlyBird = {{ is_early_bird|yesno:"true,false" }};
 // Fee data as plain numbers \u2014 no locale formatting that would break parseInt
 const categoryFees = {
     {% for cat in categories %}
-    "{{ cat.pk }}": { fee: {% localize off %}{{ cat.fee|floatformat:0 }}{% endlocalize %}, earlyFee: {% if cat.early_bird_fee %}{% localize off %}{{ cat.early_bird_fee|floatformat:0 }}{% endlocalize %}{% else %}null{% endif %} }{% if not forloop.last %},{% endif %}
+    "{{ cat.pk }}": { fee: {% localize off %}{{ cat.fee }}{% endlocalize %}, earlyFee: {% if cat.early_bird_fee %}{% localize off %}{{ cat.early_bird_fee }}{% endlocalize %}{% else %}null{% endif %} }{% if not forloop.last %},{% endif %}
     {% endfor %}
 };
 
