@@ -207,8 +207,8 @@ class RegistrationCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
-    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_status', 'checked_in', 'registered_at']
-    list_filter = ['conference', 'payment_status', 'category', 'checked_in']
+    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'checked_in', 'registered_at']
+    list_filter = ['conference', 'payment_method', 'payment_status', 'category', 'checked_in']
     search_fields = ['ticket_id', 'first_name', 'last_name', 'email', 'organization']
     list_editable = ['payment_status', 'checked_in']
     readonly_fields = ['ticket_id', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id']
@@ -226,7 +226,7 @@ class RegistrationAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('Payment', {
-            'fields': ('amount', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
+            'fields': ('amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
         }),
         ('Check-in', {
             'fields': ('checked_in', 'checked_in_at')

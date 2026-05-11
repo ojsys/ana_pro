@@ -283,11 +283,19 @@ class Registration(models.Model):
     position = models.CharField(max_length=200, blank=True)
     state_of_origin = models.CharField(max_length=100, blank=True)
     dietary_requirements = models.CharField(max_length=200, blank=True, help_text="e.g., Vegetarian, Halal, None")
-    t_shirt_size = models.CharField(max_length=5, blank=True, choices=[('XS','XS'),('S','S'),('M','M'),('L','L'),('XL','XL'),('XXL','XXL')])
+    t_shirt_size = models.CharField(max_length=5, blank=True, choices=[
+        ('XS','XS'),('S','S'),('M','M'),('L','L'),('XL','XL'),
+        ('XXL','XXL'),('XXXL','XXXL'),('X4L','X4L'),
+    ])
     abstract_reference = models.CharField(max_length=20, blank=True, help_text="If you submitted an abstract, enter your reference number")
 
     # Payment
+    PAYMENT_METHOD_CHOICES = [
+        ('paystack', 'Pay Online (Paystack)'),
+        ('manual', 'Bank Transfer'),
+    ]
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='paystack')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     paystack_reference = models.CharField(max_length=100, blank=True)
     paystack_transaction_id = models.CharField(max_length=100, blank=True)

@@ -21,6 +21,10 @@
 .btn-pay { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border:none;padding:1rem 2rem;border-radius:50px;font-weight:700;font-size:1rem;width:100%;transition:all 0.3s;margin-top:1rem; }
 .btn-pay:hover { opacity:0.9;transform:translateY(-2px); }
 .early-bird-badge { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;font-size:0.72rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:50px;margin-left:0.5rem; }
+.pay-method-card { display:block;border:2px solid #e0e0e0;border-radius:14px;padding:1rem 1.25rem;cursor:pointer;transition:all 0.3s; }
+.pay-method-card:hover,.pay-method-card.selected { border-color:var(--conf-green-light);background:#f1f8e9; }
+.pay-method-card.selected { border-color:var(--conf-green); }
+.pay-method-card input[type=radio] { accent-color:var(--conf-green); }
 {% endblock %}
 
 {% block content %}
@@ -155,6 +159,51 @@
                             </div>
                         </div>
 
+                        <!-- Payment Method -->
+                        <div class="form-section-title"><i class="bi bi-credit-card me-2"></i>Payment Method</div>
+                        <div class="row g-3 mb-4" id="paymentMethodSection">
+                            {% for radio in form.payment_method %}
+                            <div class="col-md-6">
+                                <label class="pay-method-card{% if forloop.first %} selected{% endif %}" for="{{ radio.id_for_label }}" data-method="{{ radio.data.value }}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        {{ radio.tag }}
+                                        <div>
+                                            {% if radio.data.value == 'paystack' %}
+                                            <div style="font-weight:700;font-size:0.9rem;">Pay Online</div>
+                                            <div style="font-size:0.78rem;color:#888;">Debit/Credit card via Paystack</div>
+                                            {% else %}
+                                            <div style="font-weight:700;font-size:0.9rem;">Bank Transfer</div>
+                                            <div style="font-size:0.78rem;color:#888;">Pay directly into our account</div>
+                                            {% endif %}
+                                        </div>
+                                        {% if radio.data.value == 'paystack' %}
+                                        <i class="bi bi-shield-lock-fill ms-auto" style="color:var(--conf-green-light);font-size:1.3rem;"></i>
+                                        {% else %}
+                                        <i class="bi bi-bank ms-auto" style="color:var(--conf-gold-dark);font-size:1.3rem;"></i>
+                                        {% endif %}
+                                    </div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% if form.payment_method.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.payment_method.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <!-- Bank Transfer Details (shown when manual selected) -->
+                        <div id="bankDetailsBox" style="display:none;background:#fffde7;border:1.5px solid #f9a825;border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+                            <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:0.95rem;color:#e65100;margin-bottom:0.75rem;">
+                                <i class="bi bi-bank me-2"></i>Bank Transfer Details
+                            </div>
+                            <div style="font-size:0.88rem;color:#555;line-height:2;">
+                                <div><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>Agrimpact for Sustainable Dev Initiative</strong></div>
+                                <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.05rem;letter-spacing:2px;">0513118178</strong></div>
+                                <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>Sterling Bank</strong></div>
+                            </div>
+                            <div style="margin-top:1rem;background:#fff8e1;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.8rem;color:#bf360c;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                After completing your transfer, use your <strong>Ticket ID</strong> as the payment narration. Your registration will be confirmed once payment is verified.
+                            </div>
+                        </div>
+
                         <!-- Terms -->
                         <div class="mb-4 p-3" style="background:#f9f9f9;border-radius:10px;">
                             <div class="form-check">
@@ -167,9 +216,9 @@
                         </div>
 
                         <button type="submit" class="btn-pay" id="payBtn">
-                            <i class="bi bi-credit-card me-2"></i> Proceed to Payment
+                            <i class="bi bi-credit-card me-2" id="payBtnIcon"></i><span id="payBtnText">Proceed to Payment</span>
                         </button>
-                        <div style="text-align:center;margin-top:0.75rem;font-size:0.78rem;color:#aaa;">
+                        <div id="payBtnSubtext" style="text-align:center;margin-top:0.75rem;font-size:0.78rem;color:#aaa;">
                             <i class="bi bi-shield-check me-1"></i> Secured by Paystack &nbsp;·&nbsp; 256-bit SSL
                         </div>
                     </form>
@@ -243,9 +292,10 @@ function selectCategory(catId) {
     if (sel) sel.value = catId;
 
     // Read fee directly from data attributes (no JS object lookup)
-    var fee = parseInt(chosen.getAttribute('data-fee'), 10) || 0;
+    // Strip locale commas (e.g. "5,000") before parsing to avoid parseInt stopping at the comma
+    var fee = parseInt((chosen.getAttribute('data-fee') || '0').replace(/,/g, ''), 10) || 0;
     var earlyFeeAttr = chosen.getAttribute('data-early-fee');
-    var earlyFee = earlyFeeAttr ? parseInt(earlyFeeAttr, 10) : null;
+    var earlyFee = earlyFeeAttr ? parseInt(earlyFeeAttr.replace(/,/g, ''), 10) : null;
     var activeFee = (isEarlyBird && earlyFee) ? earlyFee : fee;
 
     // Get category name from rendered DOM
@@ -295,5 +345,35 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
         document.getElementById('categoryCards').scrollIntoView({behavior: 'smooth'});
     }
 });
+
+// Payment method card toggle
+function updatePaymentMethod(value) {
+    document.querySelectorAll('.pay-method-card').forEach(function(card) {
+        card.classList.toggle('selected', card.getAttribute('data-method') === value);
+    });
+    var isManual = value === 'manual';
+    document.getElementById('bankDetailsBox').style.display = isManual ? 'block' : 'none';
+    document.getElementById('payBtnIcon').className = isManual ? 'bi bi-bank me-2' : 'bi bi-credit-card me-2';
+    document.getElementById('payBtnText').textContent = isManual ? 'Submit Registration' : 'Proceed to Payment';
+    document.getElementById('payBtnSubtext').innerHTML = isManual
+        ? '<i class="bi bi-info-circle me-1"></i> Your registration will be confirmed after payment is verified.'
+        : '<i class="bi bi-shield-check me-1"></i> Secured by Paystack &nbsp;·&nbsp; 256-bit SSL';
+}
+
+document.querySelectorAll('.pay-method-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        var radio = card.querySelector('input[type=radio]');
+        if (radio) {
+            radio.checked = true;
+            updatePaymentMethod(radio.value);
+        }
+    });
+});
+
+// Set initial state from checked radio
+(function() {
+    var checked = document.querySelector('.pay-method-radio:checked');
+    if (checked) updatePaymentMethod(checked.value);
+})();
 </script>
 {% endblock %}

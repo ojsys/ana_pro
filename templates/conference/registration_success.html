@@ -23,6 +23,15 @@
 
 {% block content %}
 <div style="min-height:85vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f9f9f9;padding:4rem 1rem;">
+    {% if registration and registration.payment_method == 'manual' %}
+    <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#e65100,#f9a825);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(249,168,37,0.35);">
+            <i class="bi bi-bank"></i>
+        </div>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#e65100;">Registration Submitted!</h2>
+        <p style="color:#666;margin-top:0.5rem;">Your spot is reserved. Please complete your bank transfer to confirm your registration.</p>
+    </div>
+    {% else %}
     <div style="text-align:center;margin-bottom:1.5rem;">
         <div style="width:80px;height:80px;background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,0.35);">
             <i class="bi bi-check2-all"></i>
@@ -30,6 +39,7 @@
         <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;">Registration Confirmed!</h2>
         <p style="color:#666;margin-top:0.5rem;">A confirmation email has been sent to your inbox. Welcome to AKILIMO International Conference 2026!</p>
     </div>
+    {% endif %}
 
     {% if registration %}
     <div class="ticket">
@@ -61,12 +71,22 @@
                 <span class="ticket-value">{{ registration.category.name }}</span>
             </div>
             <div class="ticket-row">
-                <span class="ticket-label">Amount Paid</span>
+                <span class="ticket-label">Amount Due</span>
                 <span class="ticket-value" style="color:#1B5E20;">₦{{ registration.amount|floatformat:0|intcomma }}</span>
             </div>
             <div class="ticket-row">
                 <span class="ticket-label">Payment Status</span>
-                <span class="ticket-value"><span style="background:#e8f5e9;color:#1B5E20;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Confirmed</span></span>
+                <span class="ticket-value">
+                    {% if registration.payment_method == 'manual' %}
+                    <span style="background:#fff8e1;color:#e65100;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Awaiting Transfer</span>
+                    {% else %}
+                    <span style="background:#e8f5e9;color:#1B5E20;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Confirmed</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Payment Method</span>
+                <span class="ticket-value">{% if registration.payment_method == 'manual' %}Bank Transfer{% else %}Online (Paystack){% endif %}</span>
             </div>
             {% if conference %}
             <div class="ticket-row">
@@ -81,9 +101,27 @@
         </div>
     </div>
 
+    {% if registration.payment_method == 'manual' %}
+    <div style="max-width:620px;width:100%;margin-top:1.25rem;background:#fffde7;border:1.5px solid #f9a825;border-radius:16px;padding:1.5rem 1.75rem;">
+        <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:#e65100;margin-bottom:1rem;">
+            <i class="bi bi-bank me-2"></i>Complete Your Payment
+        </div>
+        <div style="font-size:0.88rem;color:#555;line-height:2.2;">
+            <div><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>Agrimpact for Sustainable Dev Initiative</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.1rem;letter-spacing:2px;">0513118178</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>Sterling Bank</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Amount</span><br><strong>₦{{ registration.amount|floatformat:0|intcomma }}</strong></div>
+        </div>
+        <div style="margin-top:1rem;background:#fff8e1;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#bf360c;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Use your Ticket ID <strong>{{ registration.ticket_id }}</strong> as the payment narration/description when making the transfer.
+        </div>
+    </div>
+    {% endif %}
+
     <div style="margin-top:1.5rem;display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;">
         <button onclick="window.print()" style="border:2px solid #1B5E20;color:#1B5E20;padding:0.75rem 1.75rem;border-radius:50px;font-weight:600;font-size:0.9rem;background:none;cursor:pointer;">
-            <i class="bi bi-printer me-1"></i> Print Ticket
+            <i class="bi bi-printer me-1"></i> Print Details
         </button>
         <a href="{% url 'conference:landing' %}" style="background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff;padding:0.75rem 1.75rem;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.9rem;">
             <i class="bi bi-house-fill me-1"></i> Back to Conference Home

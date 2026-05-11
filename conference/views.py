@@ -194,6 +194,11 @@ class RegistrationView(FormView):
             self.request.session['ticket_id'] = registration.ticket_id
             return redirect('conference:registration_success')
 
+        # Manual bank transfer — save pending, show instructions
+        if registration.payment_method == 'manual':
+            self.request.session['ticket_id'] = registration.ticket_id
+            return redirect('conference:registration_success')
+
         # Initialize Paystack payment
         try:
             paystack = PaystackService()

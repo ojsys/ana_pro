@@ -61,7 +61,7 @@ class RegistrationForm(forms.ModelForm):
             'first_name', 'last_name', 'email', 'phone',
             'organization', 'position', 'state_of_origin',
             'category', 'dietary_requirements', 't_shirt_size',
-            'abstract_reference', 'terms_accepted',
+            'abstract_reference', 'payment_method', 'terms_accepted',
         ]
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
@@ -75,6 +75,7 @@ class RegistrationForm(forms.ModelForm):
             'dietary_requirements': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Vegetarian, Halal, None'}),
             't_shirt_size': forms.Select(attrs={'class': 'form-select'}),
             'abstract_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., ANC2026-0012 (if applicable)'}),
+            'payment_method': forms.RadioSelect(attrs={'class': 'pay-method-radio'}),
             'terms_accepted': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
