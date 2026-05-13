@@ -286,6 +286,9 @@
                 {% if conference.notification_date %}
                 <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:var(--conf-gold);font-size:0.5rem;"></i>Notification: {{ conference.notification_date|date:"j M Y" }}</p>
                 {% endif %}
+                {% if conference.registration_deadline %}
+                <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:var(--conf-gold);font-size:0.5rem;"></i>Registration Deadline: {{ conference.registration_deadline|date:"j M Y" }}</p>
+                {% endif %}
                 <p style="margin-bottom:0.4rem;color:rgba(255,255,255,0.6);font-size:0.83rem;"><i class="bi bi-circle-fill me-1" style="color:#4CAF50;font-size:0.5rem;"></i>Conference: {{ conference.start_date|date:"j M Y" }}</p>
                 {% endif %}
             </div>
