@@ -1,0 +1,108 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Showcase Portal — {{ exhibitor.company_name }}{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:3rem 0 2.5rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.5rem,3vw,2.2rem); }
+.form-card { background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:2rem;border:1px solid #f0f0f0; }
+.item-card { background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%; }
+.item-img { width:100%;height:160px;object-fit:cover; }
+.status-pill { font-size:0.72rem;font-weight:700;padding:0.2rem 0.7rem;border-radius:50px; }
+.btn-submit { background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));color:#fff;border:none;padding:0.85rem 2rem;border-radius:50px;font-weight:700;width:100%; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem;"><i class="bi bi-images me-1"></i> Exhibitor Showcase Portal</div>
+        <h1>{{ exhibitor.company_name }}</h1>
+        <p style="color:rgba(255,255,255,0.7);margin-top:0.4rem;font-size:0.9rem;">{{ exhibitor.package.name }} &nbsp;·&nbsp; Ref {{ exhibitor.reference }}</p>
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:3rem 0;">
+    <div class="container">
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-3">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        {% if not exhibitor.is_confirmed %}
+        <div class="text-center py-5">
+            <i class="bi bi-hourglass-split" style="font-size:3.5rem;color:#f9a825;"></i>
+            <h4 style="color:#e65100;margin-top:1rem;font-family:'Poppins',sans-serif;">Payment Pending</h4>
+            <p style="color:#888;max-width:480px;margin:0.5rem auto;">Your exhibition payment hasn't been confirmed yet. Once it's verified, you'll be able to upload products to showcase here.</p>
+        </div>
+        {% else %}
+        <div class="row g-4">
+            <!-- Upload form -->
+            <div class="col-lg-4">
+                <div class="form-card">
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:var(--conf-dark);margin-bottom:1.25rem;"><i class="bi bi-plus-circle me-2"></i>Add a Showcase Item</h5>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-600" style="font-size:0.85rem;">Title <span class="text-danger">*</span></label>
+                            {{ form.title }}
+                            {% if form.title.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.title.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-600" style="font-size:0.85rem;">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-600" style="font-size:0.85rem;">Price (₦)</label>
+                            {{ form.price }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-600" style="font-size:0.85rem;">Image <span class="text-danger">*</span></label>
+                            {{ form.image }}
+                            {% if form.image.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.image.errors.0 }}</div>{% endif %}
+                        </div>
+                        <button type="submit" class="btn-submit"><i class="bi bi-upload me-1"></i> Submit for Review</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Existing items -->
+            <div class="col-lg-8">
+                <h5 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:var(--conf-dark);margin-bottom:1.25rem;">Your Items ({{ items|length }})</h5>
+                {% if items %}
+                <div class="row g-3">
+                    {% for item in items %}
+                    <div class="col-md-4 col-6">
+                        <div class="item-card">
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="item-img">
+                            <div style="padding:0.9rem;">
+                                <div style="font-weight:700;font-size:0.88rem;color:var(--conf-dark);">{{ item.title }}</div>
+                                {% if item.price %}<div style="font-weight:700;color:var(--conf-gold-dark);font-size:0.95rem;">₦{{ item.price|floatformat:0|intcomma }}</div>{% endif %}
+                                <div class="mt-2">
+                                    {% if item.is_approved %}
+                                    <span class="status-pill" style="background:#e8f5e9;color:#1B5E20;"><i class="bi bi-check2-circle"></i> Live</span>
+                                    {% else %}
+                                    <span class="status-pill" style="background:#fff8e1;color:#e65100;"><i class="bi bi-hourglass"></i> Pending Review</span>
+                                    {% endif %}
+                                </div>
+                                <form method="post" action="{% url 'conference:exhibitor_showcase_delete' exhibitor.access_token item.pk %}" onsubmit="return confirm('Remove this item?');" style="margin-top:0.6rem;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background:none;border:none;color:#c62828;font-size:0.78rem;cursor:pointer;padding:0;"><i class="bi bi-trash"></i> Remove</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5" style="background:#fff;border-radius:14px;color:#999;">
+                    <i class="bi bi-images" style="font-size:3rem;color:#ddd;"></i>
+                    <p class="mt-2">No items yet. Add your first product using the form.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

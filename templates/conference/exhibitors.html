@@ -1,0 +1,107 @@
+{% extends 'conference/base.html' %}
+{% load humanize content_editor %}
+{% block title %}Exhibitors — {{ conference.name }}{% endblock %}
+{% block nav_exhibitors %}active{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:4rem 0 3rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.8rem,3.5vw,2.5rem); }
+.pkg-card { background:#fff;border-radius:18px;border:2px solid #eee;padding:2rem;height:100%;transition:all 0.3s;display:flex;flex-direction:column; }
+.pkg-card:hover { border-color:var(--conf-green-light);box-shadow:0 12px 32px rgba(0,0,0,0.08);transform:translateY(-4px); }
+.pkg-price { font-family:'Poppins',sans-serif;font-weight:800;font-size:2rem;color:var(--conf-green); }
+.pkg-perk { font-size:0.85rem;color:#555;padding:0.3rem 0;display:flex;align-items:flex-start;gap:0.5rem; }
+.btn-pkg { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:50px;font-weight:700;text-decoration:none;display:inline-block;text-align:center;margin-top:auto; }
+.btn-pkg:hover { opacity:0.92;color:#fff; }
+.showcase-card { background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,0.07);height:100%;display:flex;flex-direction:column; }
+.showcase-img { width:100%;height:200px;object-fit:cover; }
+.showcase-body { padding:1.25rem;display:flex;flex-direction:column;flex:1; }
+.showcase-price { font-family:'Poppins',sans-serif;font-weight:800;color:var(--conf-gold-dark);font-size:1.2rem; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
+            <i class="bi bi-shop me-1"></i> Exhibition & Marketplace
+        </div>
+        <h1>{% editable "exhibitors.hero_title" "Exhibit at the Conference" %}</h1>
+        <p style="color:rgba(255,255,255,0.65);max-width:640px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
+            {% editable "exhibitors.hero_desc" "Showcase your products and services to researchers, agribusinesses, and policymakers. Choose a package below to get started." %}
+        </p>
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:4rem 0;">
+    <div class="container">
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-3">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Packages -->
+        <div class="text-center mb-5">
+            <span class="section-badge gold">{% editable "exhibitors.pkg_badge" "Packages" %}</span>
+            <h2 class="section-title">{% editable "exhibitors.pkg_title" "Choose Your Package" %}</h2>
+            <div class="section-divider gold mx-auto"></div>
+        </div>
+
+        {% if packages %}
+        <div class="row g-4 mb-5">
+            {% for pkg in packages %}
+            <div class="col-lg-4 col-md-6">
+                <div class="pkg-card">
+                    {% if pkg.icon %}<div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;margin-bottom:1rem;"><i class="bi {{ pkg.icon }}"></i></div>{% endif %}
+                    <h4 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.15rem;color:var(--conf-dark);">{{ pkg.name }}</h4>
+                    <div class="pkg-price mb-2">₦{{ pkg.price|floatformat:0|intcomma }}</div>
+                    {% if pkg.description %}<p style="font-size:0.85rem;color:#777;">{{ pkg.description }}</p>{% endif %}
+                    {% if pkg.get_perks_list %}
+                    <div class="my-3">
+                        {% for perk in pkg.get_perks_list %}
+                        <div class="pkg-perk"><i class="bi bi-check2-circle" style="color:var(--conf-green-light);margin-top:0.15rem;"></i>{{ perk }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if pkg.slots_available == 0 %}
+                    <span class="btn-pkg" style="background:#ccc;cursor:not-allowed;">Sold Out</span>
+                    {% else %}
+                    <a href="{% url 'conference:exhibitor_register' %}?package={{ pkg.pk }}" class="btn-pkg"><i class="bi bi-shop me-1"></i> Become an Exhibitor</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4" style="color:#999;">
+            <i class="bi bi-box-seam" style="font-size:3rem;color:#ddd;"></i>
+            <p class="mt-2">Exhibition packages will be announced soon.</p>
+        </div>
+        {% endif %}
+
+        <!-- Showcase / For Sale -->
+        {% if showcase_items %}
+        <div class="text-center mb-5 mt-5">
+            <span class="section-badge">{% editable "exhibitors.showcase_badge" "Marketplace" %}</span>
+            <h2 class="section-title">{% editable "exhibitors.showcase_title" "On Display — For Sale" %}</h2>
+            <div class="section-divider mx-auto"></div>
+            <p style="color:#666;max-width:600px;margin:0 auto;">{% editable "exhibitors.showcase_intro" "Products and services from our exhibitors." %}</p>
+        </div>
+        <div class="row g-4">
+            {% for item in showcase_items %}
+            <div class="col-lg-3 col-md-4 col-6">
+                <div class="showcase-card">
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="showcase-img">
+                    <div class="showcase-body">
+                        <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:0.95rem;color:var(--conf-dark);">{{ item.title }}</div>
+                        {% if item.price %}<div class="showcase-price">₦{{ item.price|floatformat:0|intcomma }}</div>{% endif %}
+                        {% if item.description %}<p style="font-size:0.8rem;color:#777;margin:0.5rem 0 0;">{{ item.description }}</p>{% endif %}
+                        <div style="font-size:0.72rem;color:#aaa;margin-top:auto;padding-top:0.75rem;"><i class="bi bi-shop me-1"></i>{{ item.exhibitor.company_name }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

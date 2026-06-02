@@ -1,0 +1,75 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Exhibitor Registration — {{ conference.name }}{% endblock %}
+
+{% block content %}
+<div style="min-height:85vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f9f9f9;padding:4rem 1rem;">
+    {% if exhibitor %}
+    {% if exhibitor.payment_method == 'manual' and not exhibitor.is_confirmed %}
+    <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#e65100,#f9a825);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(249,168,37,0.35);">
+            <i class="bi bi-bank"></i>
+        </div>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#e65100;">Registration Submitted!</h2>
+        <p style="color:#666;margin-top:0.5rem;">Your booth is reserved. Please complete your bank transfer to confirm your exhibition.</p>
+    </div>
+    {% else %}
+    <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,0.35);">
+            <i class="bi bi-check2-all"></i>
+        </div>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;">You're an Exhibitor!</h2>
+        <p style="color:#666;margin-top:0.5rem;">Your booth is confirmed. Use your private link below to upload products to showcase.</p>
+    </div>
+    {% endif %}
+
+    <div style="background:#fff;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,0.1);max-width:620px;width:100%;padding:2.5rem;">
+        <div style="background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:12px;padding:1rem 1.5rem;text-align:center;margin-bottom:1.5rem;">
+            <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.25rem;">Exhibitor Reference</div>
+            <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.8rem;color:#fff;letter-spacing:2px;">{{ exhibitor.reference }}</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px dashed #eee;"><span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600;">Company</span><span style="font-size:0.9rem;font-weight:600;color:#222;">{{ exhibitor.company_name }}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px dashed #eee;"><span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600;">Package</span><span style="font-size:0.9rem;font-weight:600;color:#222;">{{ exhibitor.package.name }}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px dashed #eee;"><span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600;">Amount</span><span style="font-size:0.9rem;font-weight:600;color:#1B5E20;">₦{{ exhibitor.amount|floatformat:0|intcomma }}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.6rem 0;"><span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600;">Status</span><span style="font-size:0.9rem;font-weight:600;">
+            {% if exhibitor.is_confirmed %}<span style="background:#e8f5e9;color:#1B5E20;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Confirmed</span>
+            {% else %}<span style="background:#fff8e1;color:#e65100;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Awaiting Payment</span>{% endif %}
+        </span></div>
+    </div>
+
+    {% if exhibitor.payment_method == 'manual' and not exhibitor.is_confirmed %}
+    <div style="max-width:620px;width:100%;margin-top:1.25rem;background:#fffde7;border:1.5px solid #f9a825;border-radius:16px;padding:1.5rem 1.75rem;">
+        <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:#e65100;margin-bottom:1rem;"><i class="bi bi-bank me-2"></i>Complete Your Payment</div>
+        <div style="font-size:0.88rem;color:#555;line-height:2.2;">
+            <div><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>Agrimpact for Sustainable Dev Initiative</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.1rem;letter-spacing:2px;">0513118178</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>Sterling Bank</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Amount</span><br><strong>₦{{ exhibitor.amount|floatformat:0|intcomma }}</strong></div>
+        </div>
+        <div style="margin-top:1rem;background:#fff8e1;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#bf360c;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Use your reference <strong>{{ exhibitor.reference }}</strong> as the payment narration. You can upload products once payment is confirmed.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Private showcase link -->
+    <div style="max-width:620px;width:100%;margin-top:1.25rem;background:#e8f5e9;border:1.5px solid var(--conf-green-light);border-radius:16px;padding:1.5rem 1.75rem;">
+        <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:#1B5E20;margin-bottom:0.5rem;"><i class="bi bi-link-45deg me-2"></i>Your Private Showcase Link</div>
+        <p style="font-size:0.85rem;color:#555;margin-bottom:0.75rem;">Bookmark this link — use it to upload product images for your booth. Each item is reviewed before going live.</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <input id="showcaseLink" type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'conference:exhibitor_showcase' exhibitor.access_token %}" style="flex:1;min-width:240px;border:1px solid #c8e6c9;border-radius:8px;padding:0.6rem 0.8rem;font-size:0.82rem;color:#333;background:#fff;">
+            <button onclick="navigator.clipboard.writeText(document.getElementById('showcaseLink').value);this.innerHTML='<i class=\'bi bi-check2\'></i> Copied';" style="background:var(--conf-green);color:#fff;border:none;border-radius:8px;padding:0.6rem 1rem;font-size:0.82rem;font-weight:600;cursor:pointer;"><i class="bi bi-clipboard"></i> Copy</button>
+        </div>
+        <a href="{% url 'conference:exhibitor_showcase' exhibitor.access_token %}" style="display:inline-block;margin-top:1rem;background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff;padding:0.7rem 1.5rem;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.88rem;"><i class="bi bi-images me-1"></i> Go to Showcase Portal</a>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+        <a href="{% url 'conference:exhibitors' %}" style="color:var(--conf-green-mid);font-size:0.85rem;"><i class="bi bi-arrow-left me-1"></i> Back to Exhibitors</a>
+    </div>
+    {% else %}
+    <p style="color:#888;">No exhibitor registration found in this session.</p>
+    {% endif %}
+</div>
+{% endblock %}

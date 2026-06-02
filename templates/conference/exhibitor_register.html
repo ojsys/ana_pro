@@ -1,0 +1,253 @@
+{% extends 'conference/base.html' %}
+{% load humanize content_editor %}
+{% block title %}Become an Exhibitor — {{ conference.name }}{% endblock %}
+{% block nav_exhibitors %}active{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:4rem 0 3rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.8rem,3.5vw,2.5rem); }
+.form-card { background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:2.5rem;border:1px solid #f0f0f0; }
+.form-section-title { font-family:'Poppins',sans-serif;font-weight:700;font-size:0.9rem;color:var(--conf-green-mid);text-transform:uppercase;letter-spacing:1.5px;padding-bottom:0.75rem;border-bottom:2px solid var(--conf-surface);margin-bottom:1.5rem;margin-top:0.5rem; }
+.cat-option { border:2px solid #e0e0e0;border-radius:14px;padding:1.25rem;cursor:pointer;transition:all 0.3s;margin-bottom:0.75rem; }
+.cat-option:hover, .cat-option.selected { border-color:var(--conf-green-light);background:#f1f8e9; }
+.cat-option.selected { border-color:var(--conf-green); }
+.cat-name-label { font-family:'Poppins',sans-serif;font-weight:700;font-size:0.95rem;color:var(--conf-dark); }
+.cat-fee-label { font-family:'Poppins',sans-serif;font-weight:800;font-size:1.4rem;color:var(--conf-green); }
+.cat-desc-label { font-size:0.78rem;color:#888; }
+.btn-pay { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border:none;padding:1rem 2rem;border-radius:50px;font-weight:700;font-size:1rem;width:100%;transition:all 0.3s;margin-top:1rem; }
+.btn-pay:hover { opacity:0.9;transform:translateY(-2px); }
+.pay-method-card { display:block;border:2px solid #e0e0e0;border-radius:14px;padding:1rem 1.25rem;cursor:pointer;transition:all 0.3s; }
+.pay-method-card:hover,.pay-method-card.selected { border-color:var(--conf-green-light);background:#f1f8e9; }
+.pay-method-card.selected { border-color:var(--conf-green); }
+.pay-method-card input[type=radio] { accent-color:var(--conf-green); }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.75rem;">
+            <i class="bi bi-shop me-1"></i> Exhibitor Registration
+        </div>
+        <h1>{% editable "exhibitor_register.hero_title" "Become an Exhibitor" %}</h1>
+        <p style="color:rgba(255,255,255,0.65);max-width:600px;margin-top:0.5rem;font-size:0.95rem;line-height:1.7;">
+            {% editable "exhibitor_register.hero_desc" "Register for an exhibition package. Once your payment is confirmed you'll get a private link to upload products to showcase for sale." %}
+        </p>
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:4rem 0;">
+    <div class="container">
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-3">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        {% if not packages %}
+        <div class="text-center py-5">
+            <i class="bi bi-box-seam" style="font-size:4rem;color:#ddd;"></i>
+            <h4 style="color:#555;margin-top:1rem;font-family:'Poppins',sans-serif;">No Exhibition Packages Available</h4>
+            <p style="color:#888;">Please check back later or contact us for more information.</p>
+        </div>
+        {% else %}
+        <div class="row g-4">
+            <div class="col-lg-8 mx-auto">
+                <div class="form-card">
+                    <form method="post" id="exhForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Package Selection -->
+                        <div class="form-section-title"><i class="bi bi-grid me-2"></i>Select Package</div>
+                        <div style="display:none;">{{ form.package }}</div>
+                        {% if form.package.errors %}<div class="text-danger mb-3" style="font-size:0.82rem;">{{ form.package.errors.0 }}</div>{% endif %}
+
+                        <div class="mb-4" id="packageCards">
+                            {% for pkg in packages %}
+                            <div class="cat-option" data-pkg-id="{{ pkg.pk }}">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if pkg.icon %}<div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;"><i class="bi {{ pkg.icon }}"></i></div>{% endif %}
+                                    <div style="flex:1;">
+                                        <span class="cat-name-label">{{ pkg.name }}</span>
+                                        {% if pkg.description %}<div class="cat-desc-label">{{ pkg.description }}</div>{% endif %}
+                                    </div>
+                                    <div class="text-end" style="flex-shrink:0;">
+                                        <div class="cat-fee-label">₦{{ pkg.price|floatformat:0|intcomma }}</div>
+                                    </div>
+                                </div>
+                                {% if pkg.get_perks_list %}
+                                <ul style="list-style:none;padding:0.75rem 0 0 0;margin:0;display:none;" class="cat-includes">
+                                    {% for perk in pkg.get_perks_list %}
+                                    <li style="font-size:0.78rem;color:#555;padding:0.2rem 0;display:flex;align-items:center;gap:0.4rem;"><i class="bi bi-check2-circle" style="color:var(--conf-green-light);"></i>{{ perk }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Exhibitor Info -->
+                        <div class="form-section-title"><i class="bi bi-building me-2"></i>Exhibitor Details</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Company / Organization <span class="text-danger">*</span></label>
+                                {{ form.company_name }}
+                                {% if form.company_name.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.company_name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Contact Person <span class="text-danger">*</span></label>
+                                {{ form.contact_name }}
+                                {% if form.contact_name.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.contact_name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Email Address <span class="text-danger">*</span></label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.email.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Phone Number <span class="text-danger">*</span></label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.phone.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Website</label>
+                                {{ form.website }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600" style="font-size:0.85rem;">Company Logo</label>
+                                {{ form.logo }}
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="form-section-title"><i class="bi bi-credit-card me-2"></i>Payment Method</div>
+                        <div class="row g-3 mb-4" id="paymentMethodSection">
+                            {% for radio in form.payment_method %}
+                            <div class="col-md-6">
+                                <label class="pay-method-card{% if forloop.first %} selected{% endif %}" for="{{ radio.id_for_label }}" data-method="{{ radio.data.value }}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        {{ radio.tag }}
+                                        <div>
+                                            {% if radio.data.value == 'paystack' %}
+                                            <div style="font-weight:700;font-size:0.9rem;">Pay Online</div>
+                                            <div style="font-size:0.78rem;color:#888;">Debit/Credit card via Paystack</div>
+                                            {% else %}
+                                            <div style="font-weight:700;font-size:0.9rem;">Bank Transfer</div>
+                                            <div style="font-size:0.78rem;color:#888;">Pay directly into our account</div>
+                                            {% endif %}
+                                        </div>
+                                        {% if radio.data.value == 'paystack' %}
+                                        <i class="bi bi-shield-lock-fill ms-auto" style="color:var(--conf-green-light);font-size:1.3rem;"></i>
+                                        {% else %}
+                                        <i class="bi bi-bank ms-auto" style="color:var(--conf-gold-dark);font-size:1.3rem;"></i>
+                                        {% endif %}
+                                    </div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% if form.payment_method.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.payment_method.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <!-- Bank Transfer Details (shown when manual selected) -->
+                        <div id="bankDetailsBox" style="display:none;background:#fffde7;border:1.5px solid #f9a825;border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+                            <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:0.95rem;color:#e65100;margin-bottom:0.75rem;">
+                                <i class="bi bi-bank me-2"></i>Bank Transfer Details
+                            </div>
+                            <div style="font-size:0.88rem;color:#555;line-height:2;">
+                                <div><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>Agrimpact for Sustainable Dev Initiative</strong></div>
+                                <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.05rem;letter-spacing:2px;">0513118178</strong></div>
+                                <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>Sterling Bank</strong></div>
+                            </div>
+                            <div style="margin-top:1rem;background:#fff8e1;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.8rem;color:#bf360c;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                After completing your transfer, use your <strong>Exhibitor Reference</strong> as the payment narration. Your booth will be confirmed once payment is verified.
+                            </div>
+                        </div>
+
+                        <!-- Terms -->
+                        <div class="mb-4 p-3" style="background:#f9f9f9;border-radius:10px;">
+                            <div class="form-check">
+                                {{ form.terms_accepted }}
+                                <label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}" style="font-size:0.88rem;color:#444;">
+                                    I agree to the conference exhibitor terms and conditions, and confirm that my details are accurate. <span class="text-danger">*</span>
+                                </label>
+                            </div>
+                            {% if form.terms_accepted.errors %}<div class="text-danger mt-1" style="font-size:0.78rem;">{{ form.terms_accepted.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <button type="submit" class="btn-pay" id="payBtn">
+                            <i class="bi bi-credit-card me-2" id="payBtnIcon"></i><span id="payBtnText">Proceed to Payment</span>
+                        </button>
+                        <div id="payBtnSubtext" style="text-align:center;margin-top:0.75rem;font-size:0.78rem;color:#aaa;">
+                            <i class="bi bi-shield-check me-1"></i> Secured by Paystack &nbsp;·&nbsp; 256-bit SSL
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectPackage(pkgId) {
+    document.querySelectorAll('.cat-option').forEach(function(el) {
+        el.classList.remove('selected');
+        var inc = el.querySelector('.cat-includes');
+        if (inc) inc.style.display = 'none';
+    });
+    var chosen = document.querySelector('.cat-option[data-pkg-id="' + pkgId + '"]');
+    if (!chosen) return;
+    chosen.classList.add('selected');
+    var incl = chosen.querySelector('.cat-includes');
+    if (incl) incl.style.display = 'block';
+    var sel = document.getElementById('id_package');
+    if (sel) sel.value = pkgId;
+}
+
+document.querySelectorAll('.cat-option').forEach(function(el) {
+    el.addEventListener('click', function() {
+        selectPackage(el.getAttribute('data-pkg-id'));
+    });
+});
+
+// Pre-select from ?package=N
+var presel = new URLSearchParams(window.location.search).get('package');
+if (presel) selectPackage(presel);
+
+document.getElementById('exhForm').addEventListener('submit', function(e) {
+    var sel = document.getElementById('id_package');
+    if (!sel || !sel.value) {
+        e.preventDefault();
+        alert('Please select an exhibition package.');
+        document.getElementById('packageCards').scrollIntoView({behavior: 'smooth'});
+    }
+});
+
+function updatePaymentMethod(value) {
+    document.querySelectorAll('.pay-method-card').forEach(function(card) {
+        card.classList.toggle('selected', card.getAttribute('data-method') === value);
+    });
+    var isManual = value === 'manual';
+    document.getElementById('bankDetailsBox').style.display = isManual ? 'block' : 'none';
+    document.getElementById('payBtnIcon').className = isManual ? 'bi bi-bank me-2' : 'bi bi-credit-card me-2';
+    document.getElementById('payBtnText').textContent = isManual ? 'Submit Registration' : 'Proceed to Payment';
+    document.getElementById('payBtnSubtext').innerHTML = isManual
+        ? '<i class="bi bi-info-circle me-1"></i> Your booth will be confirmed after payment is verified.'
+        : '<i class="bi bi-shield-check me-1"></i> Secured by Paystack &nbsp;·&nbsp; 256-bit SSL';
+}
+
+document.querySelectorAll('.pay-method-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        var radio = card.querySelector('input[type=radio]');
+        if (radio) { radio.checked = true; updatePaymentMethod(radio.value); }
+    });
+});
+
+(function() {
+    var checked = document.querySelector('.pay-method-radio:checked');
+    if (checked) updatePaymentMethod(checked.value);
+})();
+</script>
+{% endblock %}

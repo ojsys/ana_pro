@@ -530,6 +530,40 @@
 </section>
 {% endif %}
 
+<!-- ── Local Organising Committee ─────────────────────────────────────────────── -->
+{% if loc_members %}
+<section style="padding:5rem 0;background:var(--conf-surface);">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-badge">{% editable "landing.loc_badge" "Organising Committee" %}</span>
+            <h2 class="section-title">{% editable "landing.loc_title" "Local Organising Committee" %}</h2>
+            <div class="section-divider mx-auto"></div>
+            <p style="color:#666;max-width:600px;margin:0 auto;">{% editable "landing.loc_intro" "Meet the team working behind the scenes to bring you the conference." %}</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            {% for member in loc_members %}
+            <div class="col-lg-4 col-md-6">
+                <div style="background:#fff;border-radius:16px;padding:1.75rem;height:100%;box-shadow:0 2px 12px rgba(0,0,0,0.06);border-top:4px solid var(--conf-gold);">
+                    <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.05rem;color:var(--conf-dark);">{{ member.full_name }}</div>
+                    <div style="font-size:0.85rem;color:var(--conf-green-mid);font-weight:600;margin-bottom:0.75rem;">{{ member.position }}</div>
+                    {% if member.email %}
+                    <div style="font-size:0.85rem;color:#666;margin-bottom:0.3rem;">
+                        <i class="bi bi-envelope me-2" style="color:var(--conf-gold-dark);"></i><a href="mailto:{{ member.email }}" style="color:#666;text-decoration:none;">{{ member.email }}</a>
+                    </div>
+                    {% endif %}
+                    {% if member.phone %}
+                    <div style="font-size:0.85rem;color:#666;">
+                        <i class="bi bi-telephone me-2" style="color:var(--conf-gold-dark);"></i><a href="tel:{{ member.phone }}" style="color:#666;text-decoration:none;">{{ member.phone }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- ── CTA Band ───────────────────────────────────────────────────────────────── -->
 <section style="background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));padding:3.5rem 0;">
     <div class="container text-center">

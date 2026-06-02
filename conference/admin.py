@@ -6,7 +6,8 @@ from ckeditor.widgets import CKEditorWidget
 from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
-    KeyMessage, ContentBlock,
+    KeyMessage, ContentBlock, LOCMember, ExhibitorPackage, Exhibitor,
+    ExhibitorShowcase,
 )
 
 # Standard rich-text toolbar used across conference admin forms
@@ -308,6 +309,100 @@ class KeyMessageAdmin(admin.ModelAdmin):
         from django.utils.html import strip_tags
         return strip_tags(obj.message)[:80]
     message_short.short_description = "Message"
+
+
+@admin.register(LOCMember)
+class LOCMemberAdmin(admin.ModelAdmin):
+    list_display = ['full_name', 'position', 'email', 'phone', 'conference', 'order', 'is_active']
+    list_filter = ['conference', 'is_active']
+    search_fields = ['full_name', 'position', 'email']
+    list_editable = ['order', 'is_active']
+    ordering = ['conference', 'order']
+
+
+@admin.register(ExhibitorPackage)
+class ExhibitorPackageAdmin(admin.ModelAdmin):
+    list_display = ['name', 'conference', 'price', 'max_slots', 'order', 'is_active']
+    list_filter = ['conference', 'is_active']
+    search_fields = ['name']
+    list_editable = ['price', 'order', 'is_active']
+    ordering = ['conference', 'order']
+
+
+class ExhibitorShowcaseInline(admin.TabularInline):
+    model = ExhibitorShowcase
+    extra = 0
+    fields = ['image_preview', 'title', 'price', 'is_approved', 'is_active', 'created_at']
+    readonly_fields = ['image_preview', 'created_at']
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">', obj.image.url)
+        return "—"
+    image_preview.short_description = "Image"
+
+
+@admin.register(Exhibitor)
+class ExhibitorAdmin(admin.ModelAdmin):
+    list_display = ['reference', 'company_name', 'contact_name', 'email', 'package', 'amount', 'payment_method', 'payment_status', 'registered_at']
+    list_filter = ['conference', 'payment_method', 'payment_status', 'package']
+    search_fields = ['reference', 'company_name', 'contact_name', 'email']
+    list_editable = ['payment_status']
+    readonly_fields = ['reference', 'access_token', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id', 'showcase_link']
+    ordering = ['-registered_at']
+    inlines = [ExhibitorShowcaseInline]
+
+    fieldsets = (
+        ('Reference', {
+            'fields': ('reference', 'conference', 'package', 'access_token', 'showcase_link', 'registered_at')
+        }),
+        ('Exhibitor', {
+            'fields': ('company_name', 'contact_name', 'email', 'phone', 'website', 'logo')
+        }),
+        ('Payment', {
+            'fields': ('amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
+        }),
+    )
+
+    actions = ['confirm_exhibitor']
+
+    def confirm_exhibitor(self, request, queryset):
+        queryset.update(payment_status='confirmed', payment_date=timezone.now())
+    confirm_exhibitor.short_description = "Confirm selected exhibitors (payment)"
+
+    def showcase_link(self, obj):
+        if obj.pk:
+            from django.urls import reverse
+            url = reverse('conference:exhibitor_showcase', args=[obj.access_token])
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return "—"
+    showcase_link.short_description = "Private showcase link"
+
+
+@admin.register(ExhibitorShowcase)
+class ExhibitorShowcaseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'exhibitor', 'price', 'is_approved', 'is_active', 'image_preview', 'created_at']
+    list_filter = ['is_approved', 'is_active', 'exhibitor__conference']
+    search_fields = ['title', 'exhibitor__company_name']
+    list_editable = ['is_approved', 'is_active']
+    readonly_fields = ['created_at', 'image_preview']
+    ordering = ['-created_at']
+
+    actions = ['approve_items', 'unapprove_items']
+
+    def approve_items(self, request, queryset):
+        queryset.update(is_approved=True)
+    approve_items.short_description = "Approve selected items for public display"
+
+    def unapprove_items(self, request, queryset):
+        queryset.update(is_approved=False)
+    unapprove_items.short_description = "Unapprove selected items"
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">', obj.image.url)
+        return "—"
+    image_preview.short_description = "Image"
 
 
 @admin.register(ContentBlock)

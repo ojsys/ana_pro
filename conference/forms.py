@@ -1,5 +1,8 @@
 from django import forms
-from .models import AbstractSubmission, Registration, RegistrationCategory, AbstractThematicArea
+from .models import (
+    AbstractSubmission, Registration, RegistrationCategory, AbstractThematicArea,
+    Exhibitor, ExhibitorPackage, ExhibitorShowcase,
+)
 
 
 class AbstractSubmissionForm(forms.ModelForm):
@@ -90,3 +93,42 @@ class RegistrationForm(forms.ModelForm):
         email = self.cleaned_data.get('email')
         # Check for duplicate registration in same conference
         return email
+
+
+class ExhibitorRegistrationForm(forms.ModelForm):
+    class Meta:
+        model = Exhibitor
+        fields = [
+            'company_name', 'contact_name', 'email', 'phone', 'website', 'logo',
+            'package', 'payment_method', 'terms_accepted',
+        ]
+        widgets = {
+            'company_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company / Organization name'}),
+            'contact_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact person full name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'your@email.com'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+234 800 000 0000'}),
+            'website': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://your-company.com (optional)'}),
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'package': forms.Select(attrs={'class': 'form-select', 'id': 'id_package'}),
+            'payment_method': forms.RadioSelect(attrs={'class': 'pay-method-radio'}),
+            'terms_accepted': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, conference, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['package'].queryset = ExhibitorPackage.objects.filter(
+            conference=conference, is_active=True
+        )
+        self.fields['terms_accepted'].required = True
+
+
+class ExhibitorShowcaseForm(forms.ModelForm):
+    class Meta:
+        model = ExhibitorShowcase
+        fields = ['title', 'description', 'price', 'image']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Product / item name'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Short description of the item'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Price in ₦ (optional)'}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }

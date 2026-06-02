@@ -435,6 +435,129 @@ class KeyMessage(models.Model):
         return self.message[:80]
 
 
+class LOCMember(models.Model):
+    """Local Organising Committee member shown on the conference home page."""
+    conference = models.ForeignKey(Conference, on_delete=models.CASCADE, related_name='loc_members')
+    full_name = models.CharField(max_length=200)
+    position = models.CharField(max_length=200, help_text="Role on the committee, e.g. 'Chairperson'")
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'full_name']
+        verbose_name = "LOC Member"
+        verbose_name_plural = "LOC Members"
+
+    def __str__(self):
+        return f"{self.full_name} — {self.position}"
+
+
+class ExhibitorPackage(models.Model):
+    """Exhibition / sponsorship package an exhibitor can purchase."""
+    conference = models.ForeignKey(Conference, on_delete=models.CASCADE, related_name='exhibitor_packages')
+    name = models.CharField(max_length=150, help_text="e.g., Standard Booth, Premium Booth")
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, blank=True, help_text="Bootstrap icon class")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Package price in Naira")
+    perks = models.TextField(blank=True, help_text="What's included — one item per line")
+    max_slots = models.PositiveIntegerField(null=True, blank=True, help_text="Leave blank for unlimited")
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'price']
+        verbose_name = "Exhibitor Package"
+        verbose_name_plural = "Exhibitor Packages"
+
+    def __str__(self):
+        return f"{self.name} — ₦{self.price:,.0f}"
+
+    def get_perks_list(self):
+        return [p.strip() for p in self.perks.split('\n') if p.strip()]
+
+    @property
+    def slots_available(self):
+        if self.max_slots is None:
+            return None
+        taken = self.exhibitors.filter(payment_status='confirmed').count()
+        return max(self.max_slots - taken, 0)
+
+
+class Exhibitor(models.Model):
+    """An exhibitor who registers and pays for an exhibition package."""
+    PAYMENT_STATUS_CHOICES = Registration.PAYMENT_STATUS_CHOICES
+    PAYMENT_METHOD_CHOICES = Registration.PAYMENT_METHOD_CHOICES
+
+    conference = models.ForeignKey(Conference, on_delete=models.CASCADE, related_name='exhibitors')
+    package = models.ForeignKey(ExhibitorPackage, on_delete=models.PROTECT, related_name='exhibitors')
+
+    reference = models.CharField(max_length=20, unique=True, blank=True)
+    access_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+
+    # Exhibitor info
+    company_name = models.CharField(max_length=200, verbose_name="Company / Organization")
+    contact_name = models.CharField(max_length=200, verbose_name="Contact Person")
+    email = models.EmailField()
+    phone = models.CharField(max_length=30)
+    website = models.URLField(blank=True)
+    logo = models.ImageField(upload_to='conference/exhibitors/logos/', blank=True, null=True)
+
+    # Payment
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='paystack')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    paystack_reference = models.CharField(max_length=100, blank=True)
+    paystack_transaction_id = models.CharField(max_length=100, blank=True)
+    payment_date = models.DateTimeField(null=True, blank=True)
+
+    # Consent
+    terms_accepted = models.BooleanField(default=False)
+
+    registered_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-registered_at']
+        verbose_name = "Exhibitor"
+        verbose_name_plural = "Exhibitors"
+
+    def __str__(self):
+        return f"[{self.reference}] {self.company_name} — {self.package.name}"
+
+    @property
+    def is_confirmed(self):
+        return self.payment_status == 'confirmed'
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            year = timezone.now().year
+            count = Exhibitor.objects.filter(conference=self.conference).count() + 1
+            self.reference = f"EXH{year}-{count:04d}"
+        super().save(*args, **kwargs)
+
+
+class ExhibitorShowcase(models.Model):
+    """A product/item an approved exhibitor showcases for sale on the exhibitors page."""
+    exhibitor = models.ForeignKey(Exhibitor, on_delete=models.CASCADE, related_name='showcase_items')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Sale price in Naira (optional)")
+    image = models.ImageField(upload_to='conference/exhibitors/')
+    is_approved = models.BooleanField(default=False, help_text="Admin must approve before public display")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Exhibitor Showcase Item"
+        verbose_name_plural = "Exhibitor Showcase Items"
+
+    def __str__(self):
+        return f"{self.title} ({self.exhibitor.company_name})"
+
+
 class ContentBlock(models.Model):
     """Stores inline-editable text blocks for frontend editing."""
     key = models.CharField(max_length=200, unique=True, db_index=True)

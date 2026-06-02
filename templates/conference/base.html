@@ -232,6 +232,7 @@
                 <li class="nav-item"><a class="nav-link {% block nav_home %}{% endblock %}" href="{% url 'conference:landing' %}">Home</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_speakers %}{% endblock %}" href="{% url 'conference:speakers' %}">Speakers</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_program %}{% endblock %}" href="{% url 'conference:program' %}">Programme</a></li>
+                <li class="nav-item"><a class="nav-link {% block nav_exhibitors %}{% endblock %}" href="{% url 'conference:exhibitors' %}">Exhibitors</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_abstract %}{% endblock %}" href="{% url 'conference:abstract_submit' %}">Submit Abstract</a></li>
                 <li class="nav-item ms-lg-2">
                     <a class="nav-link btn-register-nav" href="{% url 'conference:register' %}">
@@ -271,6 +272,7 @@
                 <a href="{% url 'conference:landing' %}">Home</a>
                 <a href="{% url 'conference:speakers' %}">Speakers</a>
                 <a href="{% url 'conference:program' %}">Programme</a>
+                <a href="{% url 'conference:exhibitors' %}">Exhibitors</a>
                 <a href="{% url 'conference:abstract_submit' %}">Submit Abstract</a>
                 <a href="{% url 'conference:register' %}">Register</a>
             </div>
