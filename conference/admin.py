@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.utils import timezone
 from ckeditor.widgets import CKEditorWidget
@@ -234,7 +234,7 @@ class RegistrationAdmin(admin.ModelAdmin):
         }),
     )
 
-    actions = ['confirm_registration', 'mark_checked_in']
+    actions = ['confirm_registration', 'resend_confirmation_emails', 'mark_checked_in']
 
     def confirm_registration(self, request, queryset):
         from django.utils import timezone
@@ -252,6 +252,31 @@ class RegistrationAdmin(admin.ModelAdmin):
             f"{confirmed} registration(s) confirmed. Receipt and welcome emails sent.",
         )
     confirm_registration.short_description = "Confirm selected registrations"
+
+    def resend_confirmation_emails(self, request, queryset):
+        """(Re)send the receipt + welcome email to selected confirmed registrations."""
+        from conference.emails import send_registration_confirmation
+        confirmed = queryset.filter(payment_status='confirmed')
+        sent = 0
+        failed = 0
+        for registration in confirmed:
+            try:
+                send_registration_confirmation(registration)
+            except Exception:
+                failed += 1
+                continue
+            if not registration.confirmation_email_sent:
+                Registration.objects.filter(pk=registration.pk).update(confirmation_email_sent=True)
+            sent += 1
+
+        skipped = queryset.count() - confirmed.count()
+        msg = f"Receipt + welcome email sent to {sent} registration(s)."
+        if skipped:
+            msg += f" {skipped} skipped (payment not confirmed)."
+        if failed:
+            msg += f" {failed} failed — check the logs."
+        self.message_user(request, msg, level=messages.WARNING if failed else messages.INFO)
+    resend_confirmation_emails.short_description = "Resend receipt + welcome email"
 
     def mark_checked_in(self, request, queryset):
         from django.utils import timezone
