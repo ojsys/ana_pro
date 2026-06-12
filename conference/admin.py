@@ -238,7 +238,19 @@ class RegistrationAdmin(admin.ModelAdmin):
 
     def confirm_registration(self, request, queryset):
         from django.utils import timezone
-        queryset.update(payment_status='confirmed', payment_date=timezone.now())
+        # Save each instance individually (instead of queryset.update) so the
+        # post_save signal fires and the receipt + welcome emails are sent.
+        confirmed = 0
+        for registration in queryset.exclude(payment_status='confirmed'):
+            registration.payment_status = 'confirmed'
+            if not registration.payment_date:
+                registration.payment_date = timezone.now()
+            registration.save()
+            confirmed += 1
+        self.message_user(
+            request,
+            f"{confirmed} registration(s) confirmed. Receipt and welcome emails sent.",
+        )
     confirm_registration.short_description = "Confirm selected registrations"
 
     def mark_checked_in(self, request, queryset):

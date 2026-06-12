@@ -300,6 +300,10 @@ class Registration(models.Model):
     paystack_reference = models.CharField(max_length=100, blank=True)
     paystack_transaction_id = models.CharField(max_length=100, blank=True)
     payment_date = models.DateTimeField(null=True, blank=True)
+    confirmation_email_sent = models.BooleanField(
+        default=False,
+        help_text="Whether the payment receipt and welcome email have been sent",
+    )
 
     # Consent
     terms_accepted = models.BooleanField(default=False)

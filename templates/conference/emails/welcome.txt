@@ -1,0 +1,25 @@
+WELCOME TO {{ conference.name }}!
+
+Dear {{ registration.full_name }},
+
+Welcome aboard! Your registration is confirmed and we are delighted to have you
+join us. Please keep your Ticket ID handy for check-in.
+
+Your Ticket ID:  {{ registration.ticket_id }}
+
+EVENT DETAILS
+Dates:     {{ conference.start_date|date:"d M" }} - {{ conference.end_date|date:"d M Y" }}
+Venue:     {{ conference.venue }}
+Location:  {{ conference.city }}, {{ conference.state }}, {{ conference.country }}
+{% if registration.category.get_includes_list %}
+YOUR {{ registration.category.name|upper }} PASS INCLUDES
+{% for item in registration.category.get_includes_list %}- {{ item }}
+{% endfor %}{% endif %}{% if ticket_url %}
+View your ticket: {{ ticket_url }}
+{% endif %}
+We will share the full programme and logistics updates ahead of the event.
+If you have any questions, just reply to this email{% if conference.contact_email %} or reach us at {{ conference.contact_email }}{% endif %}.
+
+See you there!
+The {{ conference.name }} Team
+{% if conference.website_url %}{{ conference.website_url }}{% endif %}

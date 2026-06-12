@@ -1,0 +1,21 @@
+{% load humanize %}PAYMENT RECEIPT — {{ conference.name }}
+
+Dear {{ registration.full_name }},
+
+We have received your payment and your conference registration is now CONFIRMED.
+This email is your official receipt of payment.
+
+Amount Paid:      N{{ registration.amount|floatformat:0|intcomma }}
+Receipt/Ticket:   {{ registration.ticket_id }}
+Category:         {{ registration.category.name }}
+Payment Method:   {{ registration.get_payment_method_display }}
+{% if registration.payment_date %}Payment Date:     {{ registration.payment_date|date:"d M Y, H:i" }}
+{% endif %}{% if registration.paystack_reference %}Reference:        {{ registration.paystack_reference }}
+{% endif %}Status:           CONFIRMED
+{% if ticket_url %}
+Verify your ticket any time at: {{ ticket_url }}
+{% endif %}
+--
+{{ conference.name }}
+{% if conference.venue %}{{ conference.venue }}, {{ conference.city }}, {{ conference.state }}{% endif %}
+{% if conference.contact_email %}Questions? {{ conference.contact_email }}{% endif %}{% if conference.contact_phone %} | {{ conference.contact_phone }}{% endif %}

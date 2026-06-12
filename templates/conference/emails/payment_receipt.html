@@ -1,0 +1,81 @@
+{% load humanize %}<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Receipt</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f4;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f4;padding:24px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <tr><td style="background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:28px 32px;color:#ffffff;">
+    <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.85;">Payment Receipt</div>
+    <div style="font-size:22px;font-weight:bold;margin-top:6px;">{{ conference.name }}</div>
+  </td></tr>
+
+  <!-- Greeting -->
+  <tr><td style="padding:28px 32px 8px;">
+    <p style="margin:0 0 12px;font-size:15px;">Dear {{ registration.full_name }},</p>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#444;">
+      We have received your payment and your conference registration is now
+      <strong style="color:#1B5E20;">confirmed</strong>. This email is your official receipt of payment.
+    </p>
+  </td></tr>
+
+  <!-- Amount -->
+  <tr><td style="padding:20px 32px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1B5E20;border-radius:12px;">
+      <tr><td style="padding:18px 24px;text-align:center;color:#ffffff;">
+        <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;opacity:0.85;">Amount Paid</div>
+        <div style="font-size:30px;font-weight:bold;margin-top:4px;">&#8358;{{ registration.amount|floatformat:0|intcomma }}</div>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <!-- Details -->
+  <tr><td style="padding:18px 32px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Receipt / Ticket ID</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ registration.ticket_id }}</td></tr>
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Category</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ registration.category.name }}</td></tr>
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Payment Method</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ registration.get_payment_method_display }}</td></tr>
+      {% if registration.payment_date %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Payment Date</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ registration.payment_date|date:"d M Y, H:i" }}</td></tr>
+      {% endif %}
+      {% if registration.paystack_reference %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Reference</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ registration.paystack_reference }}</td></tr>
+      {% endif %}
+      <tr><td style="padding:9px 0;color:#888;">Status</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;color:#1B5E20;">CONFIRMED</td></tr>
+    </table>
+  </td></tr>
+
+  {% if ticket_url %}
+  <tr><td style="padding:8px 32px 24px;">
+    <p style="margin:0;font-size:13px;color:#888;">
+      Verify your ticket any time at
+      <a href="{{ ticket_url }}" style="color:#2E7D32;">{{ ticket_url }}</a>
+    </p>
+  </td></tr>
+  {% endif %}
+
+  <!-- Footer -->
+  <tr><td style="background:#0D1B0F;padding:22px 32px;color:#9bbf9f;font-size:12px;line-height:1.6;">
+    {{ conference.name }}<br>
+    {% if conference.venue %}{{ conference.venue }}, {{ conference.city }}, {{ conference.state }}<br>{% endif %}
+    {% if conference.contact_email %}Questions? <a href="mailto:{{ conference.contact_email }}" style="color:#9bbf9f;">{{ conference.contact_email }}</a>{% endif %}
+    {% if conference.contact_phone %} &nbsp;|&nbsp; {{ conference.contact_phone }}{% endif %}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
