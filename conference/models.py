@@ -302,7 +302,11 @@ class Registration(models.Model):
     payment_date = models.DateTimeField(null=True, blank=True)
     confirmation_email_sent = models.BooleanField(
         default=False,
-        help_text="Whether the payment receipt and welcome email have been sent",
+        help_text="Whether the full confirmation (receipt + welcome) has been sent",
+    )
+    receipt_email_sent = models.BooleanField(
+        default=False,
+        help_text="Whether the payment receipt email specifically has been sent",
     )
 
     # Consent

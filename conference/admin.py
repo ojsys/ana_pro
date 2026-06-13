@@ -234,7 +234,8 @@ class RegistrationAdmin(admin.ModelAdmin):
         }),
     )
 
-    actions = ['confirm_registration', 'resend_confirmation_emails', 'mark_checked_in']
+    actions = ['confirm_registration', 'resend_confirmation_emails',
+               'resend_payment_receipt', 'mark_checked_in']
 
     def confirm_registration(self, request, queryset):
         from django.utils import timezone
@@ -265,8 +266,9 @@ class RegistrationAdmin(admin.ModelAdmin):
             except Exception:
                 failed += 1
                 continue
-            if not registration.confirmation_email_sent:
-                Registration.objects.filter(pk=registration.pk).update(confirmation_email_sent=True)
+            Registration.objects.filter(pk=registration.pk).update(
+                confirmation_email_sent=True, receipt_email_sent=True,
+            )
             sent += 1
 
         skipped = queryset.count() - confirmed.count()
@@ -277,6 +279,30 @@ class RegistrationAdmin(admin.ModelAdmin):
             msg += f" {failed} failed — check the logs."
         self.message_user(request, msg, level=messages.WARNING if failed else messages.INFO)
     resend_confirmation_emails.short_description = "Resend receipt + welcome email"
+
+    def resend_payment_receipt(self, request, queryset):
+        """Send only the payment receipt to selected confirmed registrations."""
+        from conference.emails import send_payment_receipt
+        confirmed = queryset.filter(payment_status='confirmed')
+        sent = 0
+        failed = 0
+        for registration in confirmed:
+            try:
+                send_payment_receipt(registration)
+            except Exception:
+                failed += 1
+                continue
+            Registration.objects.filter(pk=registration.pk).update(receipt_email_sent=True)
+            sent += 1
+
+        skipped = queryset.count() - confirmed.count()
+        msg = f"Payment receipt sent to {sent} registration(s)."
+        if skipped:
+            msg += f" {skipped} skipped (payment not confirmed)."
+        if failed:
+            msg += f" {failed} failed — check the logs."
+        self.message_user(request, msg, level=messages.WARNING if failed else messages.INFO)
+    resend_payment_receipt.short_description = "Resend payment receipt only"
 
     def mark_checked_in(self, request, queryset):
         from django.utils import timezone

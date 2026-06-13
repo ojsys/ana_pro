@@ -59,5 +59,9 @@ def send_confirmation_on_payment(sender, instance, created, **kwargs):
         return
 
     # Mark as sent without re-triggering signals or touching updated_at.
-    Registration.objects.filter(pk=instance.pk).update(confirmation_email_sent=True)
+    # The full confirmation includes the receipt, so flag both.
+    Registration.objects.filter(pk=instance.pk).update(
+        confirmation_email_sent=True, receipt_email_sent=True,
+    )
     instance.confirmation_email_sent = True
+    instance.receipt_email_sent = True

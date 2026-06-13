@@ -10,8 +10,13 @@ Examples:
     # Send to all confirmed registrations that haven't been emailed yet
     python manage.py send_confirmation_emails
 
-    # Re-send to everyone confirmed, even if already emailed
+    # Re-send the full pair to everyone confirmed, even if already emailed
     python manage.py send_confirmation_emails --resend
+
+    # Send ONLY the payment receipt to confirmed people who haven't got it
+    # (does not re-send the welcome email)
+    python manage.py send_confirmation_emails --receipt-only
+    python manage.py send_confirmation_emails --receipt-only --dry-run
 
     # Limit to one conference (by slug) or a single ticket
     python manage.py send_confirmation_emails --conference akilimo-lagos-2026
@@ -20,7 +25,7 @@ Examples:
 from django.core.management.base import BaseCommand, CommandError
 
 from conference.models import Registration
-from conference.emails import send_registration_confirmation
+from conference.emails import send_registration_confirmation, send_payment_receipt
 
 
 class Command(BaseCommand):
@@ -30,6 +35,11 @@ class Command(BaseCommand):
         parser.add_argument(
             '--resend', action='store_true',
             help='Include registrations that have already been emailed.',
+        )
+        parser.add_argument(
+            '--receipt-only', action='store_true',
+            help='Send only the payment receipt (not the welcome email), '
+                 'targeting confirmed people who have not received the receipt.',
         )
         parser.add_argument(
             '--dry-run', action='store_true',
@@ -47,6 +57,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         resend = options['resend']
         dry_run = options['dry_run']
+        receipt_only = options['receipt_only']
+
+        # The "already done" flag differs per mode: in receipt-only mode we
+        # gate on whether the receipt specifically went out.
+        sent_flag = 'receipt_email_sent' if receipt_only else 'confirmation_email_sent'
+        what = "payment receipt" if receipt_only else "receipt + welcome email"
 
         qs = Registration.objects.filter(payment_status='confirmed').select_related(
             'conference', 'category'
@@ -56,7 +72,7 @@ class Command(BaseCommand):
         if options['ticket']:
             qs = qs.filter(ticket_id=options['ticket'])
         if not resend:
-            qs = qs.filter(confirmation_email_sent=False)
+            qs = qs.filter(**{sent_flag: False})
 
         qs = qs.order_by('registered_at')
         total = qs.count()
@@ -64,26 +80,33 @@ class Command(BaseCommand):
         if total == 0:
             self.stdout.write(self.style.WARNING(
                 "No matching confirmed registrations to email."
-                + ("" if resend else " (use --resend to include already-emailed ones)")
+                + ("" if resend else " (use --resend to include already-sent ones)")
             ))
             return
 
         if dry_run:
             self.stdout.write(self.style.WARNING(
-                f"DRY RUN — would email {total} registration(s):\n"
+                f"DRY RUN — would send {what} to {total} registration(s):\n"
             ))
             for reg in qs:
-                flag = "" if not reg.confirmation_email_sent else " (already sent)"
+                flag = "" if not getattr(reg, sent_flag) else " (already sent)"
                 self.stdout.write(f"  • {reg.ticket_id}  {reg.full_name} <{reg.email}>{flag}")
             return
 
-        self.stdout.write(f"Sending receipt + welcome email to {total} registration(s)...\n")
+        self.stdout.write(f"Sending {what} to {total} registration(s)...\n")
 
         sent = 0
         failed = 0
         for reg in qs:
             try:
-                send_registration_confirmation(reg)
+                if receipt_only:
+                    send_payment_receipt(reg)
+                    Registration.objects.filter(pk=reg.pk).update(receipt_email_sent=True)
+                else:
+                    send_registration_confirmation(reg)
+                    Registration.objects.filter(pk=reg.pk).update(
+                        confirmation_email_sent=True, receipt_email_sent=True,
+                    )
             except Exception as exc:
                 failed += 1
                 self.stderr.write(self.style.ERROR(
@@ -91,8 +114,6 @@ class Command(BaseCommand):
                 ))
                 continue
 
-            if not reg.confirmation_email_sent:
-                Registration.objects.filter(pk=reg.pk).update(confirmation_email_sent=True)
             sent += 1
             self.stdout.write(self.style.SUCCESS(f"  ✓ {reg.ticket_id} <{reg.email}>"))
 
