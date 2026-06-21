@@ -608,25 +608,46 @@ def payment_verification(request):
     if not authorized:
         if request.method == 'POST' and request.POST.get('action') == 'request_access':
             email = (request.POST.get('email') or '').strip()
-            verifier = PaymentVerifier.objects.filter(email__iexact=email, is_active=True).first()
-            if verifier:
-                try:
-                    token = signing.dumps(verifier.email, salt=PV_SALT)
-                    login_url = request.build_absolute_uri(
-                        reverse('conference:payment_verification_login', args=[token])
-                    )
-                    from .emails import send_verifier_magic_link
-                    send_verifier_magic_link(verifier, login_url, conference)
-                except Exception as exc:
-                    logger.error("Failed to send verifier magic link to %s: %s", email, exc)
-            else:
-                # Log the miss but don't reveal whether the email is on the list.
-                logger.info("Payment verification access requested by non-authorized email: %s", email)
-            # Generic response either way (avoids email enumeration).
-            messages.info(
+
+            # This is a private tool with a small, known allowlist, so we give
+            # explicit feedback (rather than hiding whether the email is listed)
+            # — otherwise a missing entry or an SMTP error looks like success.
+            verifier = PaymentVerifier.objects.filter(email__iexact=email).first()
+            if not verifier:
+                messages.error(
+                    request,
+                    f"“{email}” is not authorized for payment verification. "
+                    "Ask an administrator to add it under Payment Verifiers.",
+                )
+                return redirect('conference:payment_verification')
+            if not verifier.is_active:
+                messages.error(
+                    request,
+                    f"Access for “{email}” has been deactivated. "
+                    "Ask an administrator to re-activate it.",
+                )
+                return redirect('conference:payment_verification')
+
+            try:
+                token = signing.dumps(verifier.email, salt=PV_SALT)
+                login_url = request.build_absolute_uri(
+                    reverse('conference:payment_verification_login', args=[token])
+                )
+                from .emails import send_verifier_magic_link
+                send_verifier_magic_link(verifier, login_url, conference)
+            except Exception as exc:
+                logger.error("Failed to send verifier magic link to %s: %s", email, exc, exc_info=True)
+                messages.error(
+                    request,
+                    "We couldn't send the sign-in link due to a mail server error. "
+                    "Please try again, or contact the site administrator.",
+                )
+                return redirect('conference:payment_verification')
+
+            messages.success(
                 request,
-                "If that email is authorized, a sign-in link has been sent to it. "
-                "The link expires in 2 hours.",
+                f"A sign-in link has been sent to {verifier.email}. "
+                "It expires in 2 hours — check your inbox (and spam folder).",
             )
             return redirect('conference:payment_verification')
 
