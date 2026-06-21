@@ -3,7 +3,13 @@
 {% block title %}Payment Verification — {{ conference.name }}{% endblock %}
 
 {% block extra_css %}
-.pv-wrap { max-width:720px;width:100%;margin:0 auto; }
+.pv-wrap { max-width:920px;width:100%;margin:0 auto; }
+.pv-table { width:100%;border-collapse:collapse;font-size:0.86rem; }
+.pv-table thead th { text-align:left;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#999;font-weight:700;padding:0.9rem 1rem;border-bottom:2px solid #eee;background:#fafafa;white-space:nowrap; }
+.pv-table tbody td { padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;color:#333;vertical-align:middle; }
+.pv-table tbody tr:hover { background:#f8fbf8; }
+.pv-page-link { background:#fff;border:1px solid #cdddcd;color:#1B5E20;border-radius:8px;padding:0.45rem 0.9rem;font-size:0.85rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem; }
+.pv-page-link:hover { background:#1B5E20;color:#fff;border-color:#1B5E20; }
 .pv-card { background:#fff;border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,0.1);overflow:hidden; }
 .pv-header { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:2rem 2.5rem;color:#fff; }
 .pv-body { padding:2rem 2.5rem; }
@@ -181,6 +187,92 @@
       </div>
     </div>
     {% endif %}
+
+    {# ── Registrations awaiting confirmation ──────────────────────────────── #}
+    <div class="pv-card" style="margin-top:1.5rem;">
+      <div class="pv-header" style="padding:1.5rem 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.15rem;">Awaiting Confirmation</div>
+            <div style="font-size:0.8rem;opacity:0.75;margin-top:0.2rem;">Unconfirmed registrations — confirm once payment is verified.</div>
+          </div>
+          <span class="pv-badge pending" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);color:#fff;">
+            <i class="bi bi-people-fill"></i> {{ unconfirmed_total }} pending
+          </span>
+        </div>
+      </div>
+      <div class="pv-body" style="padding:0;">
+        {% if page_obj.object_list %}
+        <div style="overflow-x:auto;">
+          <table class="pv-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Name</th>
+                <th>Registered</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for reg in page_obj.object_list %}
+              <tr>
+                <td style="font-weight:700;color:#1B5E20;white-space:nowrap;">{{ reg.ticket_id }}</td>
+                <td>{{ reg.full_name }}</td>
+                <td style="white-space:nowrap;">{{ reg.registered_at|date:"d M Y" }}</td>
+                <td>{{ reg.category.name }}</td>
+                <td style="white-space:nowrap;">₦{{ reg.amount|intcomma }}</td>
+                <td>{{ reg.get_payment_method_display }}</td>
+                <td><span class="pv-badge pending" style="font-size:0.68rem;">{{ reg.get_payment_status_display }}</span></td>
+                <td style="text-align:right;white-space:nowrap;">
+                  <form method="post" action="{% url 'conference:payment_verification' %}" style="margin:0;display:inline;"
+                        onsubmit="return confirm('Confirm payment for {{ reg.ticket_id }} ({{ reg.full_name }})?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ reg.ticket_id }}">
+                    <input type="hidden" name="action" value="confirm_manual">
+                    <input type="hidden" name="page" value="{{ page_obj.number }}">
+                    <button type="submit" class="pv-btn pv-btn-manual" style="padding:0.45rem 0.9rem;font-size:0.8rem;">
+                      <i class="bi bi-check2-circle"></i> Confirm
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.5rem;border-top:1px solid #eee;flex-wrap:wrap;">
+          <span style="color:#888;font-size:0.85rem;">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} · {{ unconfirmed_total }} total
+          </span>
+          <div style="display:flex;gap:0.5rem;">
+            {% if page_obj.has_previous %}
+              <a class="pv-page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+                <i class="bi bi-chevron-left"></i> Prev
+              </a>
+            {% endif %}
+            {% if page_obj.has_next %}
+              <a class="pv-page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+                Next <i class="bi bi-chevron-right"></i>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div style="padding:2.5rem 1.5rem;text-align:center;color:#888;">
+          <i class="bi bi-check2-all" style="font-size:2rem;color:#4CAF50;"></i>
+          <p style="margin:0.75rem 0 0;font-weight:600;">No registrations awaiting confirmation. All caught up!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
 
     {% endif %}{# needs_access #}
 

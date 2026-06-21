@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from django.core import signing
+from django.core.paginator import Paginator
 
 from .models import (
     Conference, Speaker, AbstractSubmission, RegistrationCategory,
@@ -730,11 +731,27 @@ def payment_verification(request):
         if record.pk:
             record.refresh_from_db()
 
+    # ── Paginated list of registrations awaiting confirmation ──────────────────
+    # Built after the confirm logic so a just-confirmed registration drops off.
+    unconfirmed_qs = (
+        Registration.objects
+        .exclude(payment_status__in=['confirmed', 'waived', 'cancelled'])
+        .select_related('category')
+        .order_by('-registered_at')
+    )
+    if conference:
+        unconfirmed_qs = unconfirmed_qs.filter(conference=conference)
+
+    paginator = Paginator(unconfirmed_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page') or request.POST.get('page'))
+
     context.update({
         'query': query,
         'searched': bool(query),
         'record': record,
         'record_type': record_type,
+        'page_obj': page_obj,
+        'unconfirmed_total': paginator.count,
     })
     return render(request, 'conference/payment_verification.html', context)
 
