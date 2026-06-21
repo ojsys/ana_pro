@@ -12,10 +12,12 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.conf import settings
 
+from django.core import signing
+
 from .models import (
     Conference, Speaker, AbstractSubmission, RegistrationCategory,
     Registration, ProgramDay, Sponsor, KeyMessage, ContentBlock,
-    Exhibitor, ExhibitorPackage, ExhibitorShowcase,
+    Exhibitor, ExhibitorPackage, ExhibitorShowcase, PaymentVerifier,
 )
 from .forms import (
     AbstractSubmissionForm, RegistrationForm,
@@ -526,13 +528,65 @@ def exhibitor_showcase_delete(request, token, pk):
     return redirect('conference:exhibitor_showcase', token=token)
 
 
-# ─── Payment Verification (staff only) ────────────────────────────────────────
+# ─── Payment Verification ─────────────────────────────────────────────────────
 
-@staff_member_required
+# Magic-link signing config for non-staff verifiers.
+PV_SALT = 'conference.payment_verification.magic-link'
+PV_MAX_AGE = 60 * 60 * 2  # links valid for 2 hours
+PV_SESSION_KEY = 'pv_verifier_email'
+
+
+def _active_verifier_email(request):
+    """Return the session's verifier email if it still maps to an active
+    PaymentVerifier, else None (so revoking access ends the session too)."""
+    email = request.session.get(PV_SESSION_KEY)
+    if email and PaymentVerifier.objects.filter(email__iexact=email, is_active=True).exists():
+        return email
+    return None
+
+
+def _is_pv_staff(request):
+    """Only superadmins get account-based access; other staff do not."""
+    return request.user.is_authenticated and request.user.is_superuser
+
+
+def payment_verification_login(request, token):
+    """Consume a magic link: validate the signed token and grant a session."""
+    try:
+        email = signing.loads(token, salt=PV_SALT, max_age=PV_MAX_AGE)
+    except signing.SignatureExpired:
+        messages.error(request, "That sign-in link has expired. Please request a new one.")
+        return redirect('conference:payment_verification')
+    except signing.BadSignature:
+        messages.error(request, "That sign-in link is invalid.")
+        return redirect('conference:payment_verification')
+
+    verifier = PaymentVerifier.objects.filter(email__iexact=email, is_active=True).first()
+    if not verifier:
+        messages.error(request, "Access for this email is no longer active.")
+        return redirect('conference:payment_verification')
+
+    request.session[PV_SESSION_KEY] = verifier.email
+    PaymentVerifier.objects.filter(pk=verifier.pk).update(last_login_at=timezone.now())
+    messages.success(request, f"Welcome, {verifier.name or verifier.email}. You now have verification access.")
+    return redirect('conference:payment_verification')
+
+
+@require_POST
+def payment_verification_logout(request):
+    """End a verifier's session."""
+    request.session.pop(PV_SESSION_KEY, None)
+    messages.info(request, "You have been signed out of Payment Verification.")
+    return redirect('conference:payment_verification')
+
+
 def payment_verification(request):
     """
-    Staff tool to verify and confirm payments for both registrations and
-    exhibitors.
+    Tool to verify and confirm payments for both registrations and exhibitors.
+
+    Access is restricted to superadmins (Django superusers), or to people on
+    the PaymentVerifier allowlist who sign in via a magic link emailed to them.
+    Other staff accounts have no access.
 
     * Look up a record by its Ticket ID (registrations, e.g. ANC2026-T00001)
       or Reference (exhibitors, e.g. EXH2026-0001).
@@ -546,7 +600,48 @@ def payment_verification(request):
     participant their receipt and welcome message.
     """
     conference = get_active_conference()
-    context = {'conference': conference}
+    is_superadmin = _is_pv_staff(request)
+    verifier_email = _active_verifier_email(request)
+    authorized = is_superadmin or verifier_email is not None
+
+    # ── Not authorized: show / handle the magic-link request form ──────────────
+    if not authorized:
+        if request.method == 'POST' and request.POST.get('action') == 'request_access':
+            email = (request.POST.get('email') or '').strip()
+            verifier = PaymentVerifier.objects.filter(email__iexact=email, is_active=True).first()
+            if verifier:
+                try:
+                    token = signing.dumps(verifier.email, salt=PV_SALT)
+                    login_url = request.build_absolute_uri(
+                        reverse('conference:payment_verification_login', args=[token])
+                    )
+                    from .emails import send_verifier_magic_link
+                    send_verifier_magic_link(verifier, login_url, conference)
+                except Exception as exc:
+                    logger.error("Failed to send verifier magic link to %s: %s", email, exc)
+            else:
+                # Log the miss but don't reveal whether the email is on the list.
+                logger.info("Payment verification access requested by non-authorized email: %s", email)
+            # Generic response either way (avoids email enumeration).
+            messages.info(
+                request,
+                "If that email is authorized, a sign-in link has been sent to it. "
+                "The link expires in 2 hours.",
+            )
+            return redirect('conference:payment_verification')
+
+        return render(request, 'conference/payment_verification.html', {
+            'conference': conference,
+            'needs_access': True,
+        })
+
+    # ── Authorized: lookup + confirm logic ─────────────────────────────────────
+    context = {
+        'conference': conference,
+        'authorized': True,
+        'is_superadmin': is_superadmin,
+        'verifier_email': verifier_email,
+    }
 
     query = (request.GET.get('q') or request.POST.get('q') or '').strip()
     action = request.POST.get('action', '')
@@ -562,6 +657,8 @@ def payment_verification(request):
             if record:
                 record_type = 'exhibitor'
 
+    actor = str(request.user) if is_superadmin else f"verifier:{verifier_email}"
+
     if request.method == 'POST' and action and record:
         label = query.upper()
         if record.payment_status == 'confirmed':
@@ -572,7 +669,7 @@ def payment_verification(request):
             if not record.payment_date:
                 record.payment_date = timezone.now()
             record.save()
-            logger.info("Bank transfer confirmed for %s by %s", label, request.user)
+            logger.info("Bank transfer confirmed for %s by %s", label, actor)
             messages.success(
                 request,
                 f"Bank transfer for {label} confirmed. "
@@ -592,7 +689,7 @@ def payment_verification(request):
                         record.paystack_transaction_id = str(result['data'].get('id', ''))
                         record.payment_date = timezone.now()
                         record.save()
-                        logger.info("Paystack payment verified for %s by %s", label, request.user)
+                        logger.info("Paystack payment verified for %s by %s", label, actor)
                         messages.success(
                             request,
                             f"Paystack payment for {label} verified and confirmed. "

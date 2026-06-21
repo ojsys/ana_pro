@@ -45,6 +45,44 @@
       {% endfor %}
     {% endif %}
 
+    {% if needs_access %}
+      {# ── Not signed in: request a magic link ───────────────────────────── #}
+      <div class="pv-card">
+        <div class="pv-body">
+          <p style="color:#555;margin-bottom:1.25rem;">
+            This page is restricted. Enter your authorized email address and we'll send you a
+            secure sign-in link (valid for 2 hours).
+          </p>
+          <form method="post" action="{% url 'conference:payment_verification' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="request_access">
+            <label class="pv-label" style="display:block;margin-bottom:0.5rem;">Your email address</label>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <input type="email" name="email" required autofocus
+                     class="pv-search-input" style="flex:1;min-width:240px;text-transform:none;letter-spacing:0;"
+                     placeholder="you@example.com">
+              <button type="submit" class="pv-btn pv-btn-manual">
+                <i class="bi bi-envelope-arrow-up"></i> Send sign-in link
+              </button>
+            </div>
+          </form>
+          <p style="color:#999;font-size:0.82rem;margin-top:1rem;margin-bottom:0;">
+            <i class="bi bi-lock"></i> Superadmins can also sign in through the admin and access this page directly.
+          </p>
+        </div>
+      </div>
+    {% else %}
+
+    {% if verifier_email %}
+      <div class="pv-alert info" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+        <span><i class="bi bi-person-check-fill me-1"></i> Signed in as <strong>{{ verifier_email }}</strong></span>
+        <form method="post" action="{% url 'conference:payment_verification_logout' %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" style="background:none;border:none;color:#1565c0;font-weight:700;cursor:pointer;text-decoration:underline;">Sign out</button>
+        </form>
+      </div>
+    {% endif %}
+
     <div class="pv-card" style="margin-bottom:1.5rem;">
       <div class="pv-body">
         <form method="get" action="{% url 'conference:payment_verification' %}">
@@ -143,6 +181,8 @@
       </div>
     </div>
     {% endif %}
+
+    {% endif %}{# needs_access #}
 
   </div>
 </div>

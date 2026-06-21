@@ -566,6 +566,28 @@ class ExhibitorShowcase(models.Model):
         return f"{self.title} ({self.exhibitor.company_name})"
 
 
+class PaymentVerifier(models.Model):
+    """A non-staff person allowed to access the Payment Verification page.
+
+    Access is granted via a time-limited magic link emailed to ``email``.
+    Untick ``is_active`` to revoke access immediately — any outstanding link
+    and any active session for that email stops working.
+    """
+    name = models.CharField(max_length=200, blank=True, help_text="For your own reference")
+    email = models.EmailField(unique=True, help_text="The link is sent here, and only this inbox can sign in")
+    is_active = models.BooleanField(default=True, help_text="Untick to immediately revoke access")
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'email']
+        verbose_name = "Payment Verifier"
+        verbose_name_plural = "Payment Verifiers"
+
+    def __str__(self):
+        return self.name or self.email
+
+
 class ContentBlock(models.Model):
     """Stores inline-editable text blocks for frontend editing."""
     key = models.CharField(max_length=200, unique=True, db_index=True)

@@ -7,7 +7,7 @@ from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
     KeyMessage, ContentBlock, LOCMember, ExhibitorPackage, Exhibitor,
-    ExhibitorShowcase,
+    ExhibitorShowcase, PaymentVerifier,
 )
 
 # Standard rich-text toolbar used across conference admin forms
@@ -466,6 +466,28 @@ class ExhibitorShowcaseAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">', obj.image.url)
         return "—"
     image_preview.short_description = "Image"
+
+
+@admin.register(PaymentVerifier)
+class PaymentVerifierAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'is_active', 'last_login_at', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'email']
+    list_editable = ['is_active']
+    readonly_fields = ['last_login_at', 'created_at']
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'email', 'is_active'),
+            'description': (
+                'People listed here can access the Payment Verification page without being '
+                'staff. They visit /conference/payment/verification/, enter this email, and '
+                'receive a 2-hour sign-in link. Untick "is active" to revoke access immediately.'
+            ),
+        }),
+        ('Activity', {
+            'fields': ('last_login_at', 'created_at'),
+        }),
+    )
 
 
 @admin.register(ContentBlock)
