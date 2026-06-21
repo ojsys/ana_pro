@@ -526,6 +526,101 @@ def exhibitor_showcase_delete(request, token, pk):
     return redirect('conference:exhibitor_showcase', token=token)
 
 
+# ─── Payment Verification (staff only) ────────────────────────────────────────
+
+@staff_member_required
+def payment_verification(request):
+    """
+    Staff tool to verify and confirm payments for both registrations and
+    exhibitors.
+
+    * Look up a record by its Ticket ID (registrations, e.g. ANC2026-T00001)
+      or Reference (exhibitors, e.g. EXH2026-0001).
+    * For Paystack payments still showing as pending, re-verify against the
+      Paystack API in case the original callback never completed.
+    * For bank transfers, confirm the payment manually once it has been
+      checked against the bank that the holder of that Ticket ID / Reference
+      actually paid.
+
+    Confirming a registration fires the post_save signal that emails the
+    participant their receipt and welcome message.
+    """
+    conference = get_active_conference()
+    context = {'conference': conference}
+
+    query = (request.GET.get('q') or request.POST.get('q') or '').strip()
+    action = request.POST.get('action', '')
+
+    record = None
+    record_type = None
+    if query:
+        record = Registration.objects.filter(ticket_id__iexact=query).first()
+        if record:
+            record_type = 'registration'
+        else:
+            record = Exhibitor.objects.filter(reference__iexact=query).first()
+            if record:
+                record_type = 'exhibitor'
+
+    if request.method == 'POST' and action and record:
+        label = query.upper()
+        if record.payment_status == 'confirmed':
+            messages.info(request, f"{label} is already confirmed.")
+
+        elif action == 'confirm_manual':
+            record.payment_status = 'confirmed'
+            if not record.payment_date:
+                record.payment_date = timezone.now()
+            record.save()
+            logger.info("Bank transfer confirmed for %s by %s", label, request.user)
+            messages.success(
+                request,
+                f"Bank transfer for {label} confirmed. "
+                f"{'A receipt and welcome email have been sent.' if record_type == 'registration' else ''}".strip(),
+            )
+
+        elif action == 'verify_paystack':
+            reference = record.paystack_reference
+            if not reference:
+                messages.error(request, f"{label} has no Paystack reference to verify.")
+            else:
+                try:
+                    paystack = PaystackService()
+                    result = paystack.verify_transaction(reference)
+                    if result.get('status') and result['data'].get('status') == 'success':
+                        record.payment_status = 'confirmed'
+                        record.paystack_transaction_id = str(result['data'].get('id', ''))
+                        record.payment_date = timezone.now()
+                        record.save()
+                        logger.info("Paystack payment verified for %s by %s", label, request.user)
+                        messages.success(
+                            request,
+                            f"Paystack payment for {label} verified and confirmed. "
+                            f"{'A receipt and welcome email have been sent.' if record_type == 'registration' else ''}".strip(),
+                        )
+                    else:
+                        gateway_status = (result.get('data') or {}).get('status', 'unknown')
+                        messages.warning(
+                            request,
+                            f"Paystack reports this payment as '{gateway_status}', not successful. "
+                            "It has not been confirmed.",
+                        )
+                except Exception as exc:
+                    logger.error("Paystack verification error for %s: %s", label, exc)
+                    messages.error(request, "Could not reach Paystack to verify. Please try again.")
+
+        if record.pk:
+            record.refresh_from_db()
+
+    context.update({
+        'query': query,
+        'searched': bool(query),
+        'record': record,
+        'record_type': record_type,
+    })
+    return render(request, 'conference/payment_verification.html', context)
+
+
 # ─── Frontend content editor (staff only) ─────────────────────────────────────
 
 @staff_member_required

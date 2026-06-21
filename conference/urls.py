@@ -11,6 +11,7 @@ urlpatterns = [
     path('register/', views.RegistrationView.as_view(), name='register'),
     path('register/success/', views.RegistrationSuccessView.as_view(), name='registration_success'),
     path('payment/verify/<str:ticket_id>/', views.payment_verify, name='payment_verify'),
+    path('payment/verification/', views.payment_verification, name='payment_verification'),
     path('ticket/<str:ticket_id>/', views.ticket_verify, name='ticket_verify'),
     path('programme/', views.ProgramView.as_view(), name='program'),
     path('exhibitors/', views.ExhibitorsView.as_view(), name='exhibitors'),

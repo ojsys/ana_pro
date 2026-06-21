@@ -1,0 +1,149 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Payment Verification — {{ conference.name }}{% endblock %}
+
+{% block extra_css %}
+.pv-wrap { max-width:720px;width:100%;margin:0 auto; }
+.pv-card { background:#fff;border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,0.1);overflow:hidden; }
+.pv-header { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:2rem 2.5rem;color:#fff; }
+.pv-body { padding:2rem 2.5rem; }
+.pv-row { display:flex;justify-content:space-between;align-items:flex-start;padding:0.6rem 0;border-bottom:1px dashed #eee;gap:1rem; }
+.pv-row:last-child { border-bottom:none; }
+.pv-label { font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600; }
+.pv-value { font-size:0.92rem;color:#222;font-weight:600;text-align:right;word-break:break-word; }
+.pv-search-input { font-size:1.1rem;letter-spacing:1px;text-transform:uppercase;padding:0.85rem 1rem;border:2px solid #d7e3d7;border-radius:12px; }
+.pv-search-input:focus { border-color:#2E7D32;box-shadow:0 0 0 0.2rem rgba(46,125,50,0.15);outline:none; }
+.pv-badge { border-radius:50px;padding:0.35rem 1rem;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem; }
+.pv-badge.confirmed { background:rgba(76,175,80,0.15);border:1px solid #4CAF50;color:#1B5E20; }
+.pv-badge.pending { background:rgba(249,168,37,0.15);border:1px solid #f9a825;color:#e65100; }
+.pv-badge.failed { background:rgba(229,57,53,0.12);border:1px solid #e53935;color:#c62828; }
+.pv-btn { border:none;border-radius:12px;padding:0.85rem 1.5rem;font-weight:700;font-size:0.95rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem; }
+.pv-btn-paystack { background:linear-gradient(135deg,#0a4ea3,#1e88e5);color:#fff; }
+.pv-btn-manual { background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff; }
+.pv-alert { border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1rem;font-size:0.92rem;font-weight:600; }
+.pv-alert.success { background:#e8f5e9;color:#1B5E20;border:1px solid #a5d6a7; }
+.pv-alert.warning { background:#fff8e1;color:#e65100;border:1px solid #ffe082; }
+.pv-alert.error { background:#ffebee;color:#c62828;border:1px solid #ef9a9a; }
+.pv-alert.info { background:#e3f2fd;color:#1565c0;border:1px solid #90caf9; }
+{% endblock %}
+
+{% block content %}
+<div style="min-height:85vh;background:#f9f9f9;padding:3.5rem 1rem;">
+  <div class="pv-wrap">
+
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="width:72px;height:72px;background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,0.35);">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;margin:0;">Payment Verification</h2>
+      <p style="color:#666;margin-top:0.5rem;">Verify and confirm Paystack &amp; bank-transfer payments by Ticket ID or Reference.</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="pv-alert {{ message.tags }}"><i class="bi bi-info-circle-fill me-1"></i> {{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="pv-card" style="margin-bottom:1.5rem;">
+      <div class="pv-body">
+        <form method="get" action="{% url 'conference:payment_verification' %}">
+          <label class="pv-label" style="display:block;margin-bottom:0.5rem;">Ticket ID / Reference</label>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <input type="text" name="q" value="{{ query }}" required autofocus
+                   class="pv-search-input" style="flex:1;min-width:220px;"
+                   placeholder="e.g. ANC2026-T00001 or EXH2026-0001">
+            <button type="submit" class="pv-btn pv-btn-manual">
+              <i class="bi bi-search"></i> Look up
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if searched and not record %}
+      <div class="pv-alert error">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        No registration or exhibitor found for "<strong>{{ query }}</strong>". Check the Ticket ID / Reference and try again.
+      </div>
+    {% endif %}
+
+    {% if record %}
+    <div class="pv-card">
+      <div class="pv-header">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;opacity:0.7;margin-bottom:0.4rem;">
+          {% if record_type == 'registration' %}Participant Registration{% else %}Exhibitor{% endif %}
+        </div>
+        <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.4rem;">
+          {% if record_type == 'registration' %}{{ record.ticket_id }}{% else %}{{ record.reference }}{% endif %}
+        </div>
+        <div style="margin-top:0.75rem;">
+          {% if record.payment_status == 'confirmed' %}
+            <span class="pv-badge confirmed"><i class="bi bi-patch-check-fill"></i> Confirmed</span>
+          {% elif record.payment_status == 'failed' %}
+            <span class="pv-badge failed"><i class="bi bi-x-octagon-fill"></i> {{ record.get_payment_status_display }}</span>
+          {% else %}
+            <span class="pv-badge pending"><i class="bi bi-hourglass-split"></i> {{ record.get_payment_status_display }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pv-body">
+        {% if record_type == 'registration' %}
+          <div class="pv-row"><span class="pv-label">Name</span><span class="pv-value">{{ record.full_name }}</span></div>
+          <div class="pv-row"><span class="pv-label">Email</span><span class="pv-value">{{ record.email }}</span></div>
+          <div class="pv-row"><span class="pv-label">Phone</span><span class="pv-value">{{ record.phone }}</span></div>
+          <div class="pv-row"><span class="pv-label">Category</span><span class="pv-value">{{ record.category.name }}</span></div>
+        {% else %}
+          <div class="pv-row"><span class="pv-label">Company</span><span class="pv-value">{{ record.company_name }}</span></div>
+          <div class="pv-row"><span class="pv-label">Contact</span><span class="pv-value">{{ record.contact_name }}</span></div>
+          <div class="pv-row"><span class="pv-label">Email</span><span class="pv-value">{{ record.email }}</span></div>
+          <div class="pv-row"><span class="pv-label">Phone</span><span class="pv-value">{{ record.phone }}</span></div>
+          <div class="pv-row"><span class="pv-label">Package</span><span class="pv-value">{{ record.package.name }}</span></div>
+        {% endif %}
+        <div class="pv-row"><span class="pv-label">Amount</span><span class="pv-value">₦{{ record.amount|intcomma }}</span></div>
+        <div class="pv-row"><span class="pv-label">Payment Method</span><span class="pv-value">{{ record.get_payment_method_display }}</span></div>
+        <div class="pv-row"><span class="pv-label">Paystack Reference</span><span class="pv-value">{{ record.paystack_reference|default:"—" }}</span></div>
+        <div class="pv-row"><span class="pv-label">Payment Date</span><span class="pv-value">{% if record.payment_date %}{{ record.payment_date|date:"d M Y, H:i" }}{% else %}—{% endif %}</span></div>
+
+        {% if record.payment_status == 'confirmed' %}
+          <div class="pv-alert success" style="margin-top:1.5rem;margin-bottom:0;">
+            <i class="bi bi-check-circle-fill me-1"></i> This payment is already confirmed. No further action needed.
+          </div>
+        {% else %}
+          <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+            {% if record.paystack_reference %}
+            <form method="post" action="{% url 'conference:payment_verification' %}" style="margin:0;">
+              {% csrf_token %}
+              <input type="hidden" name="q" value="{{ query }}">
+              <input type="hidden" name="action" value="verify_paystack">
+              <button type="submit" class="pv-btn pv-btn-paystack">
+                <i class="bi bi-credit-card-2-front"></i> Verify with Paystack
+              </button>
+            </form>
+            {% endif %}
+
+            <form method="post" action="{% url 'conference:payment_verification' %}" style="margin:0;"
+                  onsubmit="return confirm('Confirm that payment for {{ query }} has been received at the bank?');">
+              {% csrf_token %}
+              <input type="hidden" name="q" value="{{ query }}">
+              <input type="hidden" name="action" value="confirm_manual">
+              <button type="submit" class="pv-btn pv-btn-manual">
+                <i class="bi bi-bank"></i> Confirm Bank Transfer
+              </button>
+            </form>
+          </div>
+          <p style="color:#888;font-size:0.82rem;margin-top:1rem;margin-bottom:0;">
+            <i class="bi bi-info-circle"></i>
+            Use <strong>Verify with Paystack</strong> to re-check an online payment against the gateway.
+            Use <strong>Confirm Bank Transfer</strong> only after confirming at the bank that the holder of this
+            {% if record_type == 'registration' %}Ticket ID{% else %}Reference{% endif %} has paid.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
