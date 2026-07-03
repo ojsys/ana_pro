@@ -9,6 +9,7 @@ urlpatterns = [
     path('abstract/submit/', views.AbstractSubmissionView.as_view(), name='abstract_submit'),
     path('abstract/submitted/', views.AbstractSuccessView.as_view(), name='abstract_success'),
     path('register/', views.RegistrationView.as_view(), name='register'),
+    path('register/sponsor/<uuid:token>/', views.SponsorRegistrationView.as_view(), name='sponsor_register'),
     path('register/success/', views.RegistrationSuccessView.as_view(), name='registration_success'),
     path('payment/verify/<str:ticket_id>/', views.payment_verify, name='payment_verify'),
     path('payment/verification/', views.payment_verification, name='payment_verification'),

@@ -95,6 +95,27 @@ class RegistrationForm(forms.ModelForm):
         return email
 
 
+class SponsorRegistrationForm(RegistrationForm):
+    """Registration form for sponsors, sent a private link.
+
+    Identical to :class:`RegistrationForm` except there is no payment method —
+    sponsor registrations are complimentary, so no fee is shown or charged.
+    """
+    class Meta(RegistrationForm.Meta):
+        fields = [
+            'first_name', 'last_name', 'email', 'phone',
+            'organization', 'position', 'state_of_origin',
+            'category', 'dietary_requirements', 't_shirt_size',
+            'abstract_reference', 'terms_accepted',
+        ]
+
+    def __init__(self, conference, *args, **kwargs):
+        super().__init__(conference, *args, **kwargs)
+        # Show only the category name — never the fee — so no price leaks into
+        # the rendered <option> labels (the model's __str__ includes the fee).
+        self.fields['category'].label_from_instance = lambda obj: obj.name
+
+
 class ExhibitorRegistrationForm(forms.ModelForm):
     class Meta:
         model = Exhibitor

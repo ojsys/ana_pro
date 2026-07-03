@@ -59,13 +59,42 @@ class ConferenceAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'registration_open', 'abstract_submission_open']
     search_fields = ['name', 'theme', 'city']
     list_editable = ['is_active', 'registration_open', 'abstract_submission_open']
+    readonly_fields = ['sponsor_link']
+    actions = ['reset_sponsor_link']
+
+    def sponsor_link(self, obj):
+        if not obj.pk:
+            return "Save the conference first to generate the sponsor link."
+        from django.urls import reverse
+        url = reverse('conference:sponsor_register', args=[obj.sponsor_access_token])
+        return format_html(
+            '<a href="{0}" target="_blank">{0}</a>'
+            '<p style="color:#888;margin-top:6px;">Private, fee-free registration link. '
+            'Email it directly to sponsors — it is not linked anywhere public. '
+            'Use the “Reset sponsor registration link” action to invalidate it.</p>',
+            url,
+        )
+    sponsor_link.short_description = "Sponsor registration link"
+
+    def reset_sponsor_link(self, request, queryset):
+        import uuid
+        for conference in queryset:
+            conference.sponsor_access_token = uuid.uuid4()
+            conference.save(update_fields=['sponsor_access_token'])
+        self.message_user(
+            request,
+            f"Sponsor registration link reset for {queryset.count()} conference(s). "
+            "Any previously shared link no longer works.",
+        )
+    reset_sponsor_link.short_description = "Reset sponsor registration link"
+
     fieldsets = (
         ('Basic Info', {
             'fields': ('name', 'slug', 'theme', 'tagline', 'edition'),
             'description': 'Core identity of the conference.',
         }),
         ('Status & Registration', {
-            'fields': ('is_active', 'registration_open', 'abstract_submission_open'),
+            'fields': ('is_active', 'registration_open', 'abstract_submission_open', 'sponsor_link'),
             'description': 'Toggle these to open or close the conference, registration, and abstract submission.',
         }),
         ('Dates & Venue', {
@@ -208,8 +237,8 @@ class RegistrationCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
-    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'checked_in', 'registered_at']
-    list_filter = ['conference', 'payment_method', 'payment_status', 'category', 'checked_in']
+    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'is_sponsor', 'checked_in', 'registered_at']
+    list_filter = ['conference', 'is_sponsor', 'payment_method', 'payment_status', 'category', 'checked_in']
     search_fields = ['ticket_id', 'first_name', 'last_name', 'email', 'organization']
     list_editable = ['payment_status', 'checked_in']
     readonly_fields = ['ticket_id', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id']
@@ -227,7 +256,7 @@ class RegistrationAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('Payment', {
-            'fields': ('amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
+            'fields': ('is_sponsor', 'amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
         }),
         ('Check-in', {
             'fields': ('checked_in', 'checked_in_at')

@@ -7,7 +7,7 @@ from django.views.generic import TemplateView, FormView, DetailView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.conf import settings
@@ -21,7 +21,7 @@ from .models import (
     Exhibitor, ExhibitorPackage, ExhibitorShowcase, PaymentVerifier,
 )
 from .forms import (
-    AbstractSubmissionForm, RegistrationForm,
+    AbstractSubmissionForm, RegistrationForm, SponsorRegistrationForm,
     ExhibitorRegistrationForm, ExhibitorShowcaseForm,
 )
 from dashboard.paystack_service import PaystackService
@@ -248,6 +248,60 @@ class RegistrationView(FormView):
     def form_invalid(self, form):
         messages.error(self.request, "Please correct the errors below.")
         return super().form_invalid(form)
+
+
+class SponsorRegistrationView(RegistrationView):
+    """Private, fee-free registration for sponsors.
+
+    Reached only via /register/sponsor/<token>/ where the token matches the
+    active conference's ``sponsor_access_token`` — the link is emailed directly
+    to sponsors and is not linked anywhere public. No fees are shown and no
+    payment is taken; the registration is saved as a waived (complimentary)
+    sponsor registration and confirmed immediately.
+    """
+    template_name = 'conference/sponsor_registration.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        conference = self.get_conference()
+        if conference and str(kwargs.get('token')) != str(conference.sponsor_access_token):
+            raise Http404("Invalid sponsor registration link.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        return SponsorRegistrationForm(self.get_conference(), **self.get_form_kwargs())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_sponsor'] = True
+        return context
+
+    def form_valid(self, form):
+        conference = self.get_conference()
+        sponsor_url = reverse('conference:sponsor_register', args=[conference.sponsor_access_token])
+        if not conference.registration_open:
+            messages.error(self.request, "Registration is currently closed.")
+            return redirect(sponsor_url)
+
+        registration = form.save(commit=False)
+        registration.conference = conference
+        registration.is_sponsor = True
+        registration.amount = 0
+        registration.payment_status = 'waived'
+        registration.payment_date = timezone.now()
+        registration.save()
+
+        # Sponsors get the fee-free welcome email (not the payment receipt).
+        try:
+            from .emails import send_welcome
+            send_welcome(registration)
+        except Exception as exc:
+            logger.error("Failed to send sponsor welcome email for %s: %s",
+                         registration.ticket_id, exc, exc_info=True)
+
+        logger.info("Sponsor registration captured: %s (%s)",
+                    registration.ticket_id, registration.organization)
+        self.request.session['ticket_id'] = registration.ticket_id
+        return redirect('conference:registration_success')
 
 
 def payment_verify(request, ticket_id):

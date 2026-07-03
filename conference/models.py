@@ -42,6 +42,11 @@ class Conference(models.Model):
     contact_phone = models.CharField(max_length=30, blank=True)
     website_url = models.URLField(blank=True)
 
+    # Secret token embedded in the private sponsor registration link. Sponsors
+    # register through /register/sponsor/<token>/ where no fees are shown and no
+    # payment is taken. Reset this to invalidate any link already shared.
+    sponsor_access_token = models.UUIDField(default=uuid.uuid4, editable=False)
+
     is_active = models.BooleanField(default=True, help_text="The currently featured conference")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -295,6 +300,11 @@ class Registration(models.Model):
         ('manual', 'Bank Transfer'),
     ]
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_sponsor = models.BooleanField(
+        default=False,
+        help_text="Complimentary sponsor registration — captured via the private "
+                  "sponsor link, with no fee charged.",
+    )
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='paystack')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     paystack_reference = models.CharField(max_length=100, blank=True)

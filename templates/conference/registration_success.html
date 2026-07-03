@@ -23,7 +23,15 @@
 
 {% block content %}
 <div style="min-height:85vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f9f9f9;padding:4rem 1rem;">
-    {% if registration and registration.payment_method == 'manual' %}
+    {% if registration and registration.is_sponsor %}
+    <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#1B5E20,#4CAF50);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(46,125,50,0.35);">
+            <i class="bi bi-award-fill"></i>
+        </div>
+        <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;">Sponsor Registration Confirmed!</h2>
+        <p style="color:#666;margin-top:0.5rem;">Thank you for sponsoring AKILIMO International Conference 2026. A confirmation email has been sent to your inbox.</p>
+    </div>
+    {% elif registration and registration.payment_method == 'manual' %}
     <div style="text-align:center;margin-bottom:1.5rem;">
         <div style="width:80px;height:80px;background:linear-gradient(135deg,#e65100,#f9a825);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2.2rem;color:#fff;box-shadow:0 8px 24px rgba(249,168,37,0.35);">
             <i class="bi bi-bank"></i>
@@ -70,6 +78,14 @@
                 <span class="ticket-label">Category</span>
                 <span class="ticket-value">{{ registration.category.name }}</span>
             </div>
+            {% if registration.is_sponsor %}
+            <div class="ticket-row">
+                <span class="ticket-label">Registration</span>
+                <span class="ticket-value">
+                    <span style="background:#e8f5e9;color:#1B5E20;padding:0.2rem 0.6rem;border-radius:50px;font-size:0.78rem;">Complimentary — Sponsor</span>
+                </span>
+            </div>
+            {% else %}
             <div class="ticket-row">
                 <span class="ticket-label">Amount Due</span>
                 <span class="ticket-value" style="color:#1B5E20;">₦{{ registration.amount|floatformat:0|intcomma }}</span>
@@ -88,6 +104,7 @@
                 <span class="ticket-label">Payment Method</span>
                 <span class="ticket-value">{% if registration.payment_method == 'manual' %}Bank Transfer{% else %}Online (Paystack){% endif %}</span>
             </div>
+            {% endif %}
             {% if conference %}
             <div class="ticket-row">
                 <span class="ticket-label">Conference</span>
