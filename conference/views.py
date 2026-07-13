@@ -21,7 +21,7 @@ from .models import (
     Exhibitor, ExhibitorPackage, ExhibitorShowcase, PaymentVerifier,
 )
 from .forms import (
-    AbstractSubmissionForm, RegistrationForm, SponsorRegistrationForm,
+    AbstractSubmissionForm, RegistrationForm, StakeholderRegistrationForm,
     ExhibitorRegistrationForm, ExhibitorShowcaseForm,
 )
 from dashboard.paystack_service import PaystackService
@@ -250,55 +250,55 @@ class RegistrationView(FormView):
         return super().form_invalid(form)
 
 
-class SponsorRegistrationView(RegistrationView):
-    """Private, fee-free registration for sponsors.
+class StakeholderRegistrationView(RegistrationView):
+    """Private, fee-free registration for stakeholders.
 
-    Reached only via /register/sponsor/<token>/ where the token matches the
-    active conference's ``sponsor_access_token`` — the link is emailed directly
-    to sponsors and is not linked anywhere public. No fees are shown and no
-    payment is taken; the registration is saved as a waived (complimentary)
-    sponsor registration and confirmed immediately.
+    Reached only via /register/stakeholder/<token>/ where the token matches the
+    active conference's ``stakeholder_access_token`` — the link is emailed
+    directly to stakeholders and is not linked anywhere public. No fees are
+    shown and no payment is taken; the registration is saved as a waived
+    (complimentary) stakeholder registration and confirmed immediately.
     """
-    template_name = 'conference/sponsor_registration.html'
+    template_name = 'conference/stakeholder_registration.html'
 
     def dispatch(self, request, *args, **kwargs):
         conference = self.get_conference()
-        if conference and str(kwargs.get('token')) != str(conference.sponsor_access_token):
-            raise Http404("Invalid sponsor registration link.")
+        if conference and str(kwargs.get('token')) != str(conference.stakeholder_access_token):
+            raise Http404("Invalid stakeholder registration link.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
-        return SponsorRegistrationForm(self.get_conference(), **self.get_form_kwargs())
+        return StakeholderRegistrationForm(self.get_conference(), **self.get_form_kwargs())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['is_sponsor'] = True
+        context['is_stakeholder'] = True
         return context
 
     def form_valid(self, form):
         conference = self.get_conference()
-        sponsor_url = reverse('conference:sponsor_register', args=[conference.sponsor_access_token])
+        stakeholder_url = reverse('conference:stakeholder_register', args=[conference.stakeholder_access_token])
         if not conference.registration_open:
             messages.error(self.request, "Registration is currently closed.")
-            return redirect(sponsor_url)
+            return redirect(stakeholder_url)
 
         registration = form.save(commit=False)
         registration.conference = conference
-        registration.is_sponsor = True
+        registration.is_stakeholder = True
         registration.amount = 0
         registration.payment_status = 'waived'
         registration.payment_date = timezone.now()
         registration.save()
 
-        # Sponsors get the fee-free welcome email (not the payment receipt).
+        # Stakeholders get the fee-free welcome email (not the payment receipt).
         try:
             from .emails import send_welcome
             send_welcome(registration)
         except Exception as exc:
-            logger.error("Failed to send sponsor welcome email for %s: %s",
+            logger.error("Failed to send stakeholder welcome email for %s: %s",
                          registration.ticket_id, exc, exc_info=True)
 
-        logger.info("Sponsor registration captured: %s (%s)",
+        logger.info("Stakeholder registration captured: %s (%s)",
                     registration.ticket_id, registration.organization)
         self.request.session['ticket_id'] = registration.ticket_id
         return redirect('conference:registration_success')

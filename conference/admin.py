@@ -59,34 +59,34 @@ class ConferenceAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'registration_open', 'abstract_submission_open']
     search_fields = ['name', 'theme', 'city']
     list_editable = ['is_active', 'registration_open', 'abstract_submission_open']
-    readonly_fields = ['sponsor_link']
-    actions = ['reset_sponsor_link']
+    readonly_fields = ['stakeholder_link']
+    actions = ['reset_stakeholder_link']
 
-    def sponsor_link(self, obj):
+    def stakeholder_link(self, obj):
         if not obj.pk:
-            return "Save the conference first to generate the sponsor link."
+            return "Save the conference first to generate the stakeholder link."
         from django.urls import reverse
-        url = reverse('conference:sponsor_register', args=[obj.sponsor_access_token])
+        url = reverse('conference:stakeholder_register', args=[obj.stakeholder_access_token])
         return format_html(
             '<a href="{0}" target="_blank">{0}</a>'
             '<p style="color:#888;margin-top:6px;">Private, fee-free registration link. '
-            'Email it directly to sponsors — it is not linked anywhere public. '
-            'Use the “Reset sponsor registration link” action to invalidate it.</p>',
+            'Email it directly to stakeholders — it is not linked anywhere public. '
+            'Use the “Reset stakeholder registration link” action to invalidate it.</p>',
             url,
         )
-    sponsor_link.short_description = "Sponsor registration link"
+    stakeholder_link.short_description = "Stakeholder registration link"
 
-    def reset_sponsor_link(self, request, queryset):
+    def reset_stakeholder_link(self, request, queryset):
         import uuid
         for conference in queryset:
-            conference.sponsor_access_token = uuid.uuid4()
-            conference.save(update_fields=['sponsor_access_token'])
+            conference.stakeholder_access_token = uuid.uuid4()
+            conference.save(update_fields=['stakeholder_access_token'])
         self.message_user(
             request,
-            f"Sponsor registration link reset for {queryset.count()} conference(s). "
+            f"Stakeholder registration link reset for {queryset.count()} conference(s). "
             "Any previously shared link no longer works.",
         )
-    reset_sponsor_link.short_description = "Reset sponsor registration link"
+    reset_stakeholder_link.short_description = "Reset stakeholder registration link"
 
     fieldsets = (
         ('Basic Info', {
@@ -94,7 +94,7 @@ class ConferenceAdmin(admin.ModelAdmin):
             'description': 'Core identity of the conference.',
         }),
         ('Status & Registration', {
-            'fields': ('is_active', 'registration_open', 'abstract_submission_open', 'sponsor_link'),
+            'fields': ('is_active', 'registration_open', 'abstract_submission_open', 'stakeholder_link'),
             'description': 'Toggle these to open or close the conference, registration, and abstract submission.',
         }),
         ('Dates & Venue', {
@@ -237,8 +237,8 @@ class RegistrationCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
-    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'is_sponsor', 'checked_in', 'registered_at']
-    list_filter = ['conference', 'is_sponsor', 'payment_method', 'payment_status', 'category', 'checked_in']
+    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'is_stakeholder', 'checked_in', 'registered_at']
+    list_filter = ['conference', 'is_stakeholder', 'payment_method', 'payment_status', 'category', 'checked_in']
     search_fields = ['ticket_id', 'first_name', 'last_name', 'email', 'organization']
     list_editable = ['payment_status', 'checked_in']
     readonly_fields = ['ticket_id', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id']
@@ -256,7 +256,7 @@ class RegistrationAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('Payment', {
-            'fields': ('is_sponsor', 'amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
+            'fields': ('is_stakeholder', 'amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
         }),
         ('Check-in', {
             'fields': ('checked_in', 'checked_in_at')

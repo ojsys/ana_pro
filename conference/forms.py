@@ -95,11 +95,11 @@ class RegistrationForm(forms.ModelForm):
         return email
 
 
-class SponsorRegistrationForm(RegistrationForm):
-    """Registration form for sponsors, sent a private link.
+class StakeholderRegistrationForm(RegistrationForm):
+    """Registration form for stakeholders, sent a private link.
 
     Identical to :class:`RegistrationForm` except there is no payment method —
-    sponsor registrations are complimentary, so no fee is shown or charged.
+    stakeholder registrations are complimentary, so no fee is shown or charged.
     """
     class Meta(RegistrationForm.Meta):
         fields = [
