@@ -8,6 +8,10 @@ urlpatterns = [
     path('speakers/', views.SpeakersView.as_view(), name='speakers'),
     path('abstract/submit/', views.AbstractSubmissionView.as_view(), name='abstract_submit'),
     path('abstract/submitted/', views.AbstractSuccessView.as_view(), name='abstract_success'),
+    # Staff-only abstract review
+    path('staff/abstracts/', views.abstract_list, name='abstract_list'),
+    path('staff/abstracts/<int:pk>/', views.abstract_detail, name='abstract_detail'),
+    path('staff/abstracts/<int:pk>/download/', views.abstract_download, name='abstract_download'),
     path('register/', views.RegistrationView.as_view(), name='register'),
     path('register/stakeholder/<uuid:token>/', views.StakeholderRegistrationView.as_view(), name='stakeholder_register'),
     path('register/success/', views.RegistrationSuccessView.as_view(), name='registration_success'),

@@ -244,6 +244,9 @@
                 <li class="nav-item"><a class="nav-link {% block nav_program %}{% endblock %}" href="{% url 'conference:program' %}">Programme</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_exhibitors %}{% endblock %}" href="{% url 'conference:exhibitors' %}">Exhibitors</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_abstract %}{% endblock %}" href="{% url 'conference:abstract_submit' %}">Submit Abstract</a></li>
+                {% if request.user.is_staff %}
+                <li class="nav-item"><a class="nav-link {% block nav_abstract_review %}{% endblock %}" href="{% url 'conference:abstract_list' %}"><i class="bi bi-shield-lock me-1"></i>Abstracts</a></li>
+                {% endif %}
                 <li class="nav-item ms-lg-2">
                     <a class="nav-link btn-register-nav" href="{% url 'conference:register' %}">
                         <i class="bi bi-ticket-perforated-fill me-1"></i> Register

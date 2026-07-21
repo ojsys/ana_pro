@@ -7,7 +7,7 @@ from django.views.generic import TemplateView, FormView, DetailView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse, FileResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.conf import settings
@@ -16,9 +16,10 @@ from django.core import signing
 from django.core.paginator import Paginator
 
 from .models import (
-    Conference, Speaker, AbstractSubmission, RegistrationCategory,
-    Registration, ProgramDay, Sponsor, KeyMessage, ContentBlock,
-    Exhibitor, ExhibitorPackage, ExhibitorShowcase, PaymentVerifier,
+    Conference, Speaker, AbstractSubmission, AbstractThematicArea,
+    RegistrationCategory, Registration, ProgramDay, Sponsor, KeyMessage,
+    ContentBlock, Exhibitor, ExhibitorPackage, ExhibitorShowcase,
+    PaymentVerifier,
 )
 from .forms import (
     AbstractSubmissionForm, RegistrationForm, StakeholderRegistrationForm,
@@ -808,6 +809,158 @@ def payment_verification(request):
         'unconfirmed_total': paginator.count,
     })
     return render(request, 'conference/payment_verification.html', context)
+
+
+# ─── Abstract review (staff only) ─────────────────────────────────────────────
+
+import csv
+
+
+@staff_member_required
+def abstract_list(request):
+    """
+    Staff-only listing of submitted abstracts for the active conference.
+
+    Supports searching and filtering by status, thematic area and
+    presentation format, plus a CSV export of the current selection.
+    Only accounts with ``is_staff`` (or superusers) can reach this page —
+    ``staff_member_required`` sends everyone else to the admin login.
+    """
+    conference = get_active_conference()
+
+    abstracts = (
+        AbstractSubmission.objects
+        .filter(conference=conference)
+        .select_related('thematic_area')
+    ) if conference else AbstractSubmission.objects.none()
+
+    # ── Filters ────────────────────────────────────────────────────────────────
+    query = (request.GET.get('q') or '').strip()
+    status = (request.GET.get('status') or '').strip()
+    thematic_area = (request.GET.get('thematic_area') or '').strip()
+    fmt = (request.GET.get('format') or '').strip()
+
+    if query:
+        from django.db.models import Q
+        abstracts = abstracts.filter(
+            Q(title__icontains=query) |
+            Q(author_name__icontains=query) |
+            Q(co_authors__icontains=query) |
+            Q(institution__icontains=query) |
+            Q(reference_number__icontains=query) |
+            Q(email__icontains=query) |
+            Q(keywords__icontains=query)
+        )
+    if status:
+        abstracts = abstracts.filter(status=status)
+    if thematic_area:
+        abstracts = abstracts.filter(thematic_area_id=thematic_area)
+    if fmt:
+        abstracts = abstracts.filter(presentation_format=fmt)
+
+    # ── CSV export (respects the active filters) ───────────────────────────────
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        stamp = timezone.now().strftime('%Y%m%d')
+        response['Content-Disposition'] = f'attachment; filename="abstracts_{stamp}.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            'Reference', 'Title', 'Presenting Author', 'Co-Authors',
+            'Institution', 'Email', 'Phone', 'Thematic Area', 'Keywords',
+            'Format', 'Status', 'Score', 'Word Count', 'Has File',
+            'Submitted At',
+        ])
+        for a in abstracts:
+            writer.writerow([
+                a.reference_number, a.title, a.author_name, a.co_authors,
+                a.institution, a.email, a.phone,
+                a.thematic_area.name if a.thematic_area else '',
+                a.keywords, a.get_presentation_format_display(),
+                a.get_status_display(), a.score if a.score is not None else '',
+                a.word_count(), 'Yes' if a.abstract_file else 'No',
+                a.submitted_at.strftime('%Y-%m-%d %H:%M'),
+            ])
+        return response
+
+    # ── Counts by status (for the summary chips) ───────────────────────────────
+    from django.db.models import Count
+    base_qs = (
+        AbstractSubmission.objects.filter(conference=conference)
+        if conference else AbstractSubmission.objects.none()
+    )
+    counts_by_status = {
+        row['status']: row['count']
+        for row in base_qs.values('status').annotate(count=Count('id'))
+    }
+    status_summary = [
+        {'value': value, 'label': label, 'count': counts_by_status.get(value, 0)}
+        for value, label in AbstractSubmission.STATUS_CHOICES
+    ]
+
+    paginator = Paginator(abstracts, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Preserve filters across pagination links
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+
+    context = {
+        'conference': conference,
+        'page_obj': page_obj,
+        'total': paginator.count,
+        'status_summary': status_summary,
+        'status_choices': AbstractSubmission.STATUS_CHOICES,
+        'format_choices': AbstractSubmission.PRESENTATION_FORMAT_CHOICES,
+        'thematic_areas': AbstractThematicArea.objects.all(),
+        'query': query,
+        'sel_status': status,
+        'sel_thematic_area': thematic_area,
+        'sel_format': fmt,
+        'querystring': querystring,
+    }
+    return render(request, 'conference/abstract_list.html', context)
+
+
+@staff_member_required
+def abstract_detail(request, pk):
+    """Staff-only full view of a single submitted abstract."""
+    abstract = get_object_or_404(
+        AbstractSubmission.objects.select_related('thematic_area', 'conference'),
+        pk=pk,
+    )
+    return render(request, 'conference/abstract_detail.html', {
+        'conference': abstract.conference,
+        'abstract': abstract,
+    })
+
+
+@staff_member_required
+def abstract_download(request, pk):
+    """
+    Staff-only download of an abstract's uploaded file.
+
+    Serving through this view (rather than linking the raw media URL) keeps
+    the files behind the ``is_staff`` gate and forces an attachment download.
+    """
+    abstract = get_object_or_404(AbstractSubmission, pk=pk)
+    if not abstract.abstract_file:
+        raise Http404("This abstract has no uploaded file.")
+
+    import os
+    filename = os.path.basename(abstract.abstract_file.name)
+    # Give the download a meaningful name based on the reference number,
+    # keeping the original extension.
+    ext = os.path.splitext(filename)[1]
+    download_name = f"{abstract.reference_number}{ext}" if abstract.reference_number else filename
+    try:
+        return FileResponse(
+            abstract.abstract_file.open('rb'),
+            as_attachment=True,
+            filename=download_name,
+        )
+    except FileNotFoundError:
+        raise Http404("The file for this abstract is missing from storage.")
 
 
 # ─── Frontend content editor (staff only) ─────────────────────────────────────

@@ -1,0 +1,181 @@
+{% extends 'conference/base.html' %}
+{% load humanize %}
+{% block title %}Submitted Abstracts — Staff{% endblock %}
+{% block nav_abstract_review %}active{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:3rem 0 2.5rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.6rem,3vw,2.2rem); }
+.stat-chip { background:#fff;border:1px solid #eee;border-radius:12px;padding:0.75rem 1.1rem;display:flex;flex-direction:column;min-width:110px; }
+.stat-chip .n { font-family:'Poppins',sans-serif;font-weight:800;font-size:1.5rem;color:var(--conf-green);line-height:1; }
+.stat-chip .l { font-size:0.72rem;color:#777;text-transform:uppercase;letter-spacing:1px;margin-top:0.25rem; }
+.filter-bar { background:#fff;border:1px solid #eee;border-radius:14px;padding:1.25rem; }
+.abs-table { background:#fff;border-radius:14px;overflow:hidden;border:1px solid #eee; }
+.abs-table table { margin:0; }
+.abs-table thead th { background:var(--conf-surface);color:var(--conf-green);font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;border:none;padding:0.9rem 1rem;white-space:nowrap; }
+.abs-table td { padding:0.9rem 1rem;vertical-align:middle;font-size:0.88rem;border-color:#f2f2f2; }
+.abs-ref { font-family:'Poppins',sans-serif;font-weight:700;color:var(--conf-green);font-size:0.8rem; }
+.abs-title { font-weight:600;color:#222;display:block;max-width:340px; }
+.abs-title:hover { color:var(--conf-green); }
+.badge-status { font-size:0.7rem;font-weight:600;padding:0.3rem 0.6rem;border-radius:50px;text-transform:capitalize; }
+.st-pending { background:#FFF3E0;color:#E65100; }
+.st-under_review { background:#E3F2FD;color:#1565C0; }
+.st-revision_required { background:#FCE4EC;color:#AD1457; }
+.st-accepted { background:#E8F5E9;color:#2E7D32; }
+.st-rejected { background:#FFEBEE;color:#C62828; }
+.btn-ghost { border:1px solid #ddd;background:#fff;color:#444;padding:0.35rem 0.7rem;border-radius:8px;font-size:0.78rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem; }
+.btn-ghost:hover { border-color:var(--conf-green-light);color:var(--conf-green); }
+.btn-gold { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.83rem; }
+.btn-gold:hover { opacity:0.92;color:#fff; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem;">
+            <i class="bi bi-shield-lock me-1"></i> Staff — Abstract Review
+        </div>
+        <h1>Submitted Abstracts</h1>
+        <p style="color:rgba(255,255,255,0.65);margin-top:0.4rem;font-size:0.92rem;">
+            {% if conference %}{{ conference.name }}{% else %}No active conference{% endif %} · {{ total }} submission{{ total|pluralize }}
+        </p>
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:2.5rem 0;min-height:60vh;">
+    <div class="container">
+
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-3">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Summary chips -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <div class="stat-chip"><span class="n">{{ total }}</span><span class="l">Total</span></div>
+            {% for s in status_summary %}
+            <div class="stat-chip"><span class="n">{{ s.count }}</span><span class="l">{{ s.label }}</span></div>
+            {% endfor %}
+        </div>
+
+        <!-- Filters -->
+        <form method="get" class="filter-bar mb-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label small text-muted mb-1">Search</label>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Title, author, institution, reference, keyword…">
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label small text-muted mb-1">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if sel_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-3 col-6">
+                    <label class="form-label small text-muted mb-1">Thematic Area</label>
+                    <select name="thematic_area" class="form-select">
+                        <option value="">All</option>
+                        {% for area in thematic_areas %}
+                        <option value="{{ area.id }}" {% if sel_thematic_area == area.id|stringformat:'s' %}selected{% endif %}>{{ area.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label small text-muted mb-1">Format</label>
+                    <select name="format" class="form-select">
+                        <option value="">All</option>
+                        {% for value, label in format_choices %}
+                        <option value="{{ value }}" {% if sel_format == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-3 col-6 d-grid">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-funnel"></i></button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <a href="{% url 'conference:abstract_list' %}" class="small text-muted text-decoration-none"><i class="bi bi-x-circle me-1"></i>Clear filters</a>
+                <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=csv" class="btn-gold"><i class="bi bi-download me-1"></i>Export CSV</a>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="abs-table">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Thematic Area</th>
+                            <th>Format</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in page_obj %}
+                        <tr>
+                            <td><span class="abs-ref">{{ a.reference_number }}</span></td>
+                            <td>
+                                <a href="{% url 'conference:abstract_detail' a.pk %}" class="abs-title text-decoration-none">{{ a.title }}</a>
+                                <span class="small text-muted">{{ a.word_count }} words{% if a.abstract_file %} · <i class="bi bi-paperclip"></i> file{% endif %}</span>
+                            </td>
+                            <td>
+                                {{ a.author_name }}<br>
+                                <span class="small text-muted">{{ a.institution|truncatechars:40 }}</span>
+                            </td>
+                            <td class="small">{{ a.thematic_area.name|default:"—" }}</td>
+                            <td class="small">{{ a.get_presentation_format_display }}</td>
+                            <td><span class="badge-status st-{{ a.status }}">{{ a.get_status_display }}</span></td>
+                            <td class="small text-muted">{{ a.submitted_at|date:"j M Y" }}</td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <a href="{% url 'conference:abstract_detail' a.pk %}" class="btn-ghost"><i class="bi bi-eye"></i> View</a>
+                                    {% if a.abstract_file %}
+                                    <a href="{% url 'conference:abstract_download' a.pk %}" class="btn-ghost"><i class="bi bi-download"></i></a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox" style="font-size:2rem;opacity:0.4;"></i>
+                                <p class="mb-0 mt-2">No abstracts match your filters.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
