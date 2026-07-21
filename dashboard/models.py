@@ -156,7 +156,7 @@ class UserProfile(models.Model):
     
     # Preferences
     email_notifications = models.BooleanField(default=True)
-    dashboard_preferences = models.JSONField(default=dict, help_text="User dashboard preferences")
+    dashboard_preferences = models.JSONField(default=dict, blank=True, help_text="User dashboard preferences")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
