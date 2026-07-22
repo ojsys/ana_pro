@@ -599,6 +599,30 @@ class PaymentVerifier(models.Model):
         return self.name or self.email
 
 
+class AbstractReviewer(models.Model):
+    """A non-staff person allowed to view the Abstract Review page.
+
+    Admins add an email here as an exception; on saving, that address is
+    emailed a time-limited magic link that opens the abstracts listing.
+    Untick ``is_active`` to revoke access immediately — any outstanding link
+    and any active session for that email stops working.
+    """
+    name = models.CharField(max_length=200, blank=True, help_text="For your own reference")
+    email = models.EmailField(unique=True, help_text="The access link is sent here, and only this inbox can sign in")
+    is_active = models.BooleanField(default=True, help_text="Untick to immediately revoke access")
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    link_sent_at = models.DateTimeField(null=True, blank=True, help_text="When the most recent access link was emailed")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'email']
+        verbose_name = "Abstract Reviewer"
+        verbose_name_plural = "Abstract Reviewers"
+
+    def __str__(self):
+        return self.name or self.email
+
+
 class ContentBlock(models.Model):
     """Stores inline-editable text blocks for frontend editing."""
     key = models.CharField(max_length=200, unique=True, db_index=True)

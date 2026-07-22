@@ -142,6 +142,56 @@ def send_verifier_magic_link(verifier, login_url, conference=None):
     return sent
 
 
+def send_abstract_reviewer_magic_link(reviewer, login_url, conference=None):
+    """Email an abstract reviewer a time-limited sign-in link that opens the
+    Abstract Review page."""
+    name = reviewer.name or "there"
+    org = conference.name if conference else "the conference"
+    subject = (
+        f"Abstract review access — {conference.name}"
+        if conference else "Abstract review access link"
+    )
+    text_body = (
+        f"Hi {name},\n\n"
+        f"You've been granted access to view the submitted abstracts for {org}.\n"
+        f"Use the link below to open the Abstract Review page.\n"
+        f"This link expires in 2 hours and only works while your access is active.\n\n"
+        f"{login_url}\n\n"
+        f"If you didn't expect this, you can safely ignore this email.\n"
+    )
+    html_body = (
+        '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#222;">'
+        '<h2 style="color:#1B5E20;">Abstract Review Access</h2>'
+        f'<p>Hi {name},</p>'
+        f'<p>You\'ve been granted access to view the submitted abstracts for '
+        f'<strong>{org}</strong>. Use the button below to open the Abstract Review page. '
+        f'This link expires in <strong>2 hours</strong> and only works while your access is active.</p>'
+        '<p style="text-align:center;margin:2rem 0;">'
+        f'<a href="{login_url}" style="background:#1B5E20;color:#fff;text-decoration:none;'
+        'padding:0.85rem 1.75rem;border-radius:10px;font-weight:bold;display:inline-block;">'
+        'Open Abstract Review</a></p>'
+        '<p style="color:#888;font-size:0.85rem;">If the button doesn\'t work, copy and paste this link:<br>'
+        f'<a href="{login_url}">{login_url}</a></p>'
+        '<p style="color:#888;font-size:0.85rem;">If you didn\'t expect this, you can safely ignore this email.</p>'
+        '</div>'
+    )
+    message = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[reviewer.email],
+        reply_to=[conference.contact_email] if conference and conference.contact_email else None,
+    )
+    message.attach_alternative(html_body, "text/html")
+    try:
+        sent = message.send(fail_silently=False)
+    except Exception as exc:
+        logger.error("Email FAILED [abstract-reviewer-link] to=%s — %s", reviewer.email, exc)
+        raise
+    logger.info("Email sent [abstract-reviewer-link] to=%s (accepted=%s)", reviewer.email, sent)
+    return sent
+
+
 def send_registration_confirmation(registration):
     """
     Send the payment receipt and the welcome email for a confirmed

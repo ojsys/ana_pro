@@ -8,10 +8,13 @@ urlpatterns = [
     path('speakers/', views.SpeakersView.as_view(), name='speakers'),
     path('abstract/submit/', views.AbstractSubmissionView.as_view(), name='abstract_submit'),
     path('abstract/submitted/', views.AbstractSuccessView.as_view(), name='abstract_success'),
-    # Staff-only abstract review
+    # Abstract review (staff + allowlisted email exceptions via magic link)
     path('staff/abstracts/', views.abstract_list, name='abstract_list'),
     path('staff/abstracts/<int:pk>/', views.abstract_detail, name='abstract_detail'),
     path('staff/abstracts/<int:pk>/download/', views.abstract_download, name='abstract_download'),
+    path('abstracts/access/', views.abstract_access, name='abstract_access'),
+    path('abstracts/access/login/<str:token>/', views.abstract_reviewer_login, name='abstract_reviewer_login'),
+    path('abstracts/access/logout/', views.abstract_reviewer_logout, name='abstract_reviewer_logout'),
     path('register/', views.RegistrationView.as_view(), name='register'),
     path('register/stakeholder/<uuid:token>/', views.StakeholderRegistrationView.as_view(), name='stakeholder_register'),
     path('register/success/', views.RegistrationSuccessView.as_view(), name='registration_success'),

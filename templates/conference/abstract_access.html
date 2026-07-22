@@ -1,0 +1,55 @@
+{% extends 'conference/base.html' %}
+{% block title %}Abstract Review Access{% endblock %}
+
+{% block extra_css %}
+.page-hero { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:3rem 0 2.5rem; }
+.page-hero h1 { font-family:'Poppins',sans-serif;font-weight:800;color:#fff;font-size:clamp(1.6rem,3vw,2.2rem); }
+.access-card { background:#fff;border:1px solid #eee;border-radius:16px;padding:2rem;max-width:520px;margin:0 auto; }
+.btn-gold { background:linear-gradient(135deg,var(--conf-gold-dark),var(--conf-gold));color:#fff;border:none;padding:0.7rem 1.4rem;border-radius:50px;font-weight:700;font-size:0.9rem; }
+.btn-gold:hover { opacity:0.92;color:#fff; }
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <div style="font-size:0.72rem;color:var(--conf-gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem;">
+            <i class="bi bi-shield-lock me-1"></i> Restricted — Abstract Review
+        </div>
+        <h1>Abstract Review Access</h1>
+    </div>
+</section>
+
+<div style="background:#f9f9f9;padding:3rem 0;min-height:55vh;">
+    <div class="container">
+        {% if messages %}
+            <div style="max-width:520px;margin:0 auto 1.25rem;">
+            {% for msg in messages %}
+            <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} rounded-3 mb-2">{{ msg }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="access-card">
+            <p class="text-muted" style="font-size:0.92rem;line-height:1.7;">
+                This page is for staff and approved reviewers only. If an administrator has added
+                your email to the reviewer list, enter it below and we'll email you a fresh
+                sign-in link (valid for 2 hours).
+            </p>
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="request_access">
+                <label class="form-label small text-muted mb-1">Your email address</label>
+                <div class="input-group">
+                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+                    <button type="submit" class="btn-gold"><i class="bi bi-envelope me-1"></i>Send link</button>
+                </div>
+            </form>
+            <hr class="my-4">
+            <p class="small text-muted mb-0">
+                Staff can also sign in through the
+                <a href="/admin/login/?next={% url 'conference:abstract_list' %}">admin login</a>.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

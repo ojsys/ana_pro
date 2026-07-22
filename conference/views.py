@@ -19,7 +19,7 @@ from .models import (
     Conference, Speaker, AbstractSubmission, AbstractThematicArea,
     RegistrationCategory, Registration, ProgramDay, Sponsor, KeyMessage,
     ContentBlock, Exhibitor, ExhibitorPackage, ExhibitorShowcase,
-    PaymentVerifier,
+    PaymentVerifier, AbstractReviewer,
 )
 from .forms import (
     AbstractSubmissionForm, RegistrationForm, StakeholderRegistrationForm,
@@ -811,20 +811,67 @@ def payment_verification(request):
     return render(request, 'conference/payment_verification.html', context)
 
 
-# ─── Abstract review (staff only) ─────────────────────────────────────────────
+# ─── Abstract review (staff + email exceptions) ───────────────────────────────
 
 import csv
+from functools import wraps
+
+# Magic-link access for non-staff reviewers on the allowlist (AbstractReviewer).
+AR_SALT = 'conference.abstract_review.magic-link'
+AR_MAX_AGE = 60 * 60 * 2  # links valid for 2 hours
+AR_SESSION_KEY = 'ar_reviewer_email'
 
 
-@staff_member_required
+def _active_abstract_reviewer_email(request):
+    """Return the session's reviewer email if it still maps to an active
+    AbstractReviewer, else None (so revoking access ends the session too)."""
+    email = request.session.get(AR_SESSION_KEY)
+    if email and AbstractReviewer.objects.filter(email__iexact=email, is_active=True).exists():
+        return email
+    return None
+
+
+def _can_view_abstracts(request):
+    """Staff/superusers always qualify; otherwise an allowlisted reviewer with
+    an active magic-link session does."""
+    user = request.user
+    if user.is_authenticated and (user.is_staff or user.is_superuser):
+        return True
+    return _active_abstract_reviewer_email(request) is not None
+
+
+def issue_abstract_reviewer_link(request, reviewer):
+    """Build a signed magic link for a reviewer and email it. Records when the
+    link was sent. Raises on mail failure so callers can report it."""
+    from .emails import send_abstract_reviewer_magic_link
+    token = signing.dumps(reviewer.email, salt=AR_SALT)
+    login_url = request.build_absolute_uri(
+        reverse('conference:abstract_reviewer_login', args=[token])
+    )
+    send_abstract_reviewer_magic_link(reviewer, login_url, get_active_conference())
+    AbstractReviewer.objects.filter(pk=reviewer.pk).update(link_sent_at=timezone.now())
+
+
+def abstract_access_required(view_func):
+    """Allow staff or an allowlisted reviewer; otherwise send them to the
+    access page where they can request a fresh sign-in link."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if _can_view_abstracts(request):
+            return view_func(request, *args, **kwargs)
+        return redirect('conference:abstract_access')
+    return wrapper
+
+
+@abstract_access_required
 def abstract_list(request):
     """
-    Staff-only listing of submitted abstracts for the active conference.
+    Listing of submitted abstracts for the active conference.
 
-    Supports searching and filtering by status, thematic area and
-    presentation format, plus a CSV export of the current selection.
-    Only accounts with ``is_staff`` (or superusers) can reach this page —
-    ``staff_member_required`` sends everyone else to the admin login.
+    Open to staff/superusers and to allowlisted reviewers (AbstractReviewer)
+    who signed in via an emailed magic link. Supports searching and filtering
+    by status, thematic area and presentation format, plus a CSV export of the
+    current selection.
     """
     conference = get_active_conference()
 
@@ -918,11 +965,12 @@ def abstract_list(request):
         'sel_thematic_area': thematic_area,
         'sel_format': fmt,
         'querystring': querystring,
+        'reviewer_email': _active_abstract_reviewer_email(request),
     }
     return render(request, 'conference/abstract_list.html', context)
 
 
-@staff_member_required
+@abstract_access_required
 def abstract_detail(request, pk):
     """Staff-only full view of a single submitted abstract."""
     abstract = get_object_or_404(
@@ -935,7 +983,7 @@ def abstract_detail(request, pk):
     })
 
 
-@staff_member_required
+@abstract_access_required
 def abstract_download(request, pk):
     """
     Staff-only download of an abstract's uploaded file.
@@ -961,6 +1009,87 @@ def abstract_download(request, pk):
         )
     except FileNotFoundError:
         raise Http404("The file for this abstract is missing from storage.")
+
+
+def abstract_access(request):
+    """Landing/gate for the Abstract Review page.
+
+    Staff and signed-in reviewers are sent straight through. Everyone else
+    sees a page where an allowlisted reviewer can request a fresh sign-in
+    link (useful when a link has expired).
+    """
+    if _can_view_abstracts(request):
+        return redirect('conference:abstract_list')
+
+    conference = get_active_conference()
+
+    if request.method == 'POST' and request.POST.get('action') == 'request_access':
+        email = (request.POST.get('email') or '').strip()
+        reviewer = AbstractReviewer.objects.filter(email__iexact=email).first()
+        if not reviewer:
+            messages.error(
+                request,
+                f"“{email}” is not on the abstract-review access list. "
+                "Ask an administrator to add it under Abstract Reviewers.",
+            )
+            return redirect('conference:abstract_access')
+        if not reviewer.is_active:
+            messages.error(
+                request,
+                f"Access for “{email}” has been deactivated. "
+                "Ask an administrator to re-activate it.",
+            )
+            return redirect('conference:abstract_access')
+        try:
+            issue_abstract_reviewer_link(request, reviewer)
+        except Exception as exc:
+            logger.error("Failed to send abstract reviewer link to %s: %s", email, exc, exc_info=True)
+            messages.error(
+                request,
+                "We couldn't send the sign-in link due to a mail server error. "
+                "Please try again, or contact the site administrator.",
+            )
+            return redirect('conference:abstract_access')
+        messages.success(
+            request,
+            f"A sign-in link has been sent to {reviewer.email}. "
+            "It expires in 2 hours — check your inbox (and spam folder).",
+        )
+        return redirect('conference:abstract_access')
+
+    return render(request, 'conference/abstract_access.html', {
+        'conference': conference,
+    })
+
+
+def abstract_reviewer_login(request, token):
+    """Consume a magic link: validate the signed token and grant a session."""
+    try:
+        email = signing.loads(token, salt=AR_SALT, max_age=AR_MAX_AGE)
+    except signing.SignatureExpired:
+        messages.error(request, "That access link has expired. Please request a new one.")
+        return redirect('conference:abstract_access')
+    except signing.BadSignature:
+        messages.error(request, "That access link is invalid.")
+        return redirect('conference:abstract_access')
+
+    reviewer = AbstractReviewer.objects.filter(email__iexact=email, is_active=True).first()
+    if not reviewer:
+        messages.error(request, "Access for this email is no longer active.")
+        return redirect('conference:abstract_access')
+
+    request.session[AR_SESSION_KEY] = reviewer.email
+    AbstractReviewer.objects.filter(pk=reviewer.pk).update(last_login_at=timezone.now())
+    messages.success(request, f"Welcome, {reviewer.name or reviewer.email}. You can now view the submitted abstracts.")
+    return redirect('conference:abstract_list')
+
+
+@require_POST
+def abstract_reviewer_logout(request):
+    """End a reviewer's session."""
+    request.session.pop(AR_SESSION_KEY, None)
+    messages.info(request, "You have been signed out of Abstract Review.")
+    return redirect('conference:abstract_access')
 
 
 # ─── Frontend content editor (staff only) ─────────────────────────────────────

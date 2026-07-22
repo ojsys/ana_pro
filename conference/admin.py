@@ -7,7 +7,7 @@ from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
     KeyMessage, ContentBlock, LOCMember, ExhibitorPackage, Exhibitor,
-    ExhibitorShowcase, PaymentVerifier,
+    ExhibitorShowcase, PaymentVerifier, AbstractReviewer,
 )
 
 # Standard rich-text toolbar used across conference admin forms
@@ -517,6 +517,62 @@ class PaymentVerifierAdmin(admin.ModelAdmin):
             'fields': ('last_login_at', 'created_at'),
         }),
     )
+
+
+@admin.register(AbstractReviewer)
+class AbstractReviewerAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'is_active', 'link_sent_at', 'last_login_at', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'email']
+    list_editable = ['is_active']
+    readonly_fields = ['link_sent_at', 'last_login_at', 'created_at']
+    actions = ['resend_access_link']
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'email', 'is_active'),
+            'description': (
+                'People listed here can view the Abstract Review page without being staff. '
+                'When you add an active email and save, an access link is emailed to it '
+                'automatically. They click the link to open the abstracts page (the link '
+                'expires in 2 hours). Use the "Resend access link" action to send a fresh '
+                'link, or untick "is active" to revoke access immediately.'
+            ),
+        }),
+        ('Activity', {
+            'fields': ('link_sent_at', 'last_login_at', 'created_at'),
+        }),
+    )
+
+    def _send_link(self, request, reviewer):
+        """Send a magic link to one reviewer; report success/failure via messages.
+        Returns True on success."""
+        from .views import issue_abstract_reviewer_link
+        if not reviewer.is_active:
+            messages.warning(
+                request,
+                f"Skipped {reviewer.email}: access is deactivated (tick “is active” first).",
+            )
+            return False
+        try:
+            issue_abstract_reviewer_link(request, reviewer)
+        except Exception as exc:
+            messages.error(request, f"Could not email {reviewer.email}: {exc}")
+            return False
+        messages.success(request, f"Access link sent to {reviewer.email}.")
+        return True
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        # Email an access link when a reviewer is first added (or when an
+        # existing entry is (re)activated and has never received one).
+        newly_active = 'is_active' in form.changed_data and obj.is_active
+        if obj.is_active and (not change or newly_active) and not obj.link_sent_at:
+            self._send_link(request, obj)
+
+    @admin.action(description="Resend access link")
+    def resend_access_link(self, request, queryset):
+        for reviewer in queryset:
+            self._send_link(request, reviewer)
 
 
 @admin.register(ContentBlock)
