@@ -816,9 +816,9 @@ def payment_verification(request):
 import csv
 from functools import wraps
 
-# Magic-link access for non-staff reviewers on the allowlist (AbstractReviewer).
-AR_SALT = 'conference.abstract_review.magic-link'
-AR_MAX_AGE = 60 * 60 * 2  # links valid for 2 hours
+# Permanent per-reviewer access links for non-staff reviewers on the allowlist
+# (AbstractReviewer). The link embeds the reviewer's stable access_token and
+# keeps working as long as the reviewer stays active.
 AR_SESSION_KEY = 'ar_reviewer_email'
 
 
@@ -840,14 +840,18 @@ def _can_view_abstracts(request):
     return _active_abstract_reviewer_email(request) is not None
 
 
-def issue_abstract_reviewer_link(request, reviewer):
-    """Build a signed magic link for a reviewer and email it. Records when the
-    link was sent. Raises on mail failure so callers can report it."""
-    from .emails import send_abstract_reviewer_magic_link
-    token = signing.dumps(reviewer.email, salt=AR_SALT)
-    login_url = request.build_absolute_uri(
-        reverse('conference:abstract_reviewer_login', args=[token])
+def abstract_reviewer_access_url(request, reviewer):
+    """Absolute, permanent access URL for a reviewer (embeds their token)."""
+    return request.build_absolute_uri(
+        reverse('conference:abstract_reviewer_login', args=[str(reviewer.access_token)])
     )
+
+
+def issue_abstract_reviewer_link(request, reviewer):
+    """Email a reviewer their permanent access link. Records when it was sent.
+    Raises on mail failure so callers can report it."""
+    from .emails import send_abstract_reviewer_magic_link
+    login_url = abstract_reviewer_access_url(request, reviewer)
     send_abstract_reviewer_magic_link(reviewer, login_url, get_active_conference())
     AbstractReviewer.objects.filter(pk=reviewer.pk).update(link_sent_at=timezone.now())
 
@@ -1052,8 +1056,8 @@ def abstract_access(request):
             return redirect('conference:abstract_access')
         messages.success(
             request,
-            f"A sign-in link has been sent to {reviewer.email}. "
-            "It expires in 2 hours — check your inbox (and spam folder).",
+            f"Your access link has been sent to {reviewer.email} — "
+            "check your inbox (and spam folder).",
         )
         return redirect('conference:abstract_access')
 
@@ -1063,19 +1067,15 @@ def abstract_access(request):
 
 
 def abstract_reviewer_login(request, token):
-    """Consume a magic link: validate the signed token and grant a session."""
-    try:
-        email = signing.loads(token, salt=AR_SALT, max_age=AR_MAX_AGE)
-    except signing.SignatureExpired:
-        messages.error(request, "That access link has expired. Please request a new one.")
-        return redirect('conference:abstract_access')
-    except signing.BadSignature:
-        messages.error(request, "That access link is invalid.")
-        return redirect('conference:abstract_access')
-
-    reviewer = AbstractReviewer.objects.filter(email__iexact=email, is_active=True).first()
+    """Open a reviewer's permanent access link: match the token and grant a
+    session. The link keeps working while the reviewer stays active."""
+    reviewer = AbstractReviewer.objects.filter(access_token=token, is_active=True).first()
     if not reviewer:
-        messages.error(request, "Access for this email is no longer active.")
+        messages.error(
+            request,
+            "This access link is invalid or has been deactivated. "
+            "Please contact an administrator.",
+        )
         return redirect('conference:abstract_access')
 
     request.session[AR_SESSION_KEY] = reviewer.email

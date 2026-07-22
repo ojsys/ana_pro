@@ -525,23 +525,46 @@ class AbstractReviewerAdmin(admin.ModelAdmin):
     list_filter = ['is_active']
     search_fields = ['name', 'email']
     list_editable = ['is_active']
-    readonly_fields = ['link_sent_at', 'last_login_at', 'created_at']
+    readonly_fields = ['access_link', 'link_sent_at', 'last_login_at', 'created_at']
     actions = ['resend_access_link']
     fieldsets = (
         (None, {
             'fields': ('name', 'email', 'is_active'),
             'description': (
                 'People listed here can view the Abstract Review page without being staff. '
-                'When you add an active email and save, an access link is emailed to it '
-                'automatically. They click the link to open the abstracts page (the link '
-                'expires in 2 hours). Use the "Resend access link" action to send a fresh '
-                'link, or untick "is active" to revoke access immediately.'
+                'When you add an active email and save, their permanent access link is emailed '
+                'to them automatically. The link never expires — they can bookmark it and return '
+                'any time while active. Copy it from "Access link" below to share it another way, '
+                'use the "Resend access link" action to email it again, or untick "is active" to '
+                'revoke access immediately.'
             ),
         }),
-        ('Activity', {
-            'fields': ('link_sent_at', 'last_login_at', 'created_at'),
+        ('Access', {
+            'fields': ('access_link', 'link_sent_at', 'last_login_at', 'created_at'),
         }),
     )
+
+    def changeform_view(self, request, *args, **kwargs):
+        # Stash the request so access_link can build an absolute URL.
+        self._request = request
+        return super().changeform_view(request, *args, **kwargs)
+
+    def access_link(self, obj):
+        if not obj or not obj.pk:
+            return "— saved after you add the reviewer —"
+        from .views import abstract_reviewer_access_url
+        request = getattr(self, '_request', None)
+        if request is not None:
+            url = abstract_reviewer_access_url(request, obj)
+        else:
+            from django.urls import reverse
+            url = reverse('conference:abstract_reviewer_login', args=[str(obj.access_token)])
+        return format_html(
+            '<a href="{}" target="_blank" style="word-break:break-all;">{}</a>'
+            '<br><span style="color:#888;font-size:0.85em;">Permanent — share only with this reviewer.</span>',
+            url, url,
+        )
+    access_link.short_description = "Access link"
 
     def _send_link(self, request, reviewer):
         """Send a magic link to one reviewer; report success/failure via messages.

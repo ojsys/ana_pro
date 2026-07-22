@@ -154,25 +154,26 @@ def send_abstract_reviewer_magic_link(reviewer, login_url, conference=None):
     text_body = (
         f"Hi {name},\n\n"
         f"You've been granted access to view the submitted abstracts for {org}.\n"
-        f"Use the link below to open the Abstract Review page.\n"
-        f"This link expires in 2 hours and only works while your access is active.\n\n"
+        f"Use your personal link below to open the Abstract Review page — it's permanent,\n"
+        f"so you can bookmark it and return any time (it works while your access is active).\n\n"
         f"{login_url}\n\n"
-        f"If you didn't expect this, you can safely ignore this email.\n"
+        f"Please keep this link private, as anyone with it can view the abstracts.\n"
     )
     html_body = (
         '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#222;">'
         '<h2 style="color:#1B5E20;">Abstract Review Access</h2>'
         f'<p>Hi {name},</p>'
         f'<p>You\'ve been granted access to view the submitted abstracts for '
-        f'<strong>{org}</strong>. Use the button below to open the Abstract Review page. '
-        f'This link expires in <strong>2 hours</strong> and only works while your access is active.</p>'
+        f'<strong>{org}</strong>. Use your personal button below to open the Abstract Review page. '
+        f'This is a <strong>permanent link</strong> — you can bookmark it and return any time '
+        f'(it works while your access is active).</p>'
         '<p style="text-align:center;margin:2rem 0;">'
         f'<a href="{login_url}" style="background:#1B5E20;color:#fff;text-decoration:none;'
         'padding:0.85rem 1.75rem;border-radius:10px;font-weight:bold;display:inline-block;">'
         'Open Abstract Review</a></p>'
         '<p style="color:#888;font-size:0.85rem;">If the button doesn\'t work, copy and paste this link:<br>'
         f'<a href="{login_url}">{login_url}</a></p>'
-        '<p style="color:#888;font-size:0.85rem;">If you didn\'t expect this, you can safely ignore this email.</p>'
+        '<p style="color:#888;font-size:0.85rem;">Please keep this link private, as anyone with it can view the abstracts.</p>'
         '</div>'
     )
     message = EmailMultiAlternatives(

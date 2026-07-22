@@ -608,7 +608,9 @@ class AbstractReviewer(models.Model):
     and any active session for that email stops working.
     """
     name = models.CharField(max_length=200, blank=True, help_text="For your own reference")
-    email = models.EmailField(unique=True, help_text="The access link is sent here, and only this inbox can sign in")
+    email = models.EmailField(unique=True, help_text="The access link is emailed here")
+    access_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False,
+                                    help_text="Permanent token embedded in this reviewer's access link")
     is_active = models.BooleanField(default=True, help_text="Untick to immediately revoke access")
     last_login_at = models.DateTimeField(null=True, blank=True)
     link_sent_at = models.DateTimeField(null=True, blank=True, help_text="When the most recent access link was emailed")
