@@ -201,6 +201,55 @@ Tanzanian districts among its states would be wrong.
 
 ---
 
+---
+
+## Production database charset (MySQL)
+
+**Symptom.** Saving text that contains anything outside the database's charset fails with:
+
+```
+DataError (1366, "Incorrect string value: '\xE2\x86\x92 Ab...' for column
+`akilimon_db`.`dashboard_partnerorganization`.`about` at row 1")
+```
+
+**Cause.** The production database was created with an older default charset, so its
+text columns are `latin1`/`utf8mb3` even though Django connects as `utf8mb4`
+(`MYSQL_OPTIONS` in `settings/production.py` sets the *connection*, not the *columns*).
+MySQL then rejects the write.
+
+This is not limited to seeded content. **A partner typing an em dash, a curly quote
+pasted from Word, an accented name or an emoji into the Manage form hits the same
+error**, as does anyone entering such text through the admin. The existing
+`fix_production_encoding` command only ever fixed `django_admin_log`.
+
+**Fix.** `fix_mysql_charset` converts the database default, every table, and every text
+column to `utf8mb4` / `utf8mb4_unicode_ci`, converting existing rows in place.
+
+```bash
+# 1. Back up first — this rewrites tables and locks them for the duration.
+mysqldump -u USER -p DBNAME > backup-$(date +%F).sql
+
+# 2. See what would change (read-only; this is the default)
+python manage.py fix_mysql_charset --settings=akilimo_nigeria.settings.production
+
+# 3. Convert
+python manage.py fix_mysql_charset --apply --settings=akilimo_nigeria.settings.production
+
+# Or one table at a time on a busy site:
+python manage.py fix_mysql_charset --apply --table dashboard_partnerorganization \
+    --settings=akilimo_nigeria.settings.production
+```
+
+Restart the application afterwards so pooled connections pick up the change. The command
+is idempotent — re-running it reports "Everything is already utf8mb4".
+
+Verified against a `latin1` MariaDB database that reproduced the exact production error:
+after conversion, arrows, em dashes, curly quotes, accented names and emoji all write and
+read back unchanged, and pre-existing rows survive intact.
+
+Until that conversion is run, keep seeded and pasted content to plain ASCII — which is
+why the Afri Farm Sync sample copy uses `->` and `-` rather than arrows and em dashes.
+
 ## Two pre-existing bugs fixed
 
 **`dashboard:index` is not a URL name** — it is `dashboard:home`. Every branch of

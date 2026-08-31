@@ -2,8 +2,8 @@
 Create (or refresh) the "Afri Farm Sync" reference partner.
 
 Afri Farm Sync is a real ANA partner whose page is filled in here with clearly
-labelled SAMPLE content — about text, mission, areas of work, services, a gallery
-and a success story — so there is one worked example of a complete partner page
+labelled SAMPLE content - about text, mission, areas of work, services, a gallery
+and a success story - so there is one worked example of a complete partner page
 to look at, and a template for briefing real partners on what to write.
 
 The organization's real contact details are left untouched. Everything written
@@ -18,6 +18,18 @@ Note: the "Reach in Nigeria" panel on a partner page is generated from synced
 AKILIMO participant records, not from anything entered by hand. It stays empty
 for AfriFarm Sync because inventing participant rows would inflate the public
 analytics totals with farmers who do not exist.
+
+NOTE ON ENCODING
+----------------
+All seeded text here is deliberately plain ASCII. The production MySQL database
+still stores several columns in a pre-utf8mb4 charset, which rejects characters
+like an em dash or an arrow with:
+
+    DataError (1366, "Incorrect string value ...")
+
+Run ``manage.py fix_mysql_charset --apply`` to convert the database to utf8mb4;
+until that is done, any partner typing a curly quote or an accented character
+into the Manage form will hit the same error.
 """
 from io import BytesIO
 
@@ -36,12 +48,12 @@ NAME = 'Afri Farm Sync'
 SLUG = 'afri-farm-sync'
 
 ABOUT = (
-    "SAMPLE CONTENT — this page is filled in as a worked example of a complete partner "
+    "SAMPLE CONTENT - this page is filled in as a worked example of a complete partner "
     "profile. Afri Farm Sync has not written any of the text below; it is placeholder copy "
     "showing what belongs in each section.\n\n"
     "This first section is where a partner introduces itself: who it is, where it works, and "
     "what it does for smallholder farmers. Two or three short paragraphs work best. Partners "
-    "write this themselves from Manage → About.\n\n"
+    "write this themselves from Manage -> About.\n\n"
     "For example: \"We work with cassava-growing households across the South West and North "
     "Central, pairing agronomic advice with the logistics that get harvested roots to a buyer "
     "before they spoil. Our field officers use the AKILIMO advisory to build fertiliser and "
@@ -49,7 +61,7 @@ ABOUT = (
 )
 
 MISSION = (
-    "Sample mission statement — one or two sentences on what the organization is for. "
+    "Sample mission statement - one or two sentences on what the organization is for. "
     "For example: \"To put site-specific agronomic advice, and a reliable route to market, "
     "within reach of every smallholder cassava household in Nigeria.\""
 )
@@ -64,13 +76,13 @@ AREAS = "\n".join([
 ])
 
 SUCCESS_STORY = (
-    "SAMPLE CONTENT — this is where a partner tells one story well.\n\n"
+    "SAMPLE CONTENT - this is where a partner tells one story well.\n\n"
     "An example of the shape it should take: \"In the 2025 season we ran AKILIMO fertiliser "
     "planning with 42 farmer groups in Oyo and Benue. Groups that followed the site-specific "
     "plan reported better root yields than their own previous season, and scheduled "
     "harvesting cut the volume lost to delayed collection.\"\n\n"
     "A good success story names the place, the season, what was actually done, and what "
-    "changed — and it is honest about which figures are estimates."
+    "changed - and it is honest about which figures are estimates."
 )
 
 SERVICES = [
@@ -121,7 +133,7 @@ def placeholder_image(text, subtitle, size, rgb, show_text=True):
     Generate a captioned placeholder so the gallery renders without shipping
     binary assets into the repository.
 
-    ``show_text=False`` produces the pattern only — used for the cover banner,
+    ``show_text=False`` produces the pattern only - used for the cover banner,
     where the page draws its own heading over the image and baked-in text would
     ghost through the gradient overlay.
     """
@@ -184,7 +196,7 @@ class Command(BaseCommand):
 
         org = PartnerOrganization.objects.filter(slug=SLUG).first()
         if not org:
-            self.stderr.write(f'No partner organization with slug "{SLUG}" — run link_ana_partners first.')
+            self.stderr.write(f'No partner organization with slug "{SLUG}" - run link_ana_partners first.')
             return
         created = False
 
@@ -194,7 +206,7 @@ class Command(BaseCommand):
         org.areas_of_work = AREAS
         org.success_story = SUCCESS_STORY
         org.organization_type = 'Digital Advisory'
-        # Contact details belong to a real organization — never overwritten here.
+        # Contact details belong to a real organization - never overwritten here.
         # Where the organization record has none, the partner's own details are
         # copied across from its ANA Nigeria Partner row: real data already held
         # in this system, not anything invented.
@@ -210,7 +222,7 @@ class Command(BaseCommand):
         if not org.state:
             org.state = 'Oyo'
         if not org.address:
-            org.address = 'Sample address — replace with the partner\'s own'
+            org.address = 'Sample address - replace with the partner\'s own'
         org.status = PartnerOrganization.STATUS_APPROVED
         org.is_active = True
         org.has_public_page = True
@@ -265,7 +277,7 @@ class Command(BaseCommand):
             self.stdout.write(f'  ANA listing: {ana.organization} ({ana.primary_category})')
         else:
             self.stdout.write(self.style.WARNING(
-                f'  no ANA Nigeria Partner row named "{NAME}" — the card will not '
+                f'  no ANA Nigeria Partner row named "{NAME}" - the card will not '
                 f'appear in the ANA grid, only in the Partner Directory.'
             ))
 
@@ -274,7 +286,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f'\nDone. View it at /partners/{org.slug}/'
-            f'\nNote: the "Reach in Nigeria" panel stays empty — it is generated from synced'
+            f'\nNote: the "Reach in Nigeria" panel stays empty - it is generated from synced'
             f'\nAKILIMO participant records, and inventing those would inflate the public'
             f'\nanalytics totals with farmers who do not exist.'
         ))
@@ -307,7 +319,7 @@ class Command(BaseCommand):
     def _remove(self):
         org = PartnerOrganization.objects.filter(slug=SLUG).first()
         if not org:
-            self.stdout.write(self.style.WARNING(f'{NAME} not found — nothing to remove.'))
+            self.stdout.write(self.style.WARNING(f'{NAME} not found - nothing to remove.'))
             return
 
         for image in org.gallery_images.all():
