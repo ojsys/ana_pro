@@ -642,19 +642,33 @@ class RegisterView(FormView):
         return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
-        """Create user and log them in"""
+        """Create user, log them in, and set up their membership"""
         user = form.save()
         # Specify the backend when logging in with multiple backends configured
         login(self.request, user, backend='django.contrib.auth.backends.ModelBackend')
-        messages.success(
-            self.request, 
-            f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created successfully.'
-        )
+
+        from .membership_service import ensure_membership_for_user, is_free_registration_mode
+
+        ensure_membership_for_user(user)
+
+        if is_free_registration_mode():
+            messages.success(
+                self.request,
+                f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your free membership is '
+                f'active - you have full access to the platform.'
+            )
+        else:
+            messages.success(
+                self.request,
+                f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created successfully.'
+            )
         return super().form_valid(form)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['partner_organizations'] = PartnerOrganization.objects.filter(is_active=True)
+        from .membership_service import is_free_registration_mode
+        context['free_registration'] = is_free_registration_mode()
         return context
 
 
@@ -1171,6 +1185,17 @@ def initiate_payment(request):
         from decimal import Decimal
         import uuid
         from datetime import date
+        from .membership_service import is_free_registration_mode, grant_free_membership
+
+        # Free registration mode: never charge - grant the membership instead
+        if is_free_registration_mode():
+            grant_free_membership(request.user)
+            logger.info(f"Payment skipped for {request.user.username}: free registration mode is active")
+            return JsonResponse({
+                'status': 'free',
+                'message': 'Membership is currently free. Your membership has been activated.',
+                'redirect_url': reverse('dashboard:home'),
+            })
 
         # Parse request data
         data = json.loads(request.body)
@@ -1290,7 +1315,7 @@ def verify_payment(request):
 
     if not reference:
         messages.error(request, 'Payment reference not provided.')
-        return redirect('dashboard:index')
+        return redirect('dashboard:home')
 
     try:
         # Get payment record
@@ -1309,7 +1334,7 @@ def verify_payment(request):
 
             logger.info(f"Payment verified successfully: {reference}")
             messages.success(request, 'Payment successful! Your membership has been updated.')
-            return redirect('dashboard:index')
+            return redirect('dashboard:home')
         else:
             # Payment failed
             payment.status = 'failed'
@@ -1322,11 +1347,11 @@ def verify_payment(request):
     except Payment.DoesNotExist:
         logger.error(f"Payment not found for reference: {reference}")
         messages.error(request, 'Payment record not found.')
-        return redirect('dashboard:index')
+        return redirect('dashboard:home')
     except Exception as e:
         logger.error(f"Payment verification error: {e}")
         messages.error(request, 'An error occurred while verifying payment.')
-        return redirect('dashboard:index')
+        return redirect('dashboard:home')
 
 
 @login_required
@@ -1337,6 +1362,15 @@ def payment_selection(request):
     """
     from datetime import date
     from .models import Membership, MembershipPricing
+    from .membership_service import is_free_registration_mode, grant_free_membership
+
+    # Free registration mode: nothing to pay for - grant/refresh the free membership
+    if is_free_registration_mode():
+        membership = grant_free_membership(request.user)
+        return render(request, 'dashboard/free_membership.html', {
+            'membership': membership,
+            'current_year': date.today().year,
+        })
 
     # Get or create membership for current user
     membership, created = Membership.objects.get_or_create(
@@ -1389,6 +1423,16 @@ def renewal(request):
     """
     from datetime import date
     from .models import Membership, MembershipPricing
+    from .membership_service import is_free_registration_mode, grant_free_membership
+
+    # Free registration mode: renewals are automatic and free
+    if is_free_registration_mode():
+        membership = grant_free_membership(request.user)
+        return render(request, 'dashboard/free_membership.html', {
+            'membership': membership,
+            'current_year': date.today().year,
+            'is_renewal': True,
+        })
 
     # Ensure user has a membership
     if not hasattr(request.user, 'membership'):

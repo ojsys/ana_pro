@@ -10,18 +10,11 @@ from django.contrib.auth.decorators import login_required
 def get_payment_bypass_setting():
     """
     Check if payment requirements should be bypassed.
-    Returns True if bypass is enabled in Site Settings, False otherwise.
+
+    True while Site Settings -> Registration Mode is "Free".
     """
-    try:
-        from website.models import SiteSettings
-        site_settings = SiteSettings.objects.first()
-        if site_settings:
-            return site_settings.bypass_payment_requirements
-        # Default to True if no settings exist (for backwards compatibility)
-        return True
-    except Exception:
-        # If there's any error (e.g., during migrations), default to True
-        return True
+    from .membership_service import is_free_registration_mode
+    return is_free_registration_mode()
 
 
 def require_active_subscription(view_func):
@@ -36,20 +29,18 @@ def require_active_subscription(view_func):
 
     Redirects to appropriate page if requirements not met.
 
-    NOTE: If payment bypass is enabled in Site Settings, all payment checks are bypassed.
+    NOTE: While Registration Mode is "Free" in Site Settings, payment checks are skipped
+    and the user is granted an active free membership.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
         # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
         if get_payment_bypass_setting():
-            # Create membership automatically if it doesn't exist
-            if not hasattr(request.user, 'membership'):
-                from .models import Membership
-                Membership.objects.get_or_create(
-                    member=request.user,
-                    defaults={'status': 'active'}
-                )
+            # Free mode: make sure the member holds an active free membership so
+            # certificates, ID cards and platform access all work.
+            from .membership_service import grant_free_membership
+            grant_free_membership(request.user)
             return view_func(request, *args, **kwargs)
 
         # Check if user has a membership
@@ -76,7 +67,7 @@ def require_active_subscription(view_func):
                 request,
                 f'Your access has been suspended. Reason: {membership.access_suspended_reason or "Contact admin for details."}'
             )
-            return redirect('dashboard:index')
+            return redirect('dashboard:home')
 
         # Check if subscription is active
         if not membership.has_active_subscription:
@@ -98,20 +89,18 @@ def require_registration_payment(view_func):
     Used for basic features that should be accessible after registration
     but before annual dues payment.
 
-    NOTE: If payment bypass is enabled in Site Settings, all payment checks are bypassed.
+    NOTE: While Registration Mode is "Free" in Site Settings, payment checks are skipped
+    and the user is granted an active free membership.
     """
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
         # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
         if get_payment_bypass_setting():
-            # Create membership automatically if it doesn't exist
-            if not hasattr(request.user, 'membership'):
-                from .models import Membership
-                Membership.objects.get_or_create(
-                    member=request.user,
-                    defaults={'status': 'active'}
-                )
+            # Free mode: make sure the member holds an active free membership so
+            # certificates, ID cards and platform access all work.
+            from .membership_service import grant_free_membership
+            grant_free_membership(request.user)
             return view_func(request, *args, **kwargs)
 
         # Check if user has a membership
@@ -142,7 +131,8 @@ def admin_or_subscription_required(view_func):
     Decorator for views that should be accessible by admins regardless of subscription,
     but require active subscription for regular members.
 
-    NOTE: If payment bypass is enabled in Site Settings, all payment checks are bypassed.
+    NOTE: While Registration Mode is "Free" in Site Settings, payment checks are skipped
+    and the user is granted an active free membership.
     """
     @wraps(view_func)
     @login_required
@@ -153,13 +143,10 @@ def admin_or_subscription_required(view_func):
 
         # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
         if get_payment_bypass_setting():
-            # Create membership automatically if it doesn't exist
-            if not hasattr(request.user, 'membership'):
-                from .models import Membership
-                Membership.objects.get_or_create(
-                    member=request.user,
-                    defaults={'status': 'active'}
-                )
+            # Free mode: make sure the member holds an active free membership so
+            # certificates, ID cards and platform access all work.
+            from .membership_service import grant_free_membership
+            grant_free_membership(request.user)
             return view_func(request, *args, **kwargs)
 
         # For non-admins, require active subscription
@@ -184,7 +171,7 @@ def admin_or_subscription_required(view_func):
                 request,
                 f'Your access has been suspended. Reason: {membership.access_suspended_reason or "Contact admin for details."}'
             )
-            return redirect('dashboard:index')
+            return redirect('dashboard:home')
 
         if not membership.has_active_subscription:
             messages.warning(

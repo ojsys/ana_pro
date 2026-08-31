@@ -475,11 +475,12 @@ class MembershipAdmin(ImportExportModelAdmin):
 
     list_display = [
         'certificate_number', 'member', 'membership_type', 'subscription_status_display',
-        'registration_status', 'subscription_year_display', 'recent_payment_info', 'access_status', 'created_at'
+        'registration_status', 'free_membership_badge', 'subscription_year_display',
+        'recent_payment_info', 'access_status', 'created_at'
     ]
     list_filter = [
-        'membership_type', 'status', 'registration_paid', 'has_platform_access',
-        'access_suspended', 'subscription_year', 'created_at'
+        'membership_type', 'status', 'is_free_membership', 'registration_paid',
+        'has_platform_access', 'access_suspended', 'subscription_year', 'created_at'
     ]
     search_fields = ['certificate_number', 'member__username', 'member__first_name', 'member__last_name', 'member__email']
     readonly_fields = [
@@ -489,7 +490,8 @@ class MembershipAdmin(ImportExportModelAdmin):
     date_hierarchy = 'created_at'
     actions = [
         'activate_subscription', 'suspend_access', 'restore_access',
-        'mark_annual_dues_paid_current_year', 'mark_annual_dues_paid_next_year'
+        'mark_annual_dues_paid_current_year', 'mark_annual_dues_paid_next_year',
+        'grant_free_membership_action', 'revoke_free_membership_action'
     ]
 
     fieldsets = (
@@ -499,6 +501,13 @@ class MembershipAdmin(ImportExportModelAdmin):
         ('Registration Payment', {
             'fields': ('registration_paid', 'registration_payment_date'),
             'description': 'One-time registration fee tracking'
+        }),
+        ('Free Membership', {
+            'fields': ('is_free_membership', 'free_membership_granted_at'),
+            'description': (
+                'Set automatically when Site Settings &rarr; Registration Mode is <strong>Free</strong>. '
+                'Free members hold a full membership for the current year without paying.'
+            )
         }),
         ('Annual Dues Subscription', {
             'fields': (
@@ -608,8 +617,8 @@ class MembershipAdmin(ImportExportModelAdmin):
                 time_ago = timesince(recent_payment.paid_at)
 
                 return format_html(
-                    '<span title="₦{:,.2f} - {}">{} {} ago</span>',
-                    recent_payment.amount,
+                    '<span title="₦{} - {}">{} {} ago</span>',
+                    f'{recent_payment.amount:,.2f}',
                     recent_payment.get_payment_purpose_display(),
                     icon,
                     time_ago.split(',')[0]  # Show only the first part (e.g., "2 days" not "2 days, 3 hours")
@@ -745,6 +754,47 @@ class MembershipAdmin(ImportExportModelAdmin):
         )
     mark_annual_dues_paid_next_year.short_description = f'✓ Mark annual dues PAID for {date.today().year + 1}'
 
+    def free_membership_badge(self, obj):
+        """Show whether this membership was granted free of charge"""
+        if obj.is_free_membership:
+            return format_html('<span class="badge bg-info">🎁 Free</span>')
+        return format_html('<span class="badge bg-light text-dark">Paid</span>')
+    free_membership_badge.short_description = 'Fee'
+
+    @admin.action(description='🎁 Grant FREE membership for the current year')
+    def grant_free_membership_action(self, request, queryset):
+        """Give selected members an active membership at no charge"""
+        from django.contrib import messages
+        from .membership_service import grant_free_membership
+
+        count = 0
+        for membership in queryset.select_related('member'):
+            grant_free_membership(membership.member)
+            count += 1
+
+        messages.success(
+            request,
+            f'Granted a free membership to {count} member(s) for {date.today().year}.'
+        )
+
+    @admin.action(description='↩ Revoke free membership (member must pay)')
+    def revoke_free_membership_action(self, request, queryset):
+        """Remove free membership so the member has to pay"""
+        from django.contrib import messages
+        from .membership_service import revoke_free_membership
+
+        count = 0
+        for membership in queryset.filter(is_free_membership=True):
+            revoke_free_membership(membership)
+            count += 1
+
+        skipped = queryset.count() - count
+        messages.warning(
+            request,
+            f'Revoked free membership for {count} member(s).'
+            + (f' {skipped} paying member(s) were left unchanged.' if skipped else '')
+        )
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('member')
 
@@ -870,7 +920,7 @@ class MembershipPricingAdmin(ImportExportModelAdmin):
 
     def price_display(self, obj):
         """Display price with currency formatting"""
-        return format_html('<strong>₦{:,.2f}</strong>', Decimal(obj.price))
+        return format_html('<strong>₦{}</strong>', f'{Decimal(obj.price):,.2f}')
     price_display.short_description = 'Price'
 
     actions = ['activate_pricing', 'deactivate_pricing']

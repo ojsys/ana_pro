@@ -52,7 +52,7 @@
                             <span class="material-icons">verified</span>
                         </div>
                         <div class="subscription-title">
-                            <h5>Active Subscription</h5>
+                            <h5>Active Subscription{% if membership.is_free_membership %} <span class="badge bg-info">Free</span>{% endif %}</h5>
                             <p class="subscription-subtitle">Full access enabled</p>
                         </div>
                     </div>
@@ -73,7 +73,11 @@
                                 </span>
                             </div>
                         </div>
-                        {% if membership.subscription_end_date %}
+                        {% if membership.is_free_membership and site_settings.is_free_registration %}
+                            <p class="text-muted small mb-0 mt-3">
+                                {{ site_settings.free_membership_banner|default:"Membership is currently free - your access renews automatically." }}
+                            </p>
+                        {% elif membership.subscription_end_date %}
                             {% now "Y-m-d" as today %}
                             {% if membership.subscription_end_date|date:"Y-m-d" <= today|add:"30 days" %}
                                 <a href="{% url 'dashboard:renewal' %}" class="btn btn-outline-success w-100 mt-3">

@@ -550,6 +550,17 @@ class Membership(models.Model):
     registration_paid = models.BooleanField(default=False, help_text="Has the registration fee been paid?")
     registration_payment_date = models.DateTimeField(null=True, blank=True)
 
+    # Free membership tracking (granted while the site runs in Free registration mode)
+    is_free_membership = models.BooleanField(
+        default=False,
+        help_text="Membership was granted free of charge (no payment was made)."
+    )
+    free_membership_granted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the free membership was last granted or renewed."
+    )
+
     # Annual dues subscription tracking
     subscription_start_date = models.DateField(null=True, blank=True, help_text="Start of current subscription period (Jan 1)")
     subscription_end_date = models.DateField(null=True, blank=True, help_text="End of current subscription period (Dec 31)")

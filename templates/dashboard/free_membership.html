@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load humanize l10n %}
+
+{% block title %}Membership - AKILIMO Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header mb-5">
+    <h1 class="page-title">
+        <span class="material-icons">card_membership</span>
+        Your Membership
+    </h1>
+    <p class="page-subtitle">Membership of AKILIMO Nigeria Association is currently free</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="alert alert-success" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2.5rem;">verified</span>
+                <div>
+                    <h4 class="alert-heading mb-2">
+                        {% if is_renewal %}Membership Renewed{% else %}Membership Active{% endif %}
+                    </h4>
+                    <p class="mb-1">
+                        {% if site_settings.free_membership_banner %}
+                            {{ site_settings.free_membership_banner }}
+                        {% else %}
+                            Membership is currently free &mdash; there is nothing to pay.
+                        {% endif %}
+                    </p>
+                    <p class="mb-0"><strong>Valid until:</strong> December 31, {{ current_year|unlocalize }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Membership details</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <strong>Member:</strong> {{ membership.member.get_full_name|default:membership.member.username }}
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Certificate number:</strong> {{ membership.certificate_number }}
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Membership type:</strong> {{ membership.get_membership_type_display }}
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Status:</strong>
+                        <span class="badge bg-success">{{ membership.subscription_status_text }}</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Fee:</strong> <span class="badge bg-success">Free</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Subscription year:</strong> {{ current_year|unlocalize }}
+                    </div>
+                </div>
+
+                <hr>
+
+                <p class="text-muted mb-3">
+                    Your certificate and membership ID card are ready to download.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'dashboard:download_certificate' %}" class="btn btn-primary">
+                        <span class="material-icons me-1">workspace_premium</span>
+                        Download Certificate
+                    </a>
+                    <a href="{% url 'dashboard:download_id_card' %}" class="btn btn-outline-primary">
+                        <span class="material-icons me-1">badge</span>
+                        Download ID Card
+                    </a>
+                    <a href="{% url 'dashboard:home' %}" class="btn btn-link">
+                        Go to dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

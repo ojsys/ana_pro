@@ -12,6 +12,16 @@
         <p class="auth-subtitle">Create your partner account to access dashboard analytics and participate in cassava production programs</p>
     </div>
 
+    {% if free_registration %}
+    <div class="alert alert-success d-flex align-items-center" role="alert">
+        <span class="material-icons me-2">card_giftcard</span>
+        <div>
+            <strong>Membership is free right now.</strong>
+            Sign up and your membership is active immediately &mdash; no registration fee, no annual dues.
+        </div>
+    </div>
+    {% endif %}
+
     <form method="post" class="auth-form" id="registerForm">
         {% csrf_token %}
 

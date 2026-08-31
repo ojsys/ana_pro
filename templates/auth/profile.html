@@ -435,11 +435,19 @@
                     <span class="material-icons text-muted" style="font-size: 3rem;">card_membership</span>
                 </div>
                 <h6>No Membership Found</h6>
-                <p class="text-muted">You don't have an active membership. Contact support to get started.</p>
-                <a href="{% url 'dashboard:membership_subscription' %}" class="btn btn-primary">
-                    <span class="material-icons me-2">person_add</span>
-                    Apply for Membership
-                </a>
+                {% if site_settings.is_free_registration %}
+                    <p class="text-muted">Membership is currently <strong>free</strong> &mdash; activate yours in one click.</p>
+                    <a href="{% url 'dashboard:membership_subscription' %}" class="btn btn-success">
+                        <span class="material-icons me-2">card_giftcard</span>
+                        Activate Free Membership
+                    </a>
+                {% else %}
+                    <p class="text-muted">You don't have an active membership. Contact support to get started.</p>
+                    <a href="{% url 'dashboard:membership_subscription' %}" class="btn btn-primary">
+                        <span class="material-icons me-2">person_add</span>
+                        Apply for Membership
+                    </a>
+                {% endif %}
             </div>
         </div>
         {% endif %}

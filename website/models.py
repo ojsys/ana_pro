@@ -413,11 +413,31 @@ class SiteSettings(models.Model):
         default="AKILIMO Nigeria Association promotes sustainable cassava production and agricultural innovation across Nigeria."
     )
 
-    # Payment Settings
-    bypass_payment_requirements = models.BooleanField(
-        default=True,
-        verbose_name="Bypass Payment Requirements",
-        help_text="When enabled, users can register and access the dashboard without payment. Disable to enforce payment requirements."
+    # Registration / Membership Settings
+    REGISTRATION_MODE_FREE = 'free'
+    REGISTRATION_MODE_PAID = 'paid'
+    REGISTRATION_MODE_CHOICES = [
+        (REGISTRATION_MODE_FREE, 'Free - membership is granted immediately, no payment required'),
+        (REGISTRATION_MODE_PAID, 'Paid - registration fee and annual dues must be paid'),
+    ]
+
+    registration_mode = models.CharField(
+        max_length=10,
+        choices=REGISTRATION_MODE_CHOICES,
+        default=REGISTRATION_MODE_FREE,
+        verbose_name="Registration Mode",
+        help_text=(
+            "Free: new sign-ups get an active membership straight away (use this to grow the "
+            "member base). Paid: registration fees and annual dues are enforced before members "
+            "can access the platform."
+        )
+    )
+    free_membership_banner = models.CharField(
+        max_length=255,
+        blank=True,
+        default="Membership is currently free - enjoy full access to the platform.",
+        verbose_name="Free Membership Message",
+        help_text="Message shown to members while registration mode is Free. Leave blank to hide it."
     )
 
     # Contact
@@ -468,6 +488,16 @@ class SiteSettings(models.Model):
         if not self.pk and SiteSettings.objects.exists():
             self.pk = SiteSettings.objects.first().pk
         super().save(*args, **kwargs)
+
+    @property
+    def is_free_registration(self):
+        """True when registration / membership is currently free."""
+        return self.registration_mode == self.REGISTRATION_MODE_FREE
+
+    @property
+    def bypass_payment_requirements(self):
+        """Backward-compatible alias for the retired boolean toggle."""
+        return self.is_free_registration
 
 
 class HeroSlide(models.Model):

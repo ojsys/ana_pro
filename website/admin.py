@@ -323,15 +323,31 @@ class StatisticAdmin(ImportExportModelAdmin):
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(ImportExportModelAdmin):
     resource_class = SiteSettingsResource
-    list_display = ['site_title', 'site_tagline', 'bypass_payment_requirements', 'primary_email', 'primary_phone']
-    
+    list_display = ['site_title', 'site_tagline', 'registration_mode_display', 'primary_email', 'primary_phone']
+
     fieldsets = (
         ('Site Information', {
             'fields': ('site_title', 'site_tagline', 'site_description')
         }),
-        ('Payment Settings', {
-            'fields': ('bypass_payment_requirements',),
-            'description': '<div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin-bottom: 15px; border-radius: 4px;"><strong>⚠️ Important:</strong> When "Bypass Payment Requirements" is <strong>enabled</strong>, users can register and access the dashboard <strong>without any payment</strong>. Disable this setting to enforce payment requirements.</div>'
+        ('Registration & Membership', {
+            'fields': ('registration_mode', 'free_membership_banner'),
+            'description': (
+                '<div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; '
+                'margin-bottom: 15px; border-radius: 4px;">'
+                '<strong>⚠️ Registration Mode</strong>'
+                '<ul style="margin: 10px 0 0 18px;">'
+                '<li><strong>Free</strong> — anyone who signs up is given an active membership for the '
+                'current year straight away. No registration fee, no annual dues, and certificates / ID '
+                'cards unlock immediately. Use this to grow the member base.</li>'
+                '<li><strong>Paid</strong> — registration fees and annual dues are enforced again. '
+                'Members who were granted a free membership keep it until it expires on 31 December; '
+                'they are asked to pay when they renew.</li>'
+                '</ul>'
+                '<p style="margin: 10px 0 0 0;">Switching to Paid does not charge existing free members '
+                'retroactively. To end free memberships immediately, use the '
+                '<em>Revoke free membership</em> action in Memberships.</p>'
+                '</div>'
+            )
         }),
         ('Contact Information', {
             'fields': ('primary_email', 'primary_phone')
@@ -359,7 +375,13 @@ class SiteSettingsAdmin(ImportExportModelAdmin):
     )
     
     readonly_fields = ['created_at', 'updated_at']
-    
+
+    @admin.display(description='Registration Mode', ordering='registration_mode')
+    def registration_mode_display(self, obj):
+        if obj.is_free_registration:
+            return format_html('<span style="color: #0a7d2b; font-weight: 600;">✓ FREE</span>')
+        return format_html('<span style="color: #b45309; font-weight: 600;">₦ PAID</span>')
+
     def has_add_permission(self, request):
         # Only allow one SiteSettings instance
         return not SiteSettings.objects.exists()
