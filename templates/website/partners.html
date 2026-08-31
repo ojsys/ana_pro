@@ -5,6 +5,36 @@
 
 {% block meta_description %}Discover our strategic partners and member organizations working together to transform agriculture in Nigeria through AKILIMO tools and services.{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* The whole partner card is an <a>; these give it the affordances a link needs. */
+  a.partner-card {
+    display: block;
+    color: inherit;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  a.partner-card:hover,
+  a.partner-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 .75rem 1.75rem rgba(0,0,0,.12) !important;
+  }
+  a.partner-card:focus-visible { outline: 3px solid var(--primary-accent); outline-offset: 3px; }
+  a.partner-card:hover .card-title { color: var(--primary-accent) !important; }
+  a.partner-card .view-profile { opacity: .75; transition: opacity .2s ease; }
+  a.partner-card:hover .view-profile { opacity: 1; }
+  a.partner-card:hover .view-profile i { transform: translateX(3px); }
+  a.partner-card .view-profile i { display: inline-block; transition: transform .2s ease; }
+
+  /* Directory tiles get the same treatment. */
+  a.partner-directory-tile { transition: transform .2s ease, box-shadow .2s ease; }
+  a.partner-directory-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.1) !important;
+  }
+  a.partner-directory-tile:hover .fw-bold { color: var(--primary-accent) !important; }
+</style>
+{% endblock %}
+
 {% block content %}
     <!-- Page Header -->
     <section class="hero-section" style="min-height: 70vh; padding: 8rem 0 6rem;" data-aos="fade-in">
@@ -116,18 +146,27 @@
             <div class="row">
                 {% for partner in ana_nigeria_partners %}
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-4" data-aos="fade-up">
-                    <div class="card h-100 border-0 shadow-sm partner-card">
+                    {% comment %}
+                        The whole card is the link. Every ANA partner has a public
+                        page, so this is never rendered as a dead card.
+                    {% endcomment %}
+                    <a href="{{ partner.partner_organization.get_absolute_url }}"
+                       class="card h-100 border-0 shadow-sm partner-card text-decoration-none">
                         <div class="card-body p-4 d-flex flex-column">
 
-                            <!-- Icon -->
+                            <!-- Logo / icon -->
                             <div class="mb-3">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white" style="width:48px;height:48px;background-color:var(--primary-accent);">
-                                    <i class="bi bi-building fs-5"></i>
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white overflow-hidden" style="width:48px;height:48px;background-color:var(--primary-accent);">
+                                    {% if partner.partner_organization.logo %}
+                                        <img src="{{ partner.partner_organization.logo.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+                                    {% else %}
+                                        <i class="bi bi-building fs-5"></i>
+                                    {% endif %}
                                 </div>
                             </div>
 
                             <!-- Organisation name -->
-                            <h6 class="card-title fw-bold mb-2">{{ partner.organization }}</h6>
+                            <h6 class="card-title fw-bold mb-2 text-dark">{{ partner.organization }}</h6>
 
                             <!-- Primary category -->
                             <span class="badge rounded-pill mb-3" style="background-color:var(--primary-accent);font-size:0.7rem;width:fit-content;">
@@ -148,15 +187,12 @@
                                 {% endif %}
                             </div>
 
-                            {% if partner.partner_organization and partner.partner_organization.has_public_page %}
-                            <a href="{{ partner.partner_organization.get_absolute_url }}"
-                               class="stretched-link mt-2" style="font-size:0.78rem;font-weight:600;color:var(--primary-accent);text-decoration:none;">
+                            <span class="mt-2 view-profile" style="font-size:0.78rem;font-weight:600;color:var(--primary-accent);">
                                 View profile <i class="bi bi-arrow-right"></i>
-                            </a>
-                            {% endif %}
+                            </span>
 
                         </div>
-                    </div>
+                    </a>
                 </div>
                 {% empty %}
                 <div class="col-12 text-center py-5">
@@ -451,7 +487,7 @@
             {% for org in public_partners %}
             <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
                 <a href="{{ org.get_absolute_url }}"
-                   class="d-flex align-items-center gap-3 p-3 bg-white rounded shadow-sm h-100 text-decoration-none"
+                   class="partner-directory-tile d-flex align-items-center gap-3 p-3 bg-white rounded shadow-sm h-100 text-decoration-none"
                    style="border:1px solid #eee;">
                     <div class="d-inline-flex align-items-center justify-content-center rounded"
                          style="width:42px;height:42px;flex:0 0 42px;background:var(--surface-green);overflow:hidden;">

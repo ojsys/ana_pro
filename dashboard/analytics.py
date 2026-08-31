@@ -391,9 +391,21 @@ def build_partner_analytics(partner_name, country='nigeria'):
     }
 
 
+def _partner_cache_key(partner_name):
+    """
+    Build a safe cache key for a partner.
+
+    Partner names contain spaces, ampersands and brackets, which are illegal in
+    a memcached key — so the name is hashed rather than interpolated.
+    """
+    import hashlib
+    digest = hashlib.sha1(partner_name.strip().lower().encode('utf-8')).hexdigest()[:16]
+    return f"{PARTNER_CACHE_KEY}:{digest}"
+
+
 def get_partner_analytics(partner_name, force_refresh=False):
     """Cached per-partner analytics. Far cheaper than the site-wide build."""
-    key = f"{PARTNER_CACHE_KEY}:{partner_name.lower()}"
+    key = _partner_cache_key(partner_name)
     if not force_refresh:
         cached = cache.get(key)
         if cached is not None:

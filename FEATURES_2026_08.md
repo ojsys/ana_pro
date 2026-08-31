@@ -138,9 +138,43 @@ mission, areas of work, services, a gallery of field photos, success story, cont
 details and social links — plus a **Reach in Nigeria** panel (farmers, states, LGAs,
 share of women, and the states they work in) drawn from AKILIMO participant records.
 
-All 147 organisations were given a unique slug by the migration and are listed in a new
-**Partner Directory** at the bottom of `/partners/`. ANA partner cards also link through
-where they are joined to a partner organisation record.
+**Every partner card is clickable.** The whole card on `/partners/` is a link to that
+partner's page — not just a "View profile" line — with hover lift, a focus ring for
+keyboard users, and the partner's logo where one is set. There are no dead cards:
+`manage.py link_ana_partners` gave a `PartnerOrganization` to each of the 113 ANA
+partners that had none (matching 4 by name, creating 109, carrying across the contact
+details and category already on the ANA record), so all 144 ANA partners have a page.
+
+Every organisation also appears in the **Partner Directory** at the bottom of
+`/partners/`, so all 256 partner pages have a route in from the website.
+
+```bash
+python manage.py link_ana_partners --dry-run   # preview
+python manage.py link_ana_partners             # apply; safe to re-run
+```
+
+### Reference example — Afri Farm Sync
+
+`/partners/afri-farm-sync/` is filled in as a worked example of a complete partner page:
+about text, mission, six areas of work, six services, a six-photo gallery, and a success
+story — so there is one page to look at when briefing partners on what to write.
+
+Everything written there is **clearly labelled sample copy** ("SAMPLE CONTENT — …") and
+should be replaced with the partner's own words before the page is treated as published.
+The organisation's real contact details were left untouched; the Contact block is filled
+from the details already held on its ANA Nigeria Partner record, not invented. Gallery
+and cover images are generated placeholders, not photographs.
+
+```bash
+python manage.py seed_reference_partner              # fill in the sample content
+python manage.py seed_reference_partner --with-admin # + a demo partner-admin login
+python manage.py seed_reference_partner --remove     # clear the sample content again
+                                                     # (the partner record is kept)
+```
+
+The **Reach in Nigeria** panel stays empty on that page. It is generated from synced
+AKILIMO participant records, and fabricating those would have added farmers who do not
+exist to the public analytics totals and to the "Top partners" chart.
 
 ### Partner administration — `/partners/<slug>/manage/`
 
