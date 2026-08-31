@@ -148,6 +148,13 @@
                                 {% endif %}
                             </div>
 
+                            {% if partner.partner_organization and partner.partner_organization.has_public_page %}
+                            <a href="{{ partner.partner_organization.get_absolute_url }}"
+                               class="stretched-link mt-2" style="font-size:0.78rem;font-weight:600;color:var(--primary-accent);text-decoration:none;">
+                                View profile <i class="bi bi-arrow-right"></i>
+                            </a>
+                            {% endif %}
+
                         </div>
                     </div>
                 </div>
@@ -431,4 +438,39 @@
             </div>
         </div>
     </section>
+
+<!-- Partner Directory -->
+{% if public_partners %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Partner Directory</h2>
+        <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+            Browse the profile of every partner organization working with AKILIMO Nigeria
+        </p>
+        <div class="row">
+            {% for org in public_partners %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                <a href="{{ org.get_absolute_url }}"
+                   class="d-flex align-items-center gap-3 p-3 bg-white rounded shadow-sm h-100 text-decoration-none"
+                   style="border:1px solid #eee;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded"
+                         style="width:42px;height:42px;flex:0 0 42px;background:var(--surface-green);overflow:hidden;">
+                        {% if org.logo %}
+                            <img src="{{ org.logo.url }}" alt="" style="max-width:85%;max-height:85%;object-fit:contain;">
+                        {% else %}
+                            <i class="bi bi-building" style="color:var(--primary-green);"></i>
+                        {% endif %}
+                    </div>
+                    <div style="min-width:0;">
+                        <div class="fw-bold text-dark text-truncate" style="font-size:.88rem;">{{ org.name }}</div>
+                        {% if org.state %}<div class="text-muted text-truncate" style="font-size:.75rem;"><i class="bi bi-geo-alt"></i> {{ org.state }}</div>{% endif %}
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 {% endblock %}

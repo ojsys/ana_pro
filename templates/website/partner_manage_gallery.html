@@ -1,0 +1,64 @@
+{% extends 'website/partner_manage_base.html' %}
+
+{% block manage_content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="manage-card">
+      <h2 class="mb-3">{% if editing %}Edit photo{% else %}Add a photo{% endif %}</h2>
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if editing and editing.image %}
+          <div class="mb-3"><img src="{{ editing.image.url }}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:8px;"></div>
+        {% endif %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-100">
+          {% if editing %}Save photo{% else %}Upload photo{% endif %}
+        </button>
+        {% if editing %}
+          <a href="{% url 'website:partner_manage_gallery' partner.slug %}" class="btn btn-link w-100 mt-2">Cancel edit</a>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="manage-card">
+      <h2 class="mb-3">Your gallery ({{ gallery_images|length }})</h2>
+      <div class="row g-3">
+        {% for image in gallery_images %}
+        <div class="col-md-4 col-sm-6">
+          <div style="border:1px solid #EEF1EE;border-radius:12px;overflow:hidden;">
+            <img src="{{ image.image.url }}" alt="{{ image.caption }}" style="width:100%;height:150px;object-fit:cover;">
+            <div class="p-2">
+              <div class="fw-bold" style="font-size:.85rem;">
+                {{ image.caption|default:"Untitled" }}
+                {% if not image.is_active %}<span class="badge bg-secondary ms-1">Hidden</span>{% endif %}
+              </div>
+              {% if image.location %}<div class="text-muted" style="font-size:.75rem;"><i class="bi bi-geo-alt"></i> {{ image.location }}</div>{% endif %}
+              <div class="d-flex gap-1 mt-2">
+                <a href="?edit={{ image.pk }}" class="btn btn-sm btn-outline-secondary flex-grow-1"><i class="bi bi-pencil"></i></a>
+                <form method="post" onsubmit="return confirm('Remove this photo from your gallery?');" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="image_id" value="{{ image.pk }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><p class="text-muted mb-0">No photos yet. Upload pictures of your work in the field — they appear in the gallery on your public page.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'website/partner_manage_base.html' %}
+
+{% block manage_content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="manage-card mb-4">
+        <h2 class="mb-3">About your organization</h2>
+        {% for field in form %}
+          {% if field.name in 'about,mission,areas_of_work,organization_type,success_story' %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="manage-card">
+        <h2 class="mb-3">Contact details</h2>
+        <div class="row">
+          {% for field in form %}
+            {% if field.name in 'contact_person,email,phone_number,website,address,city,state,facebook_url,twitter_url,linkedin_url' %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="manage-card mb-4">
+        <h2 class="mb-3">Images</h2>
+        {% for field in form %}
+          {% if field.name in 'logo,cover_image' %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.name == 'logo' and partner.logo %}
+              <div class="mb-2"><img src="{{ partner.logo.url }}" alt="Current logo" style="max-height:80px;border:1px solid #eee;border-radius:8px;padding:6px;background:#fff;"></div>
+            {% elif field.name == 'cover_image' and partner.cover_image %}
+              <div class="mb-2"><img src="{{ partner.cover_image.url }}" alt="Current cover" style="width:100%;height:90px;object-fit:cover;border-radius:8px;"></div>
+            {% endif %}
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="manage-card">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-check-lg me-1"></i> Save changes
+        </button>
+        <a href="{% url 'website:partner_detail' partner.slug %}" class="btn btn-link w-100 mt-2">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

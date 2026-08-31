@@ -3,15 +3,20 @@ from django.views.generic import ListView, DetailView, TemplateView, RedirectVie
 from django.urls import reverse_lazy
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
+import json
+
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_GET
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from .models import (
     Page, NewsArticle, HomePageSection, TeamMember,
     PartnerShowcase, Testimonial, FAQ, ContactInfo, SiteSettings, Statistic,
     HeroSlide, MissionVision, OperationalPillar, PlatformFeature,
-    TrainingProgram, SupportTeam, CallToAction, PageContent, GalleryImage
+    TrainingProgram, SupportTeam, CallToAction, PageContent, GalleryImage,
+    SocialMediaLink, SocialPost
 )
 from dashboard.models import PartnerOrganization, AkilimoParticipant, ANANigeriaPartner
 
@@ -45,6 +50,11 @@ class HomeView(TemplateView):
 
         # Get homepage statistics - compute real statistics from database
         context['homepage_statistics'] = self._get_real_statistics()
+
+        # Social feed — admin-curated posts (embed code or image + caption)
+        context['social_posts'] = SocialPost.objects.filter(
+            is_active=True
+        ).select_related('social_link')[:6]
 
         # Get featured content
         context['featured_news'] = NewsArticle.objects.filter(
@@ -309,6 +319,13 @@ class PartnersView(TemplateView):
         # Legacy: all PartnerOrganization records (kept for backward compatibility)
         context['all_partners'] = PartnerOrganization.objects.filter(
             is_active=True
+        ).order_by('name')
+
+        # Directory of organizations with a published partner page. Only ~1 in 5
+        # ANA rows is linked to a PartnerOrganization, so without this the
+        # majority of partner pages would have no route in from the website.
+        context['public_partners'] = PartnerOrganization.objects.filter(
+            is_active=True, has_public_page=True
         ).order_by('name')
 
         # Get featured partners
@@ -606,6 +623,12 @@ def website_context(request):
             is_active=True
         ).first()
 
+    # Social accounts for the header and footer icon rows
+    social_links = list(SocialMediaLink.objects.filter(is_active=True))
+    context['social_links'] = social_links
+    context['header_social_links'] = [s for s in social_links if s.show_in_header]
+    context['footer_social_links'] = [s for s in social_links if s.show_in_footer]
+
     return context
 
 
@@ -716,3 +739,264 @@ def get_live_statistics(request):
             'error': str(e),
             'statistics': []
         }, status=500)
+
+
+# ─── Public analytics ─────────────────────────────────────────────────────────
+
+class AnalyticsView(TemplateView):
+    """
+    Public analytics page — open to every visitor, no login required.
+
+    Reads the pre-computed snapshot (see dashboard.analytics), so the page
+    renders instantly even though the underlying aggregation scans hundreds of
+    thousands of participant records.
+    """
+    template_name = 'website/analytics.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from dashboard.analytics import get_analytics
+
+        country = 'all' if self.request.GET.get('country') == 'all' else 'nigeria'
+        data = get_analytics(country=country)
+
+        context['analytics'] = data
+        context['country'] = country
+        context['totals'] = data['totals']
+        context['computed_at'] = data.get('computed_at')
+
+        # Charts are drawn client-side from this single blob. Pass the dict —
+        # json_script serialises it; pre-dumping would double-encode it into a
+        # JSON string and JSON.parse would hand the page a string, not an object.
+        context['chart_data'] = {
+            'by_gender': data['by_gender'],
+            'by_state': data['by_state'],
+            'by_lga': data['by_lga'],
+            'by_age': data['by_age'],
+            'by_year': data['by_year'],
+            'by_partner': data['by_partner'],
+            'by_event_type': data['by_event_type'],
+        }
+        return context
+
+
+@require_GET
+def analytics_api(request):
+    """JSON feed of the same public analytics payload."""
+    from dashboard.analytics import get_analytics
+
+    country = 'all' if request.GET.get('country') == 'all' else 'nigeria'
+    return JsonResponse(get_analytics(country=country))
+
+
+# ─── Partner pages ────────────────────────────────────────────────────────────
+
+def _partner_admin_or_403(request, partner):
+    """
+    Confirm the signed-in user may edit ``partner``.
+
+    Access is granted to site staff, and to a user whose profile is linked to
+    this organization *and* carries the is_partner_admin flag — being a member
+    of a partner organization is not on its own permission to edit its public
+    page.
+    """
+    from django.core.exceptions import PermissionDenied
+
+    if request.user.is_staff or request.user.is_superuser:
+        return True
+
+    profile = getattr(request.user, 'profile', None)
+    if (profile and profile.is_partner_admin
+            and profile.partner_organization_id == partner.pk):
+        return True
+
+    raise PermissionDenied(
+        "You do not have permission to manage this partner organization's page."
+    )
+
+
+class PartnerDetailView(DetailView):
+    """Public detail page for one partner organization."""
+    model = PartnerOrganization
+    template_name = 'website/partner_detail.html'
+    context_object_name = 'partner'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+
+    def get_queryset(self):
+        qs = PartnerOrganization.objects.filter(is_active=True)
+        # Staff can preview a page that is not published yet.
+        if not (self.request.user.is_authenticated and self.request.user.is_staff):
+            qs = qs.filter(has_public_page=True)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        partner = self.object
+
+        context['services'] = partner.services.filter(is_active=True)
+        context['gallery_images'] = partner.gallery_images.filter(is_active=True)
+        context['ana_partner'] = getattr(partner, 'ana_nigeria_partner', None)
+
+        from dashboard.analytics import get_partner_analytics
+        analytics = get_partner_analytics(partner.name)
+        context['partner_analytics'] = analytics
+        context['chart_data'] = {
+            'by_gender': analytics['by_gender'],
+            'by_state': analytics['by_state'],
+            'by_year': analytics['by_year'],
+        }
+
+        # Can the current viewer edit this page?
+        profile = getattr(self.request.user, 'profile', None) if self.request.user.is_authenticated else None
+        context['can_manage'] = bool(
+            self.request.user.is_authenticated and (
+                self.request.user.is_staff
+                or (profile and profile.is_partner_admin
+                    and profile.partner_organization_id == partner.pk)
+            )
+        )
+        return context
+
+
+@login_required
+def partner_manage(request, slug):
+    """
+    Partner self-service page: edit the About tab, and jump to services,
+    gallery and analytics.
+    """
+    partner = get_object_or_404(PartnerOrganization, slug=slug, is_active=True)
+    _partner_admin_or_403(request, partner)
+
+    from .forms import PartnerProfileForm
+
+    if request.method == 'POST':
+        form = PartnerProfileForm(request.POST, request.FILES, instance=partner)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your partner page has been updated.')
+            return redirect('website:partner_manage', slug=partner.slug)
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PartnerProfileForm(instance=partner)
+
+    return render(request, 'website/partner_manage.html', {
+        'partner': partner,
+        'form': form,
+        'active_tab': 'about',
+        'services': partner.services.all(),
+        'gallery_images': partner.gallery_images.all(),
+    })
+
+
+@login_required
+def partner_manage_services(request, slug):
+    """Add, edit and remove the services listed on a partner's page."""
+    partner = get_object_or_404(PartnerOrganization, slug=slug, is_active=True)
+    _partner_admin_or_403(request, partner)
+
+    from .forms import PartnerServiceForm
+    from dashboard.models import PartnerService
+
+    edit_id = request.GET.get('edit')
+    instance = None
+    if edit_id:
+        instance = get_object_or_404(PartnerService, pk=edit_id, partner=partner)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'delete':
+            service = get_object_or_404(PartnerService, pk=request.POST.get('service_id'), partner=partner)
+            title = service.title
+            service.delete()
+            messages.success(request, f'Removed "{title}".')
+            return redirect('website:partner_manage_services', slug=partner.slug)
+
+        form = PartnerServiceForm(request.POST, instance=instance)
+        if form.is_valid():
+            service = form.save(commit=False)
+            service.partner = partner
+            service.save()
+            messages.success(
+                request,
+                f'Updated "{service.title}".' if instance else f'Added "{service.title}".'
+            )
+            return redirect('website:partner_manage_services', slug=partner.slug)
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PartnerServiceForm(instance=instance)
+
+    return render(request, 'website/partner_manage_services.html', {
+        'partner': partner,
+        'form': form,
+        'editing': instance,
+        'services': partner.services.all(),
+        'active_tab': 'services',
+    })
+
+
+@login_required
+def partner_manage_gallery(request, slug):
+    """Upload and manage the photos of work done on a partner's page."""
+    partner = get_object_or_404(PartnerOrganization, slug=slug, is_active=True)
+    _partner_admin_or_403(request, partner)
+
+    from .forms import PartnerGalleryImageForm
+    from dashboard.models import PartnerGalleryImage
+
+    edit_id = request.GET.get('edit')
+    instance = None
+    if edit_id:
+        instance = get_object_or_404(PartnerGalleryImage, pk=edit_id, partner=partner)
+
+    if request.method == 'POST':
+        if request.POST.get('action') == 'delete':
+            image = get_object_or_404(PartnerGalleryImage, pk=request.POST.get('image_id'), partner=partner)
+            image.delete()
+            messages.success(request, 'Photo removed from your gallery.')
+            return redirect('website:partner_manage_gallery', slug=partner.slug)
+
+        form = PartnerGalleryImageForm(request.POST, request.FILES, instance=instance)
+        if form.is_valid():
+            image = form.save(commit=False)
+            image.partner = partner
+            if not image.uploaded_by_id:
+                image.uploaded_by = request.user
+            image.save()
+            messages.success(request, 'Photo saved.' if instance else 'Photo added to your gallery.')
+            return redirect('website:partner_manage_gallery', slug=partner.slug)
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PartnerGalleryImageForm(instance=instance)
+
+    return render(request, 'website/partner_manage_gallery.html', {
+        'partner': partner,
+        'form': form,
+        'editing': instance,
+        'gallery_images': partner.gallery_images.all(),
+        'active_tab': 'gallery',
+    })
+
+
+@login_required
+def partner_manage_analytics(request, slug):
+    """The partner's own reach figures, drawn from AKILIMO participant records."""
+    partner = get_object_or_404(PartnerOrganization, slug=slug, is_active=True)
+    _partner_admin_or_403(request, partner)
+
+    from dashboard.analytics import get_partner_analytics
+    analytics = get_partner_analytics(partner.name, force_refresh=request.GET.get('refresh') == '1')
+
+    return render(request, 'website/partner_manage_analytics.html', {
+        'partner': partner,
+        'analytics': analytics,
+        'totals': analytics['totals'],
+        'chart_data': {
+            'by_gender': analytics['by_gender'],
+            'by_state': analytics['by_state'],
+            'by_year': analytics['by_year'],
+            'by_event_type': analytics['by_event_type'],
+        },
+        'active_tab': 'analytics',
+    })

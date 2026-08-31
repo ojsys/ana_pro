@@ -9,6 +9,7 @@ from import_export.admin import ImportExportModelAdmin
 from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
     DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing,
+    PartnerService, PartnerGalleryImage,
     ANANigeriaPartner
 )
 from .resources import (
@@ -160,6 +161,18 @@ class DataSyncLogAdmin(ImportExportModelAdmin):
         return super().get_queryset(request).select_related('initiated_by')
 
 
+class PartnerServiceInline(admin.TabularInline):
+    model = PartnerService
+    extra = 0
+    fields = ['title', 'icon', 'order', 'is_active']
+
+
+class PartnerGalleryImageInline(admin.TabularInline):
+    model = PartnerGalleryImage
+    extra = 0
+    fields = ['image', 'caption', 'location', 'taken_on', 'order', 'is_active']
+
+
 @admin.register(PartnerOrganization)
 class PartnerOrganizationAdmin(ImportExportModelAdmin):
     resource_class = PartnerOrganizationResource
@@ -169,10 +182,22 @@ class PartnerOrganizationAdmin(ImportExportModelAdmin):
     readonly_fields = ['created_at', 'updated_at', 'joined_program_date', 'requested_by', 'approved_by', 'approved_at']
     list_editable = ['is_featured', 'feature_order']
     actions = ['approve_organizations', 'reject_organizations']
+    prepopulated_fields = {'slug': ('name',)}
+    inlines = [PartnerServiceInline, PartnerGalleryImageInline]
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'code', 'description', 'organization_type', 'is_active')
+            'fields': ('name', 'code', 'slug', 'description', 'organization_type', 'is_active')
+        }),
+        ('Public Partner Page', {
+            'fields': ('has_public_page', 'about', 'mission', 'areas_of_work', 'cover_image',
+                       'facebook_url', 'twitter_url', 'linkedin_url'),
+            'description': (
+                'Content for this organization\'s own page on the public website. '
+                'A user linked to this organization whose profile has '
+                '<strong>Is partner admin</strong> ticked can edit these fields themselves '
+                'at <code>/partners/&lt;slug&gt;/manage/</code>.'
+            )
         }),
         ('Approval Status', {
             'fields': ('status', 'requested_by', 'approved_by', 'approved_at', 'rejection_reason'),
@@ -325,7 +350,12 @@ class UserProfileInline(admin.StackedInline):
             'fields': ('phone_number',)
         }),
         ('Status', {
-            'fields': ('is_partner_verified', 'profile_completed', 'profile_completion_date')
+            'fields': ('is_partner_admin', 'is_partner_verified', 'profile_completed', 'profile_completion_date'),
+            'description': (
+                '<strong>Is partner admin</strong> lets this user edit their organization\'s '
+                'public partner page — about, services and gallery. Being linked to a partner '
+                'organization is not on its own enough.'
+            )
         }),
         ('Preferences', {
             'fields': ('email_notifications', 'dashboard_preferences'),
@@ -361,8 +391,9 @@ admin.site.register(User, UserAdmin)
 @admin.register(UserProfile)
 class UserProfileAdmin(ImportExportModelAdmin):
     resource_class = UserProfileResource
-    list_display = ['user', 'partner_name', 'partner_organization', 'position', 'is_partner_verified', 'profile_completed', 'created_at']
-    list_filter = ['partner_organization', 'is_partner_verified', 'profile_completed', 'email_notifications', 'created_at']
+    list_display = ['user', 'partner_name', 'partner_organization', 'position', 'is_partner_admin', 'is_partner_verified', 'profile_completed', 'created_at']
+    list_editable = ['is_partner_admin']
+    list_filter = ['is_partner_admin', 'partner_organization', 'is_partner_verified', 'profile_completed', 'email_notifications', 'created_at']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'phone_number', 'position']
     readonly_fields = ['profile_completion_date', 'created_at', 'updated_at']
     
@@ -994,3 +1025,31 @@ class ANANigeriaPartnerAdmin(admin.ModelAdmin):
     def primary_category_display(self, obj):
         return obj.primary_category
     primary_category_display.short_description = 'Primary Category'
+
+
+@admin.register(PartnerService)
+class PartnerServiceAdmin(admin.ModelAdmin):
+    list_display = ['title', 'partner', 'icon', 'order', 'is_active']
+    list_editable = ['order', 'is_active']
+    list_filter = ['is_active', 'partner']
+    search_fields = ['title', 'description', 'partner__name']
+    autocomplete_fields = ['partner']
+
+
+@admin.register(PartnerGalleryImage)
+class PartnerGalleryImageAdmin(admin.ModelAdmin):
+    list_display = ['thumbnail', 'caption', 'partner', 'location', 'taken_on', 'order', 'is_active']
+    list_editable = ['order', 'is_active']
+    list_filter = ['is_active', 'partner', 'taken_on']
+    search_fields = ['caption', 'description', 'partner__name']
+    autocomplete_fields = ['partner']
+    readonly_fields = ['uploaded_by', 'created_at']
+
+    @admin.display(description='Photo')
+    def thumbnail(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="height:44px;width:70px;object-fit:cover;border-radius:4px;">',
+                obj.image.url
+            )
+        return '—'

@@ -7,7 +7,8 @@ from .models import (
     Page, NewsArticle, HomePageSection, TeamMember, PartnerShowcase,
     Testimonial, FAQ, ContactInfo, SiteSettings, Statistic, HeroSlide,
     MissionVision, OperationalPillar, PlatformFeature, TrainingProgram,
-    SupportTeam, CallToAction, PageContent, GalleryImage
+    SupportTeam, CallToAction, PageContent, GalleryImage,
+    SocialMediaLink, SocialPost
 )
 from .resources import (
     PageResource, NewsArticleResource, HomePageSectionResource,
@@ -627,3 +628,73 @@ class GalleryImageAdmin(admin.ModelAdmin):
 admin.site.site_header = "AKILIMO Nigeria Association - CMS Admin"
 admin.site.site_title = "AKILIMO CMS"
 admin.site.index_title = "Content Management System"
+
+
+@admin.register(SocialMediaLink)
+class SocialMediaLinkAdmin(admin.ModelAdmin):
+    list_display = ['platform_badge', 'handle', 'url', 'show_in_header', 'show_in_footer', 'order', 'is_active']
+    list_editable = ['show_in_header', 'show_in_footer', 'order', 'is_active']
+    list_filter = ['platform', 'is_active', 'show_in_header', 'show_in_footer']
+    search_fields = ['handle', 'url']
+    ordering = ['order', 'platform']
+
+    fieldsets = (
+        ('Account', {
+            'fields': ('platform', 'url', 'handle'),
+            'description': 'The account itself. The handle is shown beside posts in the homepage feed.'
+        }),
+        ('Display', {
+            'fields': ('custom_icon', 'show_in_header', 'show_in_footer', 'order', 'is_active')
+        }),
+    )
+
+    @admin.display(description='Platform', ordering='platform')
+    def platform_badge(self, obj):
+        return format_html(
+            '<span style="display:inline-flex;align-items:center;gap:.4rem;">'
+            '<span style="width:10px;height:10px;border-radius:2px;background:{};"></span>{}</span>',
+            obj.brand_color, obj.get_platform_display()
+        )
+
+
+@admin.register(SocialPost)
+class SocialPostAdmin(admin.ModelAdmin):
+    list_display = ['preview', 'social_link', 'content_kind', 'posted_at', 'is_featured', 'order', 'is_active']
+    list_editable = ['is_featured', 'order', 'is_active']
+    list_filter = ['social_link__platform', 'is_active', 'is_featured', 'posted_at']
+    search_fields = ['caption', 'post_url']
+    ordering = ['order', '-posted_at']
+
+    fieldsets = (
+        ('Post', {
+            'fields': ('social_link', 'caption', 'post_url', 'posted_at')
+        }),
+        ('Content', {
+            'fields': ('image', 'embed_code'),
+            'description': (
+                '<div style="background:#e8f4fd;border:1px solid #90caf9;padding:12px;border-radius:4px;">'
+                'Two ways to fill this in:<br>'
+                '<strong>1. Upload an image</strong> — a screenshot or the post\'s own picture. '
+                'Always renders, needs nothing from the platform.<br>'
+                '<strong>2. Paste an embed code</strong> — on X use "Embed post", on Instagram use "Embed". '
+                'Renders the real post, and <em>overrides the image</em> when present.'
+                '</div>'
+            )
+        }),
+        ('Display', {
+            'fields': ('is_featured', 'order', 'is_active')
+        }),
+    )
+
+    @admin.display(description='Caption')
+    def preview(self, obj):
+        text = obj.caption[:70] + ('…' if len(obj.caption) > 70 else '')
+        return text or '(no caption)'
+
+    @admin.display(description='Type')
+    def content_kind(self, obj):
+        if obj.has_embed:
+            return format_html('<span class="badge" style="background:#0a7d2b;color:#fff;padding:2px 8px;border-radius:10px;">Embed</span>')
+        if obj.image:
+            return format_html('<span class="badge" style="background:#0A66C2;color:#fff;padding:2px 8px;border-radius:10px;">Image</span>')
+        return format_html('<span style="color:#b45309;">Text only</span>')

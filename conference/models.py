@@ -340,6 +340,26 @@ class Registration(models.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+    #: Payment states that entitle the participant to an attendance ticket.
+    TICKET_VALID_STATUSES = ('confirmed', 'waived')
+
+    @property
+    def is_paid(self):
+        """True once the fee has actually been received (or formally waived)."""
+        return self.payment_status in self.TICKET_VALID_STATUSES
+
+    @property
+    def ticket_issued(self):
+        """
+        Whether this registration is entitled to an attendance ticket.
+
+        A ticket must never be shown, printed, emailed or verified until the
+        payment behind it is confirmed — a pending bank transfer is not proof
+        of payment. Complimentary stakeholder places ('waived') are ticketed
+        because there is no fee to collect.
+        """
+        return self.is_paid
+
     def save(self, *args, **kwargs):
         if not self.ticket_id:
             year = timezone.now().year

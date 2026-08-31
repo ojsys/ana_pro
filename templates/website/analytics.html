@@ -1,0 +1,418 @@
+{% extends 'website/base.html' %}
+{% load humanize %}
+
+{% block title %}Analytics — {{ site_settings.site_title|default:"AKILIMO Nigeria Association" }}{% endblock %}
+{% block meta_description %}Open data on AKILIMO's reach in Nigeria: farmers reached, gender breakdown, coverage by state and local government area, and partner contributions.{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Data-viz roles. Categorical order is fixed and validated for colour-vision
+     deficiency across every visible pair; never re-order or cycle these. */
+  .viz {
+    --series-1: #2E7D32;   /* brand green */
+    --series-2: #2a78d6;   /* blue        */
+    --series-3: #eda100;   /* yellow      */
+    --viz-single: #2E7D32; /* single-series magnitude */
+    --viz-surface: #ffffff;
+    --viz-grid: #ECEFF1;
+    --viz-ink: #212121;
+    --viz-ink-soft: #757575;
+  }
+
+  .analytics-hero {
+    background: linear-gradient(135deg, var(--dark-green), var(--primary-green) 65%, var(--light-green));
+    color: #fff;
+    padding: 7rem 0 3.5rem;
+  }
+  .analytics-hero .lead { color: rgba(255,255,255,0.9); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+  .stat-tile {
+    background: var(--viz-surface);
+    border: 1px solid #E6E9E6;
+    border-radius: 14px;
+    padding: 1.4rem 1.25rem;
+  }
+  .stat-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    line-height: 1.1;
+    color: var(--viz-ink);
+  }
+  .stat-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.4px;
+    color: var(--viz-ink-soft); font-weight: 600; margin-top: 0.35rem;
+  }
+  .stat-note { font-size: 0.78rem; color: var(--viz-ink-soft); margin-top: 0.5rem; }
+
+  .chart-card {
+    background: var(--viz-surface);
+    border: 1px solid #E6E9E6;
+    border-radius: 16px;
+    padding: 1.5rem;
+    height: 100%;
+  }
+  .chart-title {
+    font-family: 'Poppins', sans-serif; font-weight: 700;
+    font-size: 1.05rem; color: var(--viz-ink); margin-bottom: 0.15rem;
+  }
+  .chart-sub { font-size: 0.82rem; color: var(--viz-ink-soft); margin-bottom: 1.1rem; }
+  .chart-holder { position: relative; }
+
+  /* Every chart ships a table view: it is the accessible equivalent, and the
+     relief for the yellow slot, which sits below 3:1 on a white surface. */
+  .table-toggle {
+    background: none; border: 0; padding: 0; margin-top: 0.85rem;
+    font-size: 0.78rem; font-weight: 600; color: var(--primary-green); cursor: pointer;
+  }
+  .table-toggle:hover { text-decoration: underline; }
+  .viz-table { width: 100%; font-size: 0.82rem; margin-top: 0.75rem; }
+  .viz-table th, .viz-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--viz-grid); }
+  .viz-table th { color: var(--viz-ink-soft); font-weight: 600; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 1px; }
+  .viz-table td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--viz-ink); }
+  .viz-table .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.5rem; vertical-align: middle; }
+  .viz-table-wrap { max-height: 320px; overflow-y: auto; }
+
+  .data-note {
+    background: #F7F9F7; border: 1px solid #E6E9E6; border-radius: 12px;
+    padding: 1rem 1.2rem; font-size: 0.84rem; color: #555; line-height: 1.65;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="viz">
+
+  <section class="analytics-hero">
+    <div class="container">
+      <div class="row align-items-end">
+        <div class="col-lg-8">
+          <h1 class="display-5 fw-bold mb-2">AKILIMO in Numbers</h1>
+          <p class="lead mb-0">
+            Open data on the farmers our partners have reached across Nigeria —
+            who they are, and where they farm.
+          </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+          {% if computed_at %}
+          <div style="font-size:0.8rem;opacity:0.85;">
+            Data as of {{ computed_at|slice:":10" }}
+          </div>
+          {% endif %}
+          <a href="{% url 'website:analytics_api' %}{% if country == 'all' %}?country=all{% endif %}"
+             class="btn btn-sm btn-outline-light mt-2">
+            <i class="bi bi-braces me-1"></i> View as JSON
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding" style="padding-top:2.5rem;">
+    <div class="container">
+
+      <!-- Headline figures. These are stat tiles, not charts: a single number
+           per measure has no shape worth plotting. -->
+      <div class="stat-grid mb-4">
+        <div class="stat-tile">
+          <div class="stat-value">{{ totals.farmers|intcomma }}</div>
+          <div class="stat-label">Farmers Reached</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">{{ totals.states }}</div>
+          <div class="stat-label">States Covered</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">{{ totals.lgas }}</div>
+          <div class="stat-label">Local Govt Areas</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">{{ totals.partners }}</div>
+          <div class="stat-label">Partner Organisations</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">{{ totals.events|intcomma }}</div>
+          <div class="stat-label">Training Events</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">{{ totals.female_pct }}%</div>
+          <div class="stat-label">Women Reached</div>
+          <div class="stat-note">{{ totals.female|intcomma }} of {{ totals.female|add:totals.male|intcomma }} with gender recorded</div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Gender: the one genuinely categorical breakdown on this page. -->
+        <div class="col-lg-5">
+          <div class="chart-card">
+            <div class="chart-title">Farmers by Gender</div>
+            <div class="chart-sub">Share of participants with gender recorded</div>
+            <div class="chart-holder" style="height:280px;"><canvas id="genderChart"></canvas></div>
+            <button class="table-toggle" data-target="genderTable">Show data table</button>
+            <div id="genderTable" hidden></div>
+          </div>
+        </div>
+
+        <!-- Reach over time: one series, so no legend — the title names it. -->
+        <div class="col-lg-7">
+          <div class="chart-card">
+            <div class="chart-title">Farmers Reached by Year</div>
+            <div class="chart-sub">Participants recorded per event year</div>
+            <div class="chart-holder" style="height:280px;"><canvas id="yearChart"></canvas></div>
+            <button class="table-toggle" data-target="yearTable">Show data table</button>
+            <div id="yearTable" hidden></div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="chart-card">
+            <div class="chart-title">Farmers by State</div>
+            <div class="chart-sub">All {{ totals.states }} states with recorded participants</div>
+            <div class="chart-holder" style="height:420px;"><canvas id="stateChart"></canvas></div>
+            <button class="table-toggle" data-target="stateTable">Show data table</button>
+            <div id="stateTable" hidden></div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="chart-card">
+            <div class="chart-title">Farmers by Local Government Area</div>
+            <div class="chart-sub">Top 25 of {{ totals.lgas }} LGAs reached</div>
+            <div class="chart-holder" style="height:420px;"><canvas id="lgaChart"></canvas></div>
+            <button class="table-toggle" data-target="lgaTable">Show data table</button>
+            <div id="lgaTable" hidden></div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="chart-card">
+            <div class="chart-title">Farmers by Age Group</div>
+            <div class="chart-sub">Age band as recorded at the training event</div>
+            <div class="chart-holder" style="height:280px;"><canvas id="ageChart"></canvas></div>
+            <button class="table-toggle" data-target="ageTable">Show data table</button>
+            <div id="ageTable" hidden></div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="chart-card">
+            <div class="chart-title">Farmers Reached by Partner</div>
+            <div class="chart-sub">Top 15 partner organisations by participants recorded</div>
+            <div class="chart-holder" style="height:280px;"><canvas id="partnerChart"></canvas></div>
+            <button class="table-toggle" data-target="partnerTable">Show data table</button>
+            <div id="partnerTable" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-note mt-4">
+        <strong>About this data.</strong>
+        Figures come from participant records submitted by AKILIMO partners through the
+        EiA MELIA platform{% if country != 'all' %}, filtered to Nigeria{% endif %}.
+        State names arrive in two forms in the source data — readable names and GADM
+        codes — and are merged here so each state is counted once. Local government
+        areas have no readable name in the source for some records; those appear as
+        their source code qualified by state, for example <em>IS (Abia)</em>.
+        Age is shown as “Not Provided/Invalid” wherever the source record had no usable age.
+      </div>
+
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js is not loaded by the public site base template, so this page brings its own. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"
+        onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js';"></script>
+{{ chart_data|json_script:"analytics-data" }}
+<script>
+(function () {
+  const DATA = JSON.parse(document.getElementById('analytics-data').textContent);
+
+  // Fixed categorical order — validated for CVD across every visible pair.
+  const SERIES = ['#2E7D32', '#2a78d6', '#eda100'];
+  const SINGLE = '#2E7D32';
+  const INK = '#212121', INK_SOFT = '#757575', GRID = '#ECEFF1';
+
+  const fmt = n => n.toLocaleString();
+
+  Chart.defaults.font.family = "'Inter','Segoe UI',system-ui,sans-serif";
+  Chart.defaults.color = INK_SOFT;
+
+  // Every chart gets a hover tooltip; that is the interaction layer.
+  const MAX_LABEL = 26;
+  const short = s => (s.length > MAX_LABEL ? s.slice(0, MAX_LABEL - 1) + '…' : s);
+
+  const tooltip = {
+    backgroundColor: '#212121',
+    padding: 10,
+    cornerRadius: 8,
+    displayColors: false,
+    titleFont: { size: 12, weight: '600' },
+    bodyFont: { size: 12 },
+    callbacks: {
+      // Axis labels are truncated to fit the card; the tooltip shows the full name.
+      title: items => items[0].dataset.fullLabels?.[items[0].dataIndex] ?? items[0].label,
+      label: c => `${fmt(c.parsed.x ?? c.parsed.y ?? c.parsed)} farmers`
+    }
+  };
+
+  const noGrid = { grid: { display: false }, border: { display: false } };
+  const softGrid = { grid: { color: GRID, drawTicks: false }, border: { display: false } };
+
+  function horizontalBars(canvasId, rows, color) {
+    return new Chart(document.getElementById(canvasId), {
+      type: 'bar',
+      data: {
+        labels: rows.map(r => short(r.label)),
+        datasets: [{
+          data: rows.map(r => r.count),
+          fullLabels: rows.map(r => r.label),
+          backgroundColor: color,
+          borderRadius: 4,          // rounded data-end
+          borderSkipped: 'start',   // square against the baseline
+          barPercentage: 0.8,
+          categoryPercentage: 0.82  // leaves a surface gap between bars
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip },
+        scales: {
+          x: { ...softGrid, ticks: { callback: v => fmt(v), font: { size: 11 } } },
+          y: { ...noGrid, ticks: { font: { size: 11 }, autoSkip: false } }
+        }
+      }
+    });
+  }
+
+  // ── Gender — categorical, so hues come from the fixed SERIES order and a
+  //    legend is always present alongside direct value labels.
+  const gender = DATA.by_gender || [];
+  new Chart(document.getElementById('genderChart'), {
+    type: 'doughnut',
+    data: {
+      labels: gender.map(r => r.label),
+      datasets: [{
+        data: gender.map(r => r.count),
+        backgroundColor: gender.map((_, i) => SERIES[i % SERIES.length]),
+        borderColor: '#ffffff',
+        borderWidth: 2   // 2px surface gap between adjacent fills
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '58%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: INK, boxWidth: 10, boxHeight: 10, usePointStyle: true,
+            pointStyle: 'rectRounded', padding: 14, font: { size: 12 },
+            // Direct labels on the legend: identity is never colour alone.
+            generateLabels(chart) {
+              const d = chart.data;
+              const total = d.datasets[0].data.reduce((a, b) => a + b, 0) || 1;
+              return d.labels.map((label, i) => ({
+                text: `${label} — ${fmt(d.datasets[0].data[i])} (${(d.datasets[0].data[i] / total * 100).toFixed(1)}%)`,
+                fillStyle: d.datasets[0].backgroundColor[i],
+                strokeStyle: d.datasets[0].backgroundColor[i],
+                index: i
+              }));
+            }
+          }
+        },
+        tooltip: {
+          ...tooltip,
+          callbacks: {
+            label(c) {
+              const total = c.dataset.data.reduce((a, b) => a + b, 0) || 1;
+              return `${c.label}: ${fmt(c.parsed)} (${(c.parsed / total * 100).toFixed(1)}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // ── Reach over time — one series: 2px line, no legend, the title names it.
+  const years = DATA.by_year || [];
+  new Chart(document.getElementById('yearChart'), {
+    type: 'line',
+    data: {
+      labels: years.map(r => r.label),
+      datasets: [{
+        data: years.map(r => r.count),
+        borderColor: SINGLE,
+        backgroundColor: 'rgba(46,125,50,0.10)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 8,      // hit target larger than the mark
+        pointBackgroundColor: SINGLE,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,      // 2px surface ring
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },  // crosshair behaviour
+      plugins: { legend: { display: false }, tooltip },
+      scales: {
+        y: { ...softGrid, beginAtZero: true, ticks: { callback: v => fmt(v), font: { size: 11 } } },
+        x: { ...noGrid, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  horizontalBars('stateChart', DATA.by_state || [], SINGLE);
+  horizontalBars('lgaChart', DATA.by_lga || [], SINGLE);
+  horizontalBars('ageChart', DATA.by_age || [], SINGLE);
+  horizontalBars('partnerChart', DATA.by_partner || [], SINGLE);
+
+  // ── Table views: the accessible equivalent of every chart above.
+  const TABLES = {
+    genderTable:  { rows: DATA.by_gender,  head: 'Gender',  colored: true },
+    yearTable:    { rows: DATA.by_year,    head: 'Year' },
+    stateTable:   { rows: DATA.by_state,   head: 'State' },
+    lgaTable:     { rows: DATA.by_lga,     head: 'Local Government Area' },
+    ageTable:     { rows: DATA.by_age,     head: 'Age Group' },
+    partnerTable: { rows: DATA.by_partner, head: 'Partner' }
+  };
+
+  function renderTable(id) {
+    const spec = TABLES[id];
+    const rows = spec.rows || [];
+    const total = rows.reduce((a, r) => a + r.count, 0) || 1;
+    const body = rows.map((r, i) => {
+      const swatch = spec.colored
+        ? `<span class="swatch" style="background:${SERIES[i % SERIES.length]}"></span>`
+        : '';
+      return `<tr><td>${swatch}${r.label}</td>` +
+             `<td class="num">${fmt(r.count)}</td>` +
+             `<td class="num">${(r.count / total * 100).toFixed(1)}%</td></tr>`;
+    }).join('');
+    return `<div class="viz-table-wrap"><table class="viz-table">
+        <thead><tr><th>${spec.head}</th><th class="num">Farmers</th><th class="num">Share</th></tr></thead>
+        <tbody>${body}</tbody></table></div>`;
+  }
+
+  document.querySelectorAll('.table-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = document.getElementById(btn.dataset.target);
+      if (el.hidden) {
+        if (!el.innerHTML) el.innerHTML = renderTable(btn.dataset.target);
+        el.hidden = false;
+        btn.textContent = 'Hide data table';
+      } else {
+        el.hidden = true;
+        btn.textContent = 'Show data table';
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

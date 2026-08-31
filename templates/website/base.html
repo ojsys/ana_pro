@@ -29,7 +29,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- AOS Animation Library -->
@@ -564,6 +564,13 @@
         }
     </style>
     
+    <style>
+        .header-social .nav-link { font-size: 1.05rem; opacity: 0.75; transition: opacity .2s, color .2s; }
+        .header-social .nav-link:hover { opacity: 1; color: var(--primary-accent) !important; }
+        @media (max-width: 991.98px) {
+            .header-social { flex-direction: row !important; margin: 0.5rem 0; }
+        }
+    </style>
     {% block extra_css %}{% endblock %}
     
     <!-- Google Analytics -->
@@ -615,7 +622,10 @@
                         <a class="nav-link {% if request.resolver_match.url_name == 'programs' %}active{% endif %}" href="{% url 'website:programs' %}">Programs</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'partners' %}active{% endif %}" href="{% url 'website:partners' %}">Partners</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'partners' or request.resolver_match.url_name == 'partner_detail' %}active{% endif %}" href="{% url 'website:partners' %}">Partners</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'website:analytics' %}">Analytics</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'news_list' %}active{% endif %}" href="{% url 'website:news_list' %}">News</a>
@@ -632,6 +642,20 @@
                     {% endfor %}
                 </ul>
                 
+                {% if header_social_links %}
+                <ul class="navbar-nav align-items-lg-center me-lg-2 header-social">
+                    {% for link in header_social_links %}
+                    <li class="nav-item">
+                        <a class="nav-link px-2" href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                           title="{{ link.get_platform_display }}{% if link.handle %} — @{{ link.handle }}{% endif %}"
+                           aria-label="{{ link.get_platform_display }}">
+                            <i class="bi {{ link.icon_class }}"></i>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <!-- Logged in user menu -->
@@ -704,25 +728,35 @@
                     </h5>
                     <p class="mb-3">{{ site_settings.site_description|default:"Advancing cassava production through innovation and sustainable agricultural practices across Nigeria." }}</p>
                     
-                    {% if site_settings.facebook_url or site_settings.twitter_url or site_settings.linkedin_url or site_settings.youtube_url %}
+                    {% if footer_social_links %}
+                    <div class="social-links">
+                        {% for link in footer_social_links %}
+                            <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                               title="{{ link.get_platform_display }}{% if link.handle %} — @{{ link.handle }}{% endif %}">
+                                <i class="bi {{ link.icon_class }}"></i>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    {% elif site_settings.facebook_url or site_settings.twitter_url or site_settings.linkedin_url or site_settings.youtube_url %}
+                    {# Fallback: the legacy single-URL fields on Site Settings #}
                     <div class="social-links">
                         {% if site_settings.facebook_url %}
-                            <a href="{{ site_settings.facebook_url }}" target="_blank" title="Facebook">
+                            <a href="{{ site_settings.facebook_url }}" target="_blank" rel="noopener noreferrer" title="Facebook">
                                 <i class="bi bi-facebook"></i>
                             </a>
                         {% endif %}
                         {% if site_settings.twitter_url %}
-                            <a href="{{ site_settings.twitter_url }}" target="_blank" title="Twitter">
+                            <a href="{{ site_settings.twitter_url }}" target="_blank" rel="noopener noreferrer" title="Twitter">
                                 <i class="bi bi-twitter"></i>
                             </a>
                         {% endif %}
                         {% if site_settings.linkedin_url %}
-                            <a href="{{ site_settings.linkedin_url }}" target="_blank" title="LinkedIn">
+                            <a href="{{ site_settings.linkedin_url }}" target="_blank" rel="noopener noreferrer" title="LinkedIn">
                                 <i class="bi bi-linkedin"></i>
                             </a>
                         {% endif %}
                         {% if site_settings.youtube_url %}
-                            <a href="{{ site_settings.youtube_url }}" target="_blank" title="YouTube">
+                            <a href="{{ site_settings.youtube_url }}" target="_blank" rel="noopener noreferrer" title="YouTube">
                                 <i class="bi bi-youtube"></i>
                             </a>
                         {% endif %}

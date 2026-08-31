@@ -63,6 +63,13 @@ def _context_for(registration):
 
 def send_payment_receipt(registration):
     """Send only the payment receipt (proof the payment was successful)."""
+    if not registration.ticket_issued:
+        logger.warning(
+            "Refusing to send payment receipt for unpaid registration ref=%s status=%s",
+            registration.ticket_id, registration.payment_status,
+        )
+        return False
+
     conference = registration.conference
     ref = registration.ticket_id
     _send(
@@ -78,7 +85,14 @@ def send_payment_receipt(registration):
 
 
 def send_welcome(registration):
-    """Send only the conference welcome email."""
+    """Send only the conference welcome email (carries the attendance ticket)."""
+    if not registration.ticket_issued:
+        logger.warning(
+            "Refusing to send welcome/ticket email for unpaid registration ref=%s status=%s",
+            registration.ticket_id, registration.payment_status,
+        )
+        return False
+
     conference = registration.conference
     ref = registration.ticket_id
     _send(
@@ -198,6 +212,13 @@ def send_registration_confirmation(registration):
     Send the payment receipt and the welcome email for a confirmed
     registration. Returns True if both emails were sent successfully.
     """
+    if not registration.ticket_issued:
+        logger.warning(
+            "Refusing to send confirmation emails for unpaid registration ref=%s status=%s",
+            registration.ticket_id, registration.payment_status,
+        )
+        return False
+
     # 1. Payment receipt — sent first; proof the payment was successful.
     send_payment_receipt(registration)
     # 2. Conference welcome email — sent after the receipt.

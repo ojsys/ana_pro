@@ -7,13 +7,27 @@ urlpatterns = [
     # Homepage
     path('', views.HomeView.as_view(), name='home'),
 
+    # Public analytics (open to all visitors)
+    path('analytics/', views.AnalyticsView.as_view(), name='analytics'),
+
     # API endpoints
     path('api/statistics/', views.get_live_statistics, name='live_statistics'),
+    path('api/analytics/', views.analytics_api, name='analytics_api'),
 
     # Static pages
     path('about/', views.AboutView.as_view(), name='about'),
     path('programs/', views.ProgramsView.as_view(), name='programs'),
     path('partners/', views.PartnersView.as_view(), name='partners'),
+
+    # Partner self-service (partner admins + staff). Declared before the
+    # detail route so 'manage' paths are not swallowed by the slug pattern.
+    path('partners/<slug:slug>/manage/', views.partner_manage, name='partner_manage'),
+    path('partners/<slug:slug>/manage/services/', views.partner_manage_services, name='partner_manage_services'),
+    path('partners/<slug:slug>/manage/gallery/', views.partner_manage_gallery, name='partner_manage_gallery'),
+    path('partners/<slug:slug>/manage/analytics/', views.partner_manage_analytics, name='partner_manage_analytics'),
+
+    # Public partner detail page
+    path('partners/<slug:slug>/', views.PartnerDetailView.as_view(), name='partner_detail'),
     path('team/', views.TeamView.as_view(), name='team'),
     path('contact/', views.ContactView.as_view(), name='contact'),
     path('faq/', views.FAQView.as_view(), name='faq'),

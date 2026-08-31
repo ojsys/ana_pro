@@ -78,6 +78,32 @@ class PartnerOrganization(models.Model):
     # Success story
     success_story = models.TextField(blank=True, help_text="Success story or achievement highlight")
 
+    # ── Public partner page ─────────────────────────────────────────────────
+    slug = models.SlugField(
+        max_length=220, unique=True, blank=True,
+        help_text="URL for the public partner page (auto-generated from the name)"
+    )
+    about = models.TextField(
+        blank=True,
+        help_text="Full description of the organization shown on its public page"
+    )
+    mission = models.TextField(blank=True, help_text="Mission statement")
+    areas_of_work = models.TextField(
+        blank=True,
+        help_text="One area of work per line, e.g. 'Cassava agronomy'"
+    )
+    cover_image = models.ImageField(
+        upload_to='partners/covers/', blank=True, null=True,
+        help_text="Wide banner image for the public partner page"
+    )
+    facebook_url = models.URLField(blank=True)
+    twitter_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+    has_public_page = models.BooleanField(
+        default=True,
+        help_text="Show this organization's own page on the public website"
+    )
+
     # Location information
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
@@ -103,6 +129,24 @@ class PartnerOrganization(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.code})"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base = slugify(self.name)[:200] or slugify(self.code) or 'partner'
+            slug, n = base, 2
+            while PartnerOrganization.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('website:partner_detail', kwargs={'slug': self.slug})
+
+    def get_areas_of_work_list(self):
+        return [line.strip() for line in self.areas_of_work.split('\n') if line.strip()]
 
     @property
     def is_approved(self):
@@ -135,6 +179,62 @@ class PartnerOrganization(models.Model):
         """Get total number of events organized by this partner"""
         return AkilimoParticipant.objects.filter(partner__icontains=self.name).values('event_date', 'event_venue').distinct().count()
 
+class PartnerService(models.Model):
+    """A service or offering listed on a partner's public page."""
+    partner = models.ForeignKey(
+        'PartnerOrganization', on_delete=models.CASCADE, related_name='services'
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    icon = models.CharField(
+        max_length=50, blank=True,
+        help_text="Bootstrap Icons class, e.g. 'bi-tree' (optional)"
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'title']
+        verbose_name = "Partner Service"
+        verbose_name_plural = "Partner Services"
+
+    def __str__(self):
+        return f"{self.partner.name} — {self.title}"
+
+    @property
+    def icon_class(self):
+        return self.icon or 'bi-check-circle'
+
+
+class PartnerGalleryImage(models.Model):
+    """A photo of work done, shown in the gallery on a partner's public page."""
+    partner = models.ForeignKey(
+        'PartnerOrganization', on_delete=models.CASCADE, related_name='gallery_images'
+    )
+    image = models.ImageField(upload_to='partners/gallery/')
+    caption = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    taken_on = models.DateField(null=True, blank=True, help_text="When the photo was taken")
+    location = models.CharField(max_length=200, blank=True, help_text="Where the work took place")
+    order = models.PositiveIntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='partner_gallery_uploads'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Partner Gallery Image"
+        verbose_name_plural = "Partner Gallery Images"
+
+    def __str__(self):
+        return f"{self.partner.name} — {self.caption or 'Untitled'}"
+
+
 class UserProfile(models.Model):
     """Extended user profile for partner organization users"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -150,6 +250,10 @@ class UserProfile(models.Model):
     profile_photo = models.ImageField(upload_to='profiles/', blank=True, null=True, help_text="Profile photo for ID card")
     
     # Profile status
+    is_partner_admin = models.BooleanField(
+        default=False,
+        help_text="Can edit this partner organization's public page (about, services, gallery)."
+    )
     is_partner_verified = models.BooleanField(default=False, help_text="Has partner organization been verified?")
     profile_completed = models.BooleanField(default=False)
     profile_completion_date = models.DateTimeField(null=True, blank=True)

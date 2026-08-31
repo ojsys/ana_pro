@@ -3,6 +3,9 @@ from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.utils import timezone
 from ckeditor.widgets import CKEditorWidget
+from import_export.admin import ExportMixin
+
+from .resources import RegistrationResource
 from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
@@ -236,7 +239,8 @@ class RegistrationCategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Registration)
-class RegistrationAdmin(admin.ModelAdmin):
+class RegistrationAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = RegistrationResource
     list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'is_stakeholder', 'checked_in', 'registered_at']
     list_filter = ['conference', 'is_stakeholder', 'payment_method', 'payment_status', 'category', 'checked_in']
     search_fields = ['ticket_id', 'first_name', 'last_name', 'email', 'organization']
@@ -263,8 +267,32 @@ class RegistrationAdmin(admin.ModelAdmin):
         }),
     )
 
-    actions = ['confirm_registration', 'resend_confirmation_emails',
-               'resend_payment_receipt', 'mark_checked_in']
+    actions = ['export_selected_to_csv', 'confirm_registration',
+               'resend_confirmation_emails', 'resend_payment_receipt',
+               'mark_checked_in']
+
+    @admin.action(description='⬇ Export selected registrations to CSV')
+    def export_selected_to_csv(self, request, queryset):
+        """Download the selected registrations as a CSV file.
+
+        The 'Export' button above exports the whole (filtered) list and offers
+        other formats; this action is the quick path for a hand-picked set.
+        """
+        import csv
+        from django.http import HttpResponse
+
+        resource = self.resource_class()
+        dataset = resource.export(queryset)
+
+        response = HttpResponse(content_type='text/csv')
+        filename = f"conference-registrations-{timezone.now():%Y%m%d-%H%M}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        writer = csv.writer(response)
+        writer.writerow(dataset.headers)
+        for row in dataset:
+            writer.writerow(row)
+        return response
 
     def confirm_registration(self, request, queryset):
         from django.utils import timezone

@@ -1,0 +1,238 @@
+{% extends 'website/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ partner.name }} — {{ site_settings.site_title|default:"AKILIMO Nigeria Association" }}{% endblock %}
+{% block meta_description %}{{ partner.about|default:partner.description|truncatechars:160 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .partner-hero {
+    position: relative;
+    background: linear-gradient(135deg, var(--dark-green), var(--primary-green) 65%, var(--light-green));
+    color: #fff; padding: 7rem 0 3rem;
+  }
+  .partner-hero.has-cover::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(13,27,15,0.55), rgba(27,94,32,0.9));
+  }
+  .partner-hero > .container { position: relative; z-index: 1; }
+  .partner-logo {
+    width: 96px; height: 96px; border-radius: 16px; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  .partner-logo img { max-width: 82%; max-height: 82%; object-fit: contain; }
+  .partner-tag {
+    display: inline-block; background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.3); color: #fff;
+    padding: 0.25rem 0.8rem; border-radius: 50px; font-size: 0.78rem; margin: 0 0.35rem 0.4rem 0;
+  }
+  .info-card { background:#fff; border:1px solid #E6E9E6; border-radius:16px; padding:1.5rem; }
+  .stat-mini { text-align:center; padding:1rem 0.5rem; }
+  .stat-mini .v { font-family:'Poppins',sans-serif; font-weight:800; font-size:1.7rem; color:#212121; line-height:1.1; }
+  .stat-mini .l { font-size:0.7rem; text-transform:uppercase; letter-spacing:1.2px; color:#757575; font-weight:600; margin-top:.3rem; }
+  .service-item { display:flex; gap:1rem; padding:1rem 0; border-bottom:1px solid #EEF1EE; }
+  .service-item:last-child { border-bottom:none; }
+  .service-icon {
+    flex:0 0 42px; height:42px; border-radius:10px; background:var(--surface-green);
+    color:var(--primary-green); display:flex; align-items:center; justify-content:center; font-size:1.15rem;
+  }
+  .gallery-tile { border-radius:12px; overflow:hidden; position:relative; display:block; }
+  .gallery-tile img { width:100%; height:200px; object-fit:cover; transition:transform .3s; }
+  .gallery-tile:hover img { transform:scale(1.05); }
+  .gallery-cap {
+    position:absolute; left:0; right:0; bottom:0; padding:.75rem;
+    background:linear-gradient(transparent, rgba(0,0,0,.75)); color:#fff; font-size:.82rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="partner-hero {% if partner.cover_image %}has-cover{% endif %}"
+         {% if partner.cover_image %}style="background-image:url('{{ partner.cover_image.url }}');background-size:cover;background-position:center;"{% endif %}>
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-center gap-4">
+      <div class="partner-logo">
+        {% if partner.logo %}
+          <img src="{{ partner.logo.url }}" alt="{{ partner.name }} logo">
+        {% else %}
+          <i class="bi bi-building" style="font-size:2.2rem;color:var(--primary-green);"></i>
+        {% endif %}
+      </div>
+      <div class="flex-grow-1">
+        <h1 class="display-6 fw-bold mb-2">{{ partner.name }}</h1>
+        <div>
+          {% if partner.organization_type %}<span class="partner-tag">{{ partner.organization_type }}</span>{% endif %}
+          {% if partner.state %}<span class="partner-tag"><i class="bi bi-geo-alt me-1"></i>{{ partner.state }}{% if partner.city %}, {{ partner.city }}{% endif %}</span>{% endif %}
+          {% if ana_partner.is_integrated_akilimo %}<span class="partner-tag"><i class="bi bi-patch-check me-1"></i>AKILIMO Integrated</span>{% endif %}
+          {% if ana_partner.is_uploading_data %}<span class="partner-tag"><i class="bi bi-cloud-arrow-up me-1"></i>Contributing Data</span>{% endif %}
+        </div>
+      </div>
+      {% if can_manage %}
+      <div>
+        <a href="{% url 'website:partner_manage' partner.slug %}" class="btn btn-light">
+          <i class="bi bi-pencil-square me-1"></i> Manage this page
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section-padding" style="padding-top:2.5rem;">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-8">
+        <!-- About -->
+        <div class="info-card mb-4">
+          <h2 class="h5 fw-bold mb-3">About {{ partner.name }}</h2>
+          {% if partner.about %}
+            <p style="white-space:pre-line;line-height:1.75;">{{ partner.about }}</p>
+          {% elif partner.description %}
+            <p style="line-height:1.75;">{{ partner.description }}</p>
+          {% else %}
+            <p class="text-muted mb-0">This partner has not published a description yet.</p>
+          {% endif %}
+
+          {% if partner.mission %}
+          <div class="mt-4 p-3" style="background:var(--surface-green);border-radius:12px;">
+            <div class="fw-bold mb-1" style="font-size:.78rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--primary-green);">Mission</div>
+            <div style="white-space:pre-line;">{{ partner.mission }}</div>
+          </div>
+          {% endif %}
+
+          {% if partner.get_areas_of_work_list %}
+          <div class="mt-4">
+            <div class="fw-bold mb-2" style="font-size:.78rem;text-transform:uppercase;letter-spacing:1.2px;color:#757575;">Areas of Work</div>
+            {% for area in partner.get_areas_of_work_list %}
+              <span class="badge rounded-pill me-1 mb-1" style="background:var(--surface-green);color:var(--dark-green);font-weight:600;padding:.45rem .85rem;">{{ area }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Services -->
+        {% if services %}
+        <div class="info-card mb-4">
+          <h2 class="h5 fw-bold mb-2">Services</h2>
+          {% for service in services %}
+          <div class="service-item">
+            <div class="service-icon"><i class="bi {{ service.icon_class }}"></i></div>
+            <div>
+              <div class="fw-bold">{{ service.title }}</div>
+              {% if service.description %}<div class="text-muted" style="font-size:.9rem;">{{ service.description }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Gallery -->
+        {% if gallery_images %}
+        <div class="info-card mb-4">
+          <h2 class="h5 fw-bold mb-3">Work in the Field</h2>
+          <div class="row g-3">
+            {% for image in gallery_images %}
+            <div class="col-md-4 col-sm-6">
+              <a class="gallery-tile" data-bs-toggle="modal" data-bs-target="#pgm{{ image.id }}" href="#">
+                <img src="{{ image.image.url }}" alt="{{ image.caption|default:partner.name }}">
+                {% if image.caption %}<div class="gallery-cap">{{ image.caption }}</div>{% endif %}
+              </a>
+              <div class="modal fade" id="pgm{{ image.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">{{ image.caption|default:"Field work" }}</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <img src="{{ image.image.url }}" class="img-fluid rounded" alt="{{ image.caption|default:partner.name }}">
+                      {% if image.description %}<p class="mt-3 mb-0">{{ image.description }}</p>{% endif %}
+                      <p class="text-muted mt-2 mb-0" style="font-size:.85rem;">
+                        {% if image.location %}<i class="bi bi-geo-alt me-1"></i>{{ image.location }}{% endif %}
+                        {% if image.taken_on %} &middot; {{ image.taken_on|date:"M Y" }}{% endif %}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Success story -->
+        {% if partner.success_story %}
+        <div class="info-card">
+          <h2 class="h5 fw-bold mb-3">Success Story</h2>
+          <p class="mb-0" style="white-space:pre-line;line-height:1.75;">{{ partner.success_story }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="col-lg-4">
+        <!-- Reach -->
+        {% if partner_analytics.has_data %}
+        <div class="info-card mb-4">
+          <h2 class="h6 fw-bold mb-1">Reach in Nigeria</h2>
+          <p class="text-muted mb-3" style="font-size:.8rem;">From AKILIMO participant records</p>
+          <div class="row g-0">
+            <div class="col-6 stat-mini">
+              <div class="v">{{ partner_analytics.totals.farmers|intcomma }}</div>
+              <div class="l">Farmers</div>
+            </div>
+            <div class="col-6 stat-mini">
+              <div class="v">{{ partner_analytics.totals.states }}</div>
+              <div class="l">States</div>
+            </div>
+            <div class="col-6 stat-mini">
+              <div class="v">{{ partner_analytics.totals.lgas }}</div>
+              <div class="l">LGAs</div>
+            </div>
+            <div class="col-6 stat-mini">
+              <div class="v">{{ partner_analytics.totals.female_pct }}%</div>
+              <div class="l">Women</div>
+            </div>
+          </div>
+          {% if partner_analytics.by_state %}
+          <hr>
+          <div class="fw-bold mb-2" style="font-size:.72rem;text-transform:uppercase;letter-spacing:1.2px;color:#757575;">Where they work</div>
+          {% for row in partner_analytics.by_state|slice:":6" %}
+          <div class="d-flex justify-content-between" style="font-size:.87rem;padding:.3rem 0;border-bottom:1px solid #F1F3F1;">
+            <span>{{ row.label }}</span>
+            <span class="fw-bold">{{ row.count|intcomma }}</span>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Contact -->
+        <div class="info-card">
+          <h2 class="h6 fw-bold mb-3">Contact</h2>
+          <ul class="list-unstyled mb-0" style="font-size:.9rem;line-height:2;">
+            {% if partner.contact_person %}<li><i class="bi bi-person me-2 text-muted"></i>{{ partner.contact_person }}</li>{% endif %}
+            {% if partner.email %}<li><i class="bi bi-envelope me-2 text-muted"></i><a href="mailto:{{ partner.email }}">{{ partner.email }}</a></li>{% endif %}
+            {% if partner.phone_number %}<li><i class="bi bi-telephone me-2 text-muted"></i>{{ partner.phone_number }}</li>{% endif %}
+            {% if partner.website %}<li><i class="bi bi-globe me-2 text-muted"></i><a href="{{ partner.website }}" target="_blank" rel="noopener noreferrer">Website</a></li>{% endif %}
+            {% if partner.address %}<li><i class="bi bi-geo-alt me-2 text-muted"></i>{{ partner.address }}</li>{% endif %}
+          </ul>
+          {% if partner.facebook_url or partner.twitter_url or partner.linkedin_url %}
+          <div class="mt-3 d-flex gap-2">
+            {% if partner.facebook_url %}<a href="{{ partner.facebook_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if partner.twitter_url %}<a href="{{ partner.twitter_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><i class="bi bi-twitter-x"></i></a>{% endif %}
+            {% if partner.linkedin_url %}<a href="{{ partner.linkedin_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><i class="bi bi-linkedin"></i></a>{% endif %}
+          </div>
+          {% endif %}
+          <a href="{% url 'website:partners' %}" class="btn btn-outline-primary btn-sm w-100 mt-3">
+            <i class="bi bi-arrow-left me-1"></i> All partners
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

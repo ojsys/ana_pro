@@ -811,3 +811,160 @@ class GalleryImage(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class SocialMediaLink(models.Model):
+    """
+    A social media account for the association.
+
+    Drives the social icons in the site header and footer, and labels the
+    posts shown in the homepage social feed.
+    """
+    PLATFORM_CHOICES = [
+        ('facebook', 'Facebook'),
+        ('twitter', 'X (Twitter)'),
+        ('instagram', 'Instagram'),
+        ('linkedin', 'LinkedIn'),
+        ('youtube', 'YouTube'),
+        ('tiktok', 'TikTok'),
+        ('whatsapp', 'WhatsApp'),
+        ('telegram', 'Telegram'),
+        ('threads', 'Threads'),
+        ('other', 'Other'),
+    ]
+
+    # Bootstrap Icons class per platform, used when no custom icon is given.
+    PLATFORM_ICONS = {
+        'facebook': 'bi-facebook',
+        'twitter': 'bi-twitter-x',
+        'instagram': 'bi-instagram',
+        'linkedin': 'bi-linkedin',
+        'youtube': 'bi-youtube',
+        'tiktok': 'bi-tiktok',
+        'whatsapp': 'bi-whatsapp',
+        'telegram': 'bi-telegram',
+        'threads': 'bi-threads',
+        'other': 'bi-link-45deg',
+    }
+
+    PLATFORM_COLORS = {
+        'facebook': '#1877F2',
+        'twitter': '#000000',
+        'instagram': '#E4405F',
+        'linkedin': '#0A66C2',
+        'youtube': '#FF0000',
+        'tiktok': '#000000',
+        'whatsapp': '#25D366',
+        'telegram': '#26A5E4',
+        'threads': '#000000',
+        'other': '#6c757d',
+    }
+
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
+    url = models.URLField(help_text="Full link to the account, e.g. https://facebook.com/akilimonigeria")
+    handle = models.CharField(
+        max_length=100, blank=True,
+        help_text="Public handle without the @, e.g. akilimonigeria"
+    )
+    custom_icon = models.CharField(
+        max_length=50, blank=True,
+        help_text="Optional Bootstrap Icons class to override the default, e.g. 'bi-globe'"
+    )
+    show_in_header = models.BooleanField(default=True, help_text="Show this icon in the site header")
+    show_in_footer = models.BooleanField(default=True, help_text="Show this icon in the site footer")
+    order = models.PositiveIntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'platform']
+        verbose_name = "Social Media Link"
+        verbose_name_plural = "Social Media Links"
+
+    def __str__(self):
+        return f"{self.get_platform_display()} — {self.handle or self.url}"
+
+    @property
+    def icon_class(self):
+        return self.custom_icon or self.PLATFORM_ICONS.get(self.platform, 'bi-link-45deg')
+
+    @property
+    def brand_color(self):
+        return self.PLATFORM_COLORS.get(self.platform, '#6c757d')
+
+    @property
+    def display_handle(self):
+        return f"@{self.handle}" if self.handle else self.get_platform_display()
+
+
+class SocialPost(models.Model):
+    """
+    A single post shown in the homepage social feed.
+
+    Two ways to fill one in:
+
+    * paste the platform's own **embed code** (X/Instagram/Facebook "Embed post"),
+      which renders the real post; or
+    * upload an **image with a caption** and link it back to the original post,
+      which always renders and needs no third-party script.
+
+    If both are given the embed wins.
+    """
+    social_link = models.ForeignKey(
+        SocialMediaLink,
+        on_delete=models.CASCADE,
+        related_name='posts',
+        null=True, blank=True,
+        help_text="Which account this post came from (drives the platform badge)"
+    )
+    caption = models.TextField(help_text="Post text, or a short summary of it")
+    image = models.ImageField(
+        upload_to='social/', blank=True, null=True,
+        help_text="Screenshot or the post's own image. Used when no embed code is given."
+    )
+    embed_code = models.TextField(
+        blank=True,
+        help_text=(
+            "Optional. Paste the platform's embed HTML (X → 'Embed post', "
+            "Instagram → 'Embed'). Overrides the image when present."
+        )
+    )
+    post_url = models.URLField(blank=True, help_text="Link to the original post")
+    posted_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the post went out (used for ordering and the shown date)"
+    )
+
+    is_featured = models.BooleanField(default=False, help_text="Highlight this post in the feed")
+    order = models.PositiveIntegerField(default=0, help_text="Display order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-posted_at', '-created_at']
+        verbose_name = "Social Post"
+        verbose_name_plural = "Social Posts"
+
+    def __str__(self):
+        preview = self.caption[:60] + ('…' if len(self.caption) > 60 else '')
+        return f"{self.platform_name}: {preview}"
+
+    @property
+    def platform_name(self):
+        return self.social_link.get_platform_display() if self.social_link else 'Social'
+
+    @property
+    def icon_class(self):
+        return self.social_link.icon_class if self.social_link else 'bi-share-fill'
+
+    @property
+    def brand_color(self):
+        return self.social_link.brand_color if self.social_link else '#6c757d'
+
+    @property
+    def has_embed(self):
+        return bool(self.embed_code.strip())

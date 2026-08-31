@@ -87,6 +87,12 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Default username authentication (fallback)
 ]
 
+# Django's default LOGIN_URL is /accounts/login/, which this project does not
+# serve — an unauthenticated hit on any @login_required view redirected to a 404.
+LOGIN_URL = '/dashboard/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
 # Internationalization
 LANGUAGE_CODE = config('LANGUAGE_CODE', default='en-us')
 TIME_ZONE = config('TIME_ZONE', default='Africa/Lagos')
