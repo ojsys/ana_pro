@@ -42,6 +42,19 @@ class Conference(models.Model):
     contact_phone = models.CharField(max_length=30, blank=True)
     website_url = models.URLField(blank=True)
 
+    # Sponsorship / exhibition enquiries and payment details. These were
+    # previously hard-coded into four templates.
+    sponsorship_contact_email = models.EmailField(
+        blank=True,
+        help_text="Where sponsorship and exhibition enquiries should go"
+    )
+    bank_account_name = models.CharField(
+        max_length=200, blank=True,
+        help_text="Account name shown for bank transfers"
+    )
+    bank_account_number = models.CharField(max_length=30, blank=True)
+    bank_name = models.CharField(max_length=120, blank=True, help_text="e.g. Sterling Bank")
+
     # Secret token embedded in the private stakeholder registration link.
     # Stakeholders register through /register/stakeholder/<token>/ where no fees
     # are shown and no payment is taken. Reset this to invalidate any link
@@ -500,6 +513,10 @@ class ExhibitorPackage(models.Model):
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True, help_text="Bootstrap icon class")
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Package price in Naira")
+    space_structure = models.CharField(
+        max_length=300, blank=True,
+        help_text="Booth size and structure, e.g. '2m x 2m booth; 2m x 2m backwall with demarcation sides'"
+    )
     perks = models.TextField(blank=True, help_text="What's included — one item per line")
     max_slots = models.PositiveIntegerField(null=True, blank=True, help_text="Leave blank for unlimited")
     order = models.PositiveIntegerField(default=0)
@@ -522,6 +539,129 @@ class ExhibitorPackage(models.Model):
             return None
         taken = self.exhibitors.filter(payment_status='confirmed').count()
         return max(self.max_slots - taken, 0)
+
+
+class SponsorshipBenefit(models.Model):
+    """
+    One row of the sponsorship comparison table, e.g. "Exhibition Booth".
+
+    The benefits are rows and the packages are columns; what each package
+    offers for a given benefit lives on SponsorshipPackageBenefit.
+    """
+    conference = models.ForeignKey(
+        Conference, on_delete=models.CASCADE, related_name='sponsorship_benefits'
+    )
+    label = models.CharField(max_length=150, help_text="e.g. Speaking Opportunity")
+    description = models.CharField(
+        max_length=300, blank=True,
+        help_text="Optional clarification shown under the row label"
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Row order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'label']
+        verbose_name = "Sponsorship Benefit (table row)"
+        verbose_name_plural = "Sponsorship Benefits (table rows)"
+        unique_together = ['conference', 'label']
+
+    def __str__(self):
+        return self.label
+
+
+class SponsorshipPackage(models.Model):
+    """
+    A sponsorship tier on offer, e.g. Diamond at NGN 10,000,000.
+
+    Distinct from ``Sponsor``, which records organisations that have actually
+    sponsored. This is the package being sold.
+    """
+    conference = models.ForeignKey(
+        Conference, on_delete=models.CASCADE, related_name='sponsorship_packages'
+    )
+    name = models.CharField(max_length=100, help_text="e.g. Diamond, Platinum, Gold")
+    position = models.CharField(
+        max_length=200, blank=True,
+        help_text="Sponsorship position, e.g. 'Exclusive Conference Presented By'"
+    )
+
+    price = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="Price in Naira. Leave blank when the tier is a range - use Price display instead."
+    )
+    price_display = models.CharField(
+        max_length=100, blank=True,
+        help_text="Overrides the formatted price, for ranges such as 'NGN 50,000 - NGN 500,000'"
+    )
+
+    accent_color = models.CharField(
+        max_length=7, blank=True, default='',
+        help_text="Hex colour for the column header, e.g. #B9F2FF. Falls back to the conference green."
+    )
+    is_featured = models.BooleanField(
+        default=False, help_text="Highlight this column as the recommended tier"
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Column order (0 = first)")
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-price']
+        verbose_name = "Sponsorship Package"
+        verbose_name_plural = "Sponsorship Packages"
+        unique_together = ['conference', 'name']
+
+    def __str__(self):
+        return f"{self.name} - {self.display_price}"
+
+    @property
+    def display_price(self):
+        """
+        Price as shown on the page: the override if set, else the amount.
+
+        Stored text stays ASCII ("NGN 50,000") because the production database
+        is not yet utf8mb4, but the naira sign is the house style everywhere
+        else on the site - so it is substituted at render time, never saved.
+        """
+        if self.price_display:
+            return self.price_display.replace('NGN ', '\u20a6').replace('NGN', '\u20a6')
+        if self.price is not None:
+            return f"\u20a6{self.price:,.0f}"
+        return "On request"
+
+    def benefit_map(self):
+        """{benefit_id: value} for rendering this package's column."""
+        return {pb.benefit_id: pb.value for pb in self.benefit_values.all()}
+
+
+class SponsorshipPackageBenefit(models.Model):
+    """What one package offers for one benefit - a single cell of the table."""
+    package = models.ForeignKey(
+        SponsorshipPackage, on_delete=models.CASCADE, related_name='benefit_values'
+    )
+    benefit = models.ForeignKey(
+        SponsorshipBenefit, on_delete=models.CASCADE, related_name='package_values'
+    )
+    value = models.TextField(
+        blank=True,
+        help_text="What this package offers. Leave blank (or enter a dash) for 'not included'."
+    )
+
+    class Meta:
+        ordering = ['benefit__order']
+        verbose_name = "Sponsorship Benefit Value"
+        verbose_name_plural = "Sponsorship Benefit Values"
+        unique_together = ['package', 'benefit']
+
+    def __str__(self):
+        return f"{self.package.name} - {self.benefit.label}"
+
+    @property
+    def is_included(self):
+        """False when the cell is blank or an explicit dash."""
+        return bool(self.value.strip()) and self.value.strip() not in {'-', '--', '—', '–', 'N/A', 'n/a'}
 
 
 class Exhibitor(models.Model):

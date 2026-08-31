@@ -401,6 +401,30 @@ class ExhibitorsView(TemplateView):
             is_approved=True,
             is_active=True,
         ).select_related('exhibitor')
+
+        # Sponsorship comparison table. Packages are columns, benefits are rows,
+        # so the rows are pre-assembled here rather than doing a lookup per cell
+        # in the template.
+        sponsorship_packages = list(
+            conference.sponsorship_packages.filter(is_active=True)
+            .prefetch_related('benefit_values')
+        )
+        benefits = list(conference.sponsorship_benefits.filter(is_active=True))
+
+        cells = {
+            (pb.package_id, pb.benefit_id): pb
+            for package in sponsorship_packages
+            for pb in package.benefit_values.all()
+        }
+
+        context['sponsorship_packages'] = sponsorship_packages
+        context['sponsorship_rows'] = [
+            {
+                'benefit': benefit,
+                'cells': [cells.get((package.pk, benefit.pk)) for package in sponsorship_packages],
+            }
+            for benefit in benefits
+        ]
         return context
 
 

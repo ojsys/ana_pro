@@ -203,6 +203,61 @@ Tanzanian districts among its states would be wrong.
 
 ---
 
+---
+
+## Conference Exhibition page — sponsorship packages
+
+The Exhibition page (`/conference/exhibitors/`) now carries the content of the
+*AKILIMO 2026 Sponsorship Packages & Benefits* sheet:
+
+- **A comparison table** of the six tiers (Diamond, Platinum, Gold, Silver, Bronze,
+  Supporting Partner) against ten benefit rows. The row labels stay pinned while the
+  table scrolls sideways, so the tiers stay comparable on a phone.
+- **Standalone exhibition booths** — Standard Shell Scheme (₦350,000, 2m x 2m) and
+  Premium Shell Scheme (₦700,000, 3m x 3m), each with its space/structure and what is
+  included. These keep the existing "Become an Exhibitor" booking and payment flow.
+- **A "Confirm Your Package" panel** with the sponsorship email and bank details.
+
+### Editing it
+
+| Admin section | What it controls |
+|---|---|
+| **Sponsorship Packages** | The tier columns: name, position, price, accent colour, order, and a "Most popular" flag. Each package's benefit values are edited inline on the same screen. |
+| **Sponsorship Benefits** | The table rows. Add, rename, reorder or hide a row and the table follows. |
+| **Sponsorship Benefit Values** | Individual cells, for editing one benefit across every tier at once. |
+| **Exhibitor Packages** | The standalone booths: price, space/structure, what is included, slots. |
+| **Conference** → *sponsorship contact email, bank account name / number / bank* | The payment panel. |
+
+Both list views show a "filled in for N of M" column, so a package missing a benefit
+value — or a benefit missing from a package — is visible at a glance. A blank value (or
+a dash) renders as "not included", which is how the Bronze and Supporting Partner
+booth/speaking cells are represented.
+
+Pricing takes an amount in **Price**, or free text in **Price display** for a range like
+the Supporting Partner tier. The naira sign is applied at render time, so stored text
+stays ASCII and works on the pre-utf8mb4 production database.
+
+To load or reload the published sheet:
+
+```bash
+python manage.py load_sponsorship_packages                     # safe to re-run
+python manage.py load_sponsorship_packages --overwrite-values  # reset edited cells
+```
+
+Re-running updates rows in place and, by default, preserves benefit values that have
+since been edited in the admin.
+
+### Bank details are no longer hard-coded
+
+The account name, number and bank were duplicated across four templates. They now come
+from the Conference record, with the previous literals as fallbacks.
+
+**One discrepancy was left alone.** `templates/conference/registration.html` shows
+account **0512342200**, while the exhibitor pages, the registration success page and the
+sponsorship sheet all show **0513118178**. That page renders exactly as before and the
+difference is flagged in a comment in the template. If both should use the same account,
+replace the literal with `{{ conference.bank_account_number }}`.
+
 ## Production database charset (MySQL)
 
 **Symptom.** Saving text that contains anything outside the database's charset fails with:

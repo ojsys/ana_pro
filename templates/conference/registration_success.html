@@ -145,9 +145,9 @@
             <i class="bi bi-bank me-2"></i>Complete Your Payment
         </div>
         <div style="font-size:0.88rem;color:#555;line-height:2.2;">
-            <div><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>Agrimpact for Sustainable Dev Initiative</strong></div>
-            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.1rem;letter-spacing:2px;">0513118178</strong></div>
-            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>Sterling Bank</strong></div>
+            <div><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>{{ conference.bank_account_name|default:"Agrimpact for Sustainable Dev Initiative" }}</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.1rem;letter-spacing:2px;">{{ conference.bank_account_number|default:"0513118178" }}</strong></div>
+            <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>{{ conference.bank_name|default:"Sterling Bank" }}</strong></div>
             <div style="margin-top:0.5rem;"><span style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;">Amount</span><br><strong>₦{{ registration.amount|floatformat:0|intcomma }}</strong></div>
         </div>
         <div style="margin-top:1rem;background:#fff8e1;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#bf360c;">

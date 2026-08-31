@@ -194,9 +194,18 @@
                                 <i class="bi bi-bank me-2"></i>Bank Transfer Details
                             </div>
                             <div style="font-size:0.88rem;color:#555;line-height:2;">
-                                <div><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>Agrimpact for Sustainable Dev Initiative</strong></div>
+                                <div><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Name</span><br><strong>{{ conference.bank_account_name|default:"Agrimpact for Sustainable Dev Initiative" }}</strong></div>
                                 <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Account Number</span><br><strong style="font-size:1.05rem;letter-spacing:2px;">0512342200</strong></div>
-                                <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>Sterling Bank</strong></div>
+                                {% comment %}
+                                    NOTE: this page shows account 0512342200, while the exhibitor pages,
+                                    the registration success page and the sponsorship sheet all show
+                                    0513118178. Left as-is deliberately - a bank account number should not
+                                    be changed on an assumption. If both pages should use the same account,
+                                    replace the literal above with:
+                                        {{ conference.bank_account_number }}
+                                    and it will follow the value set on the Conference record in the admin.
+                                {% endcomment %}
+                                <div style="margin-top:0.6rem;"><span style="color:#888;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">Bank</span><br><strong>{{ conference.bank_name|default:"Sterling Bank" }}</strong></div>
                             </div>
                             <div style="margin-top:1rem;background:#fff8e1;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.8rem;color:#bf360c;">
                                 <i class="bi bi-info-circle me-1"></i>

@@ -11,6 +11,7 @@ from .models import (
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
     KeyMessage, ContentBlock, LOCMember, ExhibitorPackage, Exhibitor,
     ExhibitorShowcase, PaymentVerifier, AbstractReviewer,
+    SponsorshipPackage, SponsorshipBenefit, SponsorshipPackageBenefit,
 )
 
 # Standard rich-text toolbar used across conference admin forms
@@ -442,11 +443,29 @@ class LOCMemberAdmin(admin.ModelAdmin):
 
 @admin.register(ExhibitorPackage)
 class ExhibitorPackageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'conference', 'price', 'max_slots', 'order', 'is_active']
+    """Standalone exhibition booths that can be booked and paid for."""
+    list_display = ['name', 'conference', 'price', 'space_structure', 'max_slots', 'order', 'is_active']
     list_filter = ['conference', 'is_active']
-    search_fields = ['name']
+    search_fields = ['name', 'space_structure', 'perks']
     list_editable = ['price', 'order', 'is_active']
     ordering = ['conference', 'order']
+
+    fieldsets = (
+        ('Booth', {
+            'fields': ('conference', 'name', 'description', 'icon')
+        }),
+        ('Price & space', {
+            'fields': ('price', 'space_structure'),
+            'description': 'Space/structure appears beside the price on the Exhibition page.'
+        }),
+        ('What is included', {
+            'fields': ('perks',),
+            'description': 'One item per line. Each line becomes a ticked bullet on the booth card.'
+        }),
+        ('Availability', {
+            'fields': ('max_slots', 'order', 'is_active')
+        }),
+    )
 
 
 class ExhibitorShowcaseInline(admin.TabularInline):
@@ -636,3 +655,110 @@ class ContentBlockAdmin(admin.ModelAdmin):
         from django.utils.html import strip_tags
         return strip_tags(obj.content)[:80]
     content_preview.short_description = "Content"
+
+
+# ─── Sponsorship packages & benefits ──────────────────────────────────────────
+
+@admin.register(SponsorshipBenefit)
+class SponsorshipBenefitAdmin(admin.ModelAdmin):
+    """The rows of the sponsorship comparison table."""
+    list_display = ['label', 'conference', 'order', 'packages_filled', 'is_active']
+    list_editable = ['order', 'is_active']
+    list_filter = ['conference', 'is_active']
+    search_fields = ['label', 'description']
+    ordering = ['conference', 'order']
+
+    fieldsets = (
+        (None, {
+            'fields': ('conference', 'label', 'description', 'order', 'is_active'),
+            'description': (
+                'Each benefit is one <strong>row</strong> of the comparison table on the '
+                'Exhibition page. What each package offers for this row is set on the '
+                'package itself, under Sponsorship Packages.'
+            )
+        }),
+    )
+
+    @admin.display(description='Filled in for')
+    def packages_filled(self, obj):
+        total = SponsorshipPackage.objects.filter(conference=obj.conference, is_active=True).count()
+        filled = obj.package_values.exclude(value='').count()
+        colour = '#0a7d2b' if filled >= total else '#b45309'
+        return format_html('<span style="color:{};">{} of {} package(s)</span>', colour, filled, total)
+
+
+class SponsorshipPackageBenefitInline(admin.TabularInline):
+    """Edit every benefit value for a package on one screen."""
+    model = SponsorshipPackageBenefit
+    extra = 0
+    fields = ['benefit', 'value']
+    autocomplete_fields = ['benefit']
+    verbose_name = "Benefit"
+    verbose_name_plural = "What this package includes (one row per benefit)"
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        if obj:
+            # Only offer benefits belonging to this package's conference.
+            formset.form.base_fields['benefit'].queryset = SponsorshipBenefit.objects.filter(
+                conference=obj.conference, is_active=True
+            )
+        return formset
+
+
+@admin.register(SponsorshipPackage)
+class SponsorshipPackageAdmin(admin.ModelAdmin):
+    """The columns of the sponsorship comparison table."""
+    list_display = ['name', 'conference', 'price_column', 'position', 'benefits_filled',
+                    'is_featured', 'order', 'is_active']
+    list_editable = ['is_featured', 'order', 'is_active']
+    list_filter = ['conference', 'is_active', 'is_featured']
+    search_fields = ['name', 'position']
+    ordering = ['conference', 'order']
+    inlines = [SponsorshipPackageBenefitInline]
+
+    fieldsets = (
+        ('Package', {
+            'fields': ('conference', 'name', 'position'),
+        }),
+        ('Price', {
+            'fields': ('price', 'price_display'),
+            'description': (
+                'Enter the amount in <strong>Price</strong> for a fixed tier. For a range '
+                '(such as the Supporting Partner tier) leave Price blank and type the range '
+                'into <strong>Price display</strong> instead.'
+            )
+        }),
+        ('Display', {
+            'fields': ('accent_color', 'is_featured', 'order', 'is_active'),
+        }),
+    )
+
+    @admin.display(description='Price', ordering='price')
+    def price_column(self, obj):
+        return obj.display_price
+
+    @admin.display(description='Benefits filled')
+    def benefits_filled(self, obj):
+        total = SponsorshipBenefit.objects.filter(conference=obj.conference, is_active=True).count()
+        filled = obj.benefit_values.exclude(value='').count()
+        if not total:
+            return format_html('<span style="color:#b45309;">no benefit rows defined</span>')
+        colour = '#0a7d2b' if filled >= total else '#b45309'
+        return format_html('<span style="color:{};">{} of {}</span>', colour, filled, total)
+
+
+@admin.register(SponsorshipPackageBenefit)
+class SponsorshipPackageBenefitAdmin(admin.ModelAdmin):
+    """Direct access to individual cells, for bulk edits across packages."""
+    list_display = ['benefit', 'package', 'short_value']
+    list_filter = ['package__conference', 'benefit', 'package']
+    search_fields = ['value', 'benefit__label', 'package__name']
+    autocomplete_fields = ['package', 'benefit']
+    ordering = ['benefit__order', 'package__order']
+
+    @admin.display(description='Value')
+    def short_value(self, obj):
+        if not obj.is_included:
+            return format_html('<span style="color:#999;">not included</span>')
+        return obj.value[:80] + ('…' if len(obj.value) > 80 else '')

@@ -16,6 +16,37 @@
 .showcase-img { width:100%;height:200px;object-fit:cover; }
 .showcase-body { padding:1.25rem;display:flex;flex-direction:column;flex:1; }
 .showcase-price { font-family:'Poppins',sans-serif;font-weight:800;color:var(--conf-gold-dark);font-size:1.2rem; }
+
+/* Sponsorship comparison table. Wide by nature, so it scrolls inside its own
+   container rather than pushing the page sideways. */
+.spon-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:16px;border:1px solid #e6e6e6;background:#fff; }
+.spon-table { width:100%;min-width:960px;border-collapse:separate;border-spacing:0;font-size:0.82rem; }
+.spon-table th, .spon-table td { padding:0.85rem 1rem;vertical-align:top;border-bottom:1px solid #eef1ee; }
+.spon-table thead th { position:sticky;top:0;z-index:2;background:#fff;border-bottom:2px solid #e6e6e6; }
+.spon-table tbody tr:last-child td { border-bottom:none; }
+.spon-table tbody tr:nth-child(even) { background:#fafbfa; }
+.spon-row-label { font-weight:700;color:var(--conf-dark);white-space:nowrap; }
+.spon-row-note { display:block;font-weight:400;font-size:0.74rem;color:#999;white-space:normal;max-width:200px; }
+/* First column pinned so the row label stays readable while scrolling across. */
+.spon-table th:first-child, .spon-table td:first-child {
+  position:sticky;left:0;z-index:1;background:inherit;border-right:1px solid #eef1ee;
+}
+.spon-table thead th:first-child { z-index:3;background:#fff; }
+.spon-table tbody tr:nth-child(even) td:first-child { background:#fafbfa; }
+.spon-table tbody tr:nth-child(odd) td:first-child { background:#fff; }
+.spon-name { font-family:'Poppins',sans-serif;font-weight:800;font-size:1rem;color:var(--conf-dark);line-height:1.2; }
+.spon-price { font-family:'Poppins',sans-serif;font-weight:800;font-size:0.95rem;margin-top:0.2rem; }
+.spon-position { font-size:0.72rem;color:#888;font-weight:500;margin-top:0.35rem;white-space:normal;max-width:190px; }
+.spon-swatch { display:block;height:4px;border-radius:4px;margin-bottom:0.6rem; }
+.spon-featured-tag { display:inline-block;background:var(--conf-green);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:0.15rem 0.5rem;border-radius:50px;margin-bottom:0.4rem; }
+.spon-none { color:#c9c9c9;font-size:1.1rem; }
+.spon-cta { display:inline-block;margin-top:0.75rem;font-size:0.72rem;font-weight:700;color:var(--conf-gold-dark);text-decoration:none; }
+.spon-cta:hover { text-decoration:underline;color:var(--conf-gold-dark); }
+
+.pay-panel { background:#fff;border:1.5px solid #f0e2c0;border-radius:16px;padding:1.75rem; }
+.pay-item { font-size:0.88rem;color:#444;line-height:1.6; }
+.pay-item span { display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:1.2px;color:#999;font-weight:600; }
+.booth-meta { font-size:0.78rem;color:#888;background:#f6f8f6;border-radius:8px;padding:0.5rem 0.75rem;margin:0.5rem 0 0.25rem; }
 {% endblock %}
 
 {% block content %}
@@ -39,21 +70,83 @@
         {% endfor %}
         {% endif %}
 
-        <!-- Packages -->
-        <div class="text-center mb-5">
-            <span class="section-badge gold">{% editable "exhibitors.pkg_badge" "Packages" %}</span>
-            <h2 class="section-title">{% editable "exhibitors.pkg_title" "Choose Your Package" %}</h2>
+        <!-- Sponsorship packages & benefits -->
+        {% if sponsorship_packages %}
+        <div class="text-center mb-4">
+            <span class="section-badge gold">{% editable "exhibitors.spon_badge" "Sponsorship" %}</span>
+            <h2 class="section-title">{% editable "exhibitors.spon_title" "Sponsorship Packages & Benefits" %}</h2>
             <div class="section-divider gold mx-auto"></div>
+            <p style="color:#666;max-width:680px;margin:0 auto;font-size:0.92rem;line-height:1.7;">
+                {% editable "exhibitors.spon_intro" "Partner with the 1st AKILIMO International Conference. Compare what each tier includes, then get in touch to confirm your package." %}
+            </p>
+        </div>
+
+        <div class="spon-scroll mb-2">
+            <table class="spon-table">
+                <thead>
+                    <tr>
+                        <th style="min-width:190px;">
+                            <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1.5px;color:#999;">Benefits</span>
+                        </th>
+                        {% for pkg in sponsorship_packages %}
+                        <th style="min-width:190px;">
+                            <span class="spon-swatch" style="background:{{ pkg.accent_color|default:'#2E7D32' }};"></span>
+                            {% if pkg.is_featured %}<span class="spon-featured-tag">Most popular</span>{% endif %}
+                            <div class="spon-name">{{ pkg.name }}</div>
+                            <div class="spon-price" style="color:{{ pkg.accent_color|default:'#2E7D32' }};">{{ pkg.display_price }}</div>
+                            {% if pkg.position %}<div class="spon-position">{{ pkg.position }}</div>{% endif %}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sponsorship_rows %}
+                    <tr>
+                        <td class="spon-row-label">
+                            {{ row.benefit.label }}
+                            {% if row.benefit.description %}<span class="spon-row-note">{{ row.benefit.description }}</span>{% endif %}
+                        </td>
+                        {% for cell in row.cells %}
+                        <td>
+                            {% if cell and cell.is_included %}
+                                {{ cell.value }}
+                            {% else %}
+                                <span class="spon-none" title="Not included">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-center mb-5" style="font-size:0.75rem;color:#aaa;">
+            <i class="bi bi-arrow-left-right me-1"></i>Scroll the table sideways to compare every tier
+        </p>
+        {% endif %}
+
+        <!-- Standalone exhibition booths -->
+        <div class="text-center mb-5">
+            <span class="section-badge gold">{% editable "exhibitors.pkg_badge" "Exhibition" %}</span>
+            <h2 class="section-title">{% editable "exhibitors.pkg_title" "Standalone Exhibition Options" %}</h2>
+            <div class="section-divider gold mx-auto"></div>
+            <p style="color:#666;max-width:620px;margin:0 auto;font-size:0.92rem;">
+                {% editable "exhibitors.pkg_intro" "Book a booth on its own, without taking a sponsorship package." %}
+            </p>
         </div>
 
         {% if packages %}
-        <div class="row g-4 mb-5">
+        {# Centred so a small number of booths does not leave a gap on the right. #}
+        <div class="row g-4 mb-5 justify-content-center">
             {% for pkg in packages %}
             <div class="col-lg-4 col-md-6">
                 <div class="pkg-card">
                     {% if pkg.icon %}<div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--conf-green),var(--conf-green-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;margin-bottom:1rem;"><i class="bi {{ pkg.icon }}"></i></div>{% endif %}
                     <h4 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.15rem;color:var(--conf-dark);">{{ pkg.name }}</h4>
                     <div class="pkg-price mb-2">₦{{ pkg.price|floatformat:0|intcomma }}</div>
+                    {% if pkg.space_structure %}
+                    <div class="booth-meta"><i class="bi bi-bounding-box me-1"></i>{{ pkg.space_structure }}</div>
+                    {% endif %}
                     {% if pkg.description %}<p style="font-size:0.85rem;color:#777;">{{ pkg.description }}</p>{% endif %}
                     {% if pkg.get_perks_list %}
                     <div class="my-3">
@@ -75,6 +168,49 @@
         <div class="text-center py-4" style="color:#999;">
             <i class="bi bi-box-seam" style="font-size:3rem;color:#ddd;"></i>
             <p class="mt-2">Exhibition packages will be announced soon.</p>
+        </div>
+        {% endif %}
+
+        <!-- How to confirm a package -->
+        {% if conference.sponsorship_contact_email or conference.bank_account_number %}
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-9">
+                <div class="pay-panel">
+                    <h3 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.1rem;color:var(--conf-dark);margin-bottom:0.35rem;">
+                        {% editable "exhibitors.pay_title" "Confirm Your Package" %}
+                    </h3>
+                    <p style="font-size:0.86rem;color:#777;margin-bottom:1.25rem;">
+                        {% editable "exhibitors.pay_intro" "Get in touch to reserve a sponsorship tier, or pay by transfer using the details below." %}
+                    </p>
+                    <div class="row g-4">
+                        {% if conference.sponsorship_contact_email %}
+                        <div class="col-md-6">
+                            <div class="pay-item">
+                                <span>Sponsorship enquiries</span>
+                                <a href="mailto:{{ conference.sponsorship_contact_email }}" style="color:var(--conf-green);font-weight:600;">
+                                    {{ conference.sponsorship_contact_email }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if conference.bank_account_name %}
+                        <div class="col-md-6">
+                            <div class="pay-item"><span>Account name</span><strong>{{ conference.bank_account_name }}</strong></div>
+                        </div>
+                        {% endif %}
+                        {% if conference.bank_account_number %}
+                        <div class="col-md-6">
+                            <div class="pay-item"><span>Account number</span><strong style="letter-spacing:1.5px;font-size:1.05rem;">{{ conference.bank_account_number }}</strong></div>
+                        </div>
+                        {% endif %}
+                        {% if conference.bank_name %}
+                        <div class="col-md-6">
+                            <div class="pay-item"><span>Bank</span><strong>{{ conference.bank_name }}</strong></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
         {% endif %}
 
