@@ -61,6 +61,32 @@ class Conference(models.Model):
     # already shared.
     stakeholder_access_token = models.UUIDField(default=uuid.uuid4, editable=False)
 
+    # ─── Hero stats overrides ────────────────────────────────────────────────
+    # The stats bar on the landing page normally shows live counts. Early on
+    # those numbers are small and discourage people from registering, so each
+    # one can be overridden manually here. Leave a field blank to show the
+    # real, live count.
+    display_registrations = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Override the 'Registered' number on the landing page. Blank = show the real count."
+    )
+    display_abstracts = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Override the 'Abstracts' number. Blank = show the real count."
+    )
+    display_speakers = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Override the 'Speakers' number. Blank = show the real count."
+    )
+    display_sub_themes = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Override the 'Sub-Themes' number. Blank = show the real count."
+    )
+    display_days = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Override the 'Days' number. Blank = calculate it from the start and end dates."
+    )
+
     is_active = models.BooleanField(default=True, help_text="The currently featured conference")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -86,6 +112,34 @@ class Conference(models.Model):
 
     def get_focus_areas_list(self):
         return [f.strip() for f in self.key_focus_areas.split('\n') if f.strip()]
+
+    # ─── Stats shown on the landing page ─────────────────────────────────────
+    # Each returns the manual override when one is set, otherwise the live
+    # figure. `registrations`/`abstracts` are counted in the view (they depend
+    # on payment status), so they are passed in.
+
+    def stat_registrations(self, live_count):
+        return self.display_registrations if self.display_registrations is not None else live_count
+
+    def stat_abstracts(self, live_count):
+        return self.display_abstracts if self.display_abstracts is not None else live_count
+
+    def stat_speakers(self):
+        if self.display_speakers is not None:
+            return self.display_speakers
+        return self.speakers.filter(is_active=True).count()
+
+    def stat_sub_themes(self):
+        if self.display_sub_themes is not None:
+            return self.display_sub_themes
+        return self.sub_themes.filter(is_active=True).count()
+
+    def stat_days(self):
+        if self.display_days is not None:
+            return self.display_days
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days + 1
+        return 1
 
     @property
     def days_until(self):

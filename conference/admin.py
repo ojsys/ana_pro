@@ -48,6 +48,12 @@ class ConferenceAdminForm(forms.ModelForm):
             'contact_email': forms.EmailInput(attrs={'placeholder': 'conference@akilimo-nigeria.org'}),
             'contact_phone': forms.TextInput(attrs={'placeholder': '+234 800 000 0000'}),
             'website_url': forms.URLInput(attrs={'placeholder': 'https://conference.akilimo-nigeria.org'}),
+            # Stats bar overrides — blank means "use the live count"
+            'display_registrations': forms.NumberInput(attrs={'placeholder': 'Blank = live count'}),
+            'display_abstracts': forms.NumberInput(attrs={'placeholder': 'Blank = live count'}),
+            'display_speakers': forms.NumberInput(attrs={'placeholder': 'Blank = live count'}),
+            'display_sub_themes': forms.NumberInput(attrs={'placeholder': 'Blank = live count'}),
+            'display_days': forms.NumberInput(attrs={'placeholder': 'Blank = from start/end dates'}),
             'description':       CKEditorWidget(config_name='default'),
             'objectives':        CKEditorWidget(config_name='default'),
             'expected_outcomes': CKEditorWidget(config_name='default'),
@@ -125,6 +131,17 @@ class ConferenceAdmin(admin.ModelAdmin):
         }),
         ('Media', {
             'fields': ('hero_image', 'banner_image', 'organizer_logo'),
+        }),
+        ('Landing Page Stats Bar', {
+            'fields': (
+                'display_registrations', 'display_abstracts',
+                'display_speakers', 'display_sub_themes', 'display_days',
+            ),
+            'description': (
+                'These are the five numbers in the stats bar under the hero section. '
+                'Leave a field blank to show the real, live figure; type a number to '
+                'show that instead.'
+            ),
         }),
     )
 

@@ -60,10 +60,19 @@ class ConferenceLandingView(TemplateView):
         context['loc_members'] = conference.loc_members.filter(is_active=True)
         context['sponsors'] = conference.sponsors.filter(is_active=True)
         context['registration_categories'] = conference.registration_categories.filter(is_active=True)
-        context['total_registrations'] = Registration.objects.filter(
+        live_registrations = Registration.objects.filter(
             conference=conference, payment_status='confirmed'
         ).count()
-        context['total_abstracts'] = AbstractSubmission.objects.filter(conference=conference).count()
+        live_abstracts = AbstractSubmission.objects.filter(conference=conference).count()
+        context['total_registrations'] = live_registrations
+        context['total_abstracts'] = live_abstracts
+        # Stats bar numbers — the manual override from the admin when one is
+        # set, otherwise the live count.
+        context['stat_registrations'] = conference.stat_registrations(live_registrations)
+        context['stat_abstracts'] = conference.stat_abstracts(live_abstracts)
+        context['stat_speakers'] = conference.stat_speakers()
+        context['stat_sub_themes'] = conference.stat_sub_themes()
+        context['stat_days'] = conference.stat_days()
         return context
 
 

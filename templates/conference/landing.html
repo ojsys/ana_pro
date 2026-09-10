@@ -306,27 +306,27 @@
     <div class="container">
         <div class="d-flex flex-wrap justify-content-center align-items-center gap-0">
             <div class="stat-item">
-                <div class="val">{{ total_registrations|intcomma }}+</div>
+                <div class="val">{{ stat_registrations|intcomma }}+</div>
                 <div class="lbl">Registered</div>
             </div>
             <div class="stat-divider d-none d-md-block mx-3"></div>
             <div class="stat-item">
-                <div class="val">{{ total_abstracts|intcomma }}</div>
+                <div class="val">{{ stat_abstracts|intcomma }}</div>
                 <div class="lbl">Abstracts</div>
             </div>
             <div class="stat-divider d-none d-md-block mx-3"></div>
             <div class="stat-item">
-                <div class="val">{{ conference.speakers.count }}</div>
+                <div class="val">{{ stat_speakers|intcomma }}</div>
                 <div class="lbl">Speakers</div>
             </div>
             <div class="stat-divider d-none d-md-block mx-3"></div>
             <div class="stat-item">
-                <div class="val">{{ conference.sub_themes.count }}</div>
+                <div class="val">{{ stat_sub_themes|intcomma }}</div>
                 <div class="lbl">Sub-Themes</div>
             </div>
             <div class="stat-divider d-none d-md-block mx-3"></div>
             <div class="stat-item">
-                <div class="val">3</div>
+                <div class="val">{{ stat_days }}</div>
                 <div class="lbl">Days</div>
             </div>
         </div>
