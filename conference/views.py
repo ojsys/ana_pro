@@ -15,6 +15,7 @@ from django.conf import settings
 
 from django.core import signing
 from django.core.paginator import Paginator
+from django.db.models import Q
 
 from .models import (
     Conference, Speaker, AbstractSubmission, AbstractThematicArea,
@@ -624,6 +625,8 @@ def exhibitor_showcase_delete(request, token, pk):
 PV_SALT = 'conference.payment_verification.magic-link'
 PV_MAX_AGE = 60 * 60 * 2  # links valid for 2 hours
 PV_SESSION_KEY = 'pv_verifier_email'
+# Max registrations (and, separately, exhibitors) listed for a name search.
+NAME_SEARCH_LIMIT = 25
 
 
 def _active_verifier_email(request):
@@ -679,7 +682,8 @@ def payment_verification(request):
     Other staff accounts have no access.
 
     * Look up a record by its Ticket ID (registrations, e.g. ANC2026-T00001)
-      or Reference (exhibitors, e.g. EXH2026-0001).
+      or Reference (exhibitors, e.g. EXH2026-0001), or search by name
+      (participant name, exhibitor company or contact person).
     * For Paystack payments still showing as pending, re-verify against the
       Paystack API in case the original callback never completed.
     * For bank transfers, confirm the payment manually once it has been
@@ -754,27 +758,62 @@ def payment_verification(request):
         'verifier_email': verifier_email,
     }
 
-    query = (request.GET.get('q') or request.POST.get('q') or '').strip()
+    raw_query = (request.GET.get('q') or request.POST.get('q') or '').strip()
+    raw_query = raw_query.replace('\u2013', '-').replace('\u2014', '-').replace('\u00a0', ' ')
     # Ticket IDs / references are ASCII (e.g. ANC2026-T00001). Drop anything
     # else (pasted NBSPs, smart dashes) so it can't trip MySQL collation errors.
-    query = re.sub(r'[^A-Za-z0-9-]', '', query.replace('\u2013', '-').replace('\u2014', '-'))
+    id_query = re.sub(r'[^A-Za-z0-9-]', '', raw_query)
+    # Names may contain accented letters, apostrophes and hyphens; keep those
+    # and collapse everything else to single spaces.
+    name_query = ' '.join(re.sub(r"[^\w'\- ]", ' ', raw_query).split())
     action = request.POST.get('action', '')
 
     record = None
     record_type = None
-    if query:
-        record = Registration.objects.filter(ticket_id__iexact=query).first()
+    name_matches = []
+    name_search_truncated = False
+    if id_query:
+        record = Registration.objects.filter(ticket_id__iexact=id_query).first()
         if record:
             record_type = 'registration'
         else:
-            record = Exhibitor.objects.filter(reference__iexact=query).first()
+            record = Exhibitor.objects.filter(reference__iexact=id_query).first()
             if record:
                 record_type = 'exhibitor'
+
+    # Fall back to a name search. Every word must match, so "Ada Obi" finds
+    # first_name=Ada, last_name=Obi. Actions always post the exact Ticket ID /
+    # Reference, so this only runs for lookups.
+    if not record and name_query and not action:
+        reg_q = Q()
+        exh_q = Q()
+        for word in name_query.split():
+            reg_q &= Q(first_name__icontains=word) | Q(last_name__icontains=word)
+            exh_q &= Q(company_name__icontains=word) | Q(contact_name__icontains=word)
+        regs = Registration.objects.filter(reg_q).select_related('category').order_by('last_name', 'first_name')
+        exhs = Exhibitor.objects.filter(exh_q).select_related('package').order_by('company_name')
+        if conference:
+            regs = regs.filter(conference=conference)
+            exhs = exhs.filter(conference=conference)
+        regs = list(regs[:NAME_SEARCH_LIMIT + 1])
+        exhs = list(exhs[:NAME_SEARCH_LIMIT + 1])
+        name_search_truncated = len(regs) > NAME_SEARCH_LIMIT or len(exhs) > NAME_SEARCH_LIMIT
+        name_matches = (
+            [('registration', r) for r in regs[:NAME_SEARCH_LIMIT]]
+            + [('exhibitor', e) for e in exhs[:NAME_SEARCH_LIMIT]]
+        )
+        if len(name_matches) == 1:
+            record_type, record = name_matches[0]
+            name_matches = []
+
+    query = raw_query if (name_matches or not record) else (
+        record.ticket_id if record_type == 'registration' else record.reference
+    )
 
     actor = str(request.user) if is_superadmin else f"verifier:{verifier_email}"
 
     if request.method == 'POST' and action and record:
-        label = query.upper()
+        label = record.ticket_id if record_type == 'registration' else record.reference
         if record.payment_status == 'confirmed':
             messages.info(request, f"{label} is already confirmed.")
 
@@ -841,6 +880,9 @@ def payment_verification(request):
         'query': query,
         'searched': bool(query),
         'record': record,
+        'name_matches': name_matches,
+        'name_search_truncated': name_search_truncated,
+        'name_search_limit': NAME_SEARCH_LIMIT,
         'record_type': record_type,
         'page_obj': page_obj,
         'unconfirmed_total': paginator.count,

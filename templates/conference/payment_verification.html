@@ -17,7 +17,7 @@
 .pv-row:last-child { border-bottom:none; }
 .pv-label { font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;font-weight:600; }
 .pv-value { font-size:0.92rem;color:#222;font-weight:600;text-align:right;word-break:break-word; }
-.pv-search-input { font-size:1.1rem;letter-spacing:1px;text-transform:uppercase;padding:0.85rem 1rem;border:2px solid #d7e3d7;border-radius:12px; }
+.pv-search-input { font-size:1.1rem;letter-spacing:0.5px;padding:0.85rem 1rem;border:2px solid #d7e3d7;border-radius:12px; }
 .pv-search-input:focus { border-color:#2E7D32;box-shadow:0 0 0 0.2rem rgba(46,125,50,0.15);outline:none; }
 .pv-badge { border-radius:50px;padding:0.35rem 1rem;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem; }
 .pv-badge.confirmed { background:rgba(76,175,80,0.15);border:1px solid #4CAF50;color:#1B5E20; }
@@ -42,7 +42,7 @@
         <i class="bi bi-shield-check"></i>
       </div>
       <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;margin:0;">Payment Verification</h2>
-      <p style="color:#666;margin-top:0.5rem;">Verify and confirm Paystack &amp; bank-transfer payments by Ticket ID or Reference.</p>
+      <p style="color:#666;margin-top:0.5rem;">Verify and confirm Paystack &amp; bank-transfer payments by Ticket ID, Reference or name.</p>
     </div>
 
     {% if messages %}
@@ -92,11 +92,11 @@
     <div class="pv-card" style="margin-bottom:1.5rem;">
       <div class="pv-body">
         <form method="get" action="{% url 'conference:payment_verification' %}">
-          <label class="pv-label" style="display:block;margin-bottom:0.5rem;">Ticket ID / Reference</label>
+          <label class="pv-label" style="display:block;margin-bottom:0.5rem;">Ticket ID / Reference / Name</label>
           <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
             <input type="text" name="q" value="{{ query }}" required autofocus
                    class="pv-search-input" style="flex:1;min-width:220px;"
-                   placeholder="e.g. ANC2026-T00001 or EXH2026-0001">
+                   placeholder="e.g. ANC2026-T00001, EXH2026-0001 or Ada Obi">
             <button type="submit" class="pv-btn pv-btn-manual">
               <i class="bi bi-search"></i> Look up
             </button>
@@ -105,11 +105,66 @@
       </div>
     </div>
 
-    {% if searched and not record %}
+    {% if searched and not record and not name_matches %}
       <div class="pv-alert error">
         <i class="bi bi-exclamation-triangle-fill me-1"></i>
-        No registration or exhibitor found for "<strong>{{ query }}</strong>". Check the Ticket ID / Reference and try again.
+        No registration or exhibitor found for "<strong>{{ query }}</strong>". Check the Ticket ID / Reference / name and try again.
       </div>
+    {% endif %}
+
+    {% if name_matches %}
+    <div class="pv-card" style="margin-bottom:1.5rem;">
+      <div class="pv-header" style="padding:1.5rem 2rem;">
+        <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.15rem;">{{ name_matches|length }} matches for "{{ query }}"</div>
+        <div style="font-size:0.8rem;opacity:0.75;margin-top:0.2rem;">Select the right person to view and confirm their payment.</div>
+      </div>
+      <div class="pv-body" style="padding:0;">
+        <div style="overflow-x:auto;">
+          <table class="pv-table">
+            <thead>
+              <tr>
+                <th>Ticket ID / Ref</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for match_type, match in name_matches %}
+              {% if match_type == 'registration' %}{% firstof match.ticket_id as match_id %}{% else %}{% firstof match.reference as match_id %}{% endif %}
+              <tr>
+                <td style="font-weight:700;color:#1B5E20;white-space:nowrap;">{{ match_id }}</td>
+                <td>{% if match_type == 'registration' %}{{ match.full_name }}{% else %}{{ match.company_name }}<div style="color:#888;font-size:0.8rem;">{{ match.contact_name }}</div>{% endif %}</td>
+                <td>{{ match.email }}</td>
+                <td>{% if match_type == 'registration' %}{{ match.category.name }}{% else %}Exhibitor · {{ match.package.name }}{% endif %}</td>
+                <td style="white-space:nowrap;">₦{{ match.amount|intcomma }}</td>
+                <td>
+                  {% if match.payment_status == 'confirmed' %}
+                    <span class="pv-badge confirmed" style="font-size:0.68rem;">Confirmed</span>
+                  {% elif match.payment_status == 'failed' %}
+                    <span class="pv-badge failed" style="font-size:0.68rem;">{{ match.get_payment_status_display }}</span>
+                  {% else %}
+                    <span class="pv-badge pending" style="font-size:0.68rem;">{{ match.get_payment_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td style="text-align:right;white-space:nowrap;">
+                  <a class="pv-page-link" href="?q={{ match_id|urlencode }}">View <i class="bi bi-chevron-right"></i></a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if name_search_truncated %}
+        <p style="color:#888;font-size:0.82rem;padding:0.85rem 1.5rem;margin:0;border-top:1px solid #eee;">
+          <i class="bi bi-info-circle"></i> Showing at most {{ name_search_limit }} participants and {{ name_search_limit }} exhibitors — add more of the name to narrow the search.
+        </p>
+        {% endif %}
+      </div>
+    </div>
     {% endif %}
 
     {% if record %}
