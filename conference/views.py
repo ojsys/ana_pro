@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
@@ -754,6 +755,9 @@ def payment_verification(request):
     }
 
     query = (request.GET.get('q') or request.POST.get('q') or '').strip()
+    # Ticket IDs / references are ASCII (e.g. ANC2026-T00001). Drop anything
+    # else (pasted NBSPs, smart dashes) so it can't trip MySQL collation errors.
+    query = re.sub(r'[^A-Za-z0-9-]', '', query.replace('\u2013', '-').replace('\u2014', '-'))
     action = request.POST.get('action', '')
 
     record = None
