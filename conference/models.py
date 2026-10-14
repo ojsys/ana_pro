@@ -330,6 +330,17 @@ class RegistrationCategory(models.Model):
         return max(self.max_slots - taken, 0)
 
 
+def _next_id_number(model, field, prefix):
+    """One more than the highest numeric suffix among ``field`` values that
+    start with ``prefix`` (1 if there are none)."""
+    highest = 0
+    for value in model.objects.filter(**{f'{field}__startswith': prefix}).values_list(field, flat=True):
+        suffix = value[len(prefix):]
+        if suffix.isdigit():
+            highest = max(highest, int(suffix))
+    return highest + 1
+
+
 class Registration(models.Model):
     """Conference participant registration"""
     PAYMENT_STATUS_CHOICES = [
@@ -429,9 +440,10 @@ class Registration(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.ticket_id:
-            year = timezone.now().year
-            count = Registration.objects.filter(conference=self.conference).count() + 1
-            self.ticket_id = f"ANC{year}-T{count:05d}"
+            # Next number after the highest existing ID (not a row count), so
+            # deleted registrations can't cause a duplicate ticket_id.
+            prefix = f"ANC{timezone.now().year}-T"
+            self.ticket_id = f"{prefix}{_next_id_number(Registration, 'ticket_id', prefix):05d}"
         super().save(*args, **kwargs)
 
 
@@ -765,9 +777,8 @@ class Exhibitor(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            year = timezone.now().year
-            count = Exhibitor.objects.filter(conference=self.conference).count() + 1
-            self.reference = f"EXH{year}-{count:04d}"
+            prefix = f"EXH{timezone.now().year}-"
+            self.reference = f"{prefix}{_next_id_number(Exhibitor, 'reference', prefix):04d}"
         super().save(*args, **kwargs)
 
 

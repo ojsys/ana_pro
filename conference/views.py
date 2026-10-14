@@ -689,6 +689,8 @@ def payment_verification(request):
     * For bank transfers, confirm the payment manually once it has been
       checked against the bank that the holder of that Ticket ID / Reference
       actually paid.
+    * Delete an entry whose payment never went through, so it no longer
+      shows as pending. Confirmed or waived entries cannot be deleted here.
 
     Confirming a registration fires the post_save signal that emails the
     participant their receipt and welcome message.
@@ -814,7 +816,24 @@ def payment_verification(request):
 
     if request.method == 'POST' and action and record:
         label = record.ticket_id if record_type == 'registration' else record.reference
-        if record.payment_status == 'confirmed':
+        if action == 'delete':
+            # Only for payments that never went through — a confirmed or waived
+            # entry is a real attendee/exhibitor and must be handled in the admin.
+            if record.payment_status in ('confirmed', 'waived'):
+                messages.error(
+                    request,
+                    f"{label} is {record.get_payment_status_display().lower()} and cannot be deleted here.",
+                )
+            else:
+                name = record.full_name if record_type == 'registration' else record.company_name
+                record.delete()
+                logger.info("Unpaid %s %s (%s) deleted by %s", record_type, label, name, actor)
+                messages.success(request, f"{label} ({name}) has been deleted.")
+                page = request.POST.get('page')
+                url = reverse('conference:payment_verification')
+                return redirect(f"{url}?page={page}" if page else url)
+
+        elif record.payment_status == 'confirmed':
             messages.info(request, f"{label} is already confirmed.")
 
         elif action == 'confirm_manual':

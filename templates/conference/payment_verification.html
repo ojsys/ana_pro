@@ -26,6 +26,8 @@
 .pv-btn { border:none;border-radius:12px;padding:0.85rem 1.5rem;font-weight:700;font-size:0.95rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem; }
 .pv-btn-paystack { background:linear-gradient(135deg,#0a4ea3,#1e88e5);color:#fff; }
 .pv-btn-manual { background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff; }
+.pv-btn-delete { background:#fff;color:#c62828;border:1px solid #ef9a9a; }
+.pv-btn-delete:hover { background:#c62828;color:#fff;border-color:#c62828; }
 .pv-alert { border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1rem;font-size:0.92rem;font-weight:600; }
 .pv-alert.success { background:#e8f5e9;color:#1B5E20;border:1px solid #a5d6a7; }
 .pv-alert.warning { background:#fff8e1;color:#e65100;border:1px solid #ffe082; }
@@ -231,12 +233,25 @@
                 <i class="bi bi-bank"></i> Confirm Bank Transfer
               </button>
             </form>
+
+            {% if record.payment_status != 'waived' %}
+            <form method="post" action="{% url 'conference:payment_verification' %}" style="margin:0;margin-left:auto;"
+                  onsubmit="return confirm('Permanently delete {{ query|escapejs }} ({% if record_type == 'registration' %}{{ record.full_name|escapejs }}{% else %}{{ record.company_name|escapejs }}{% endif %})? Only do this if the payment was NOT successful. This cannot be undone.');">
+              {% csrf_token %}
+              <input type="hidden" name="q" value="{{ query }}">
+              <input type="hidden" name="action" value="delete">
+              <button type="submit" class="pv-btn pv-btn-delete">
+                <i class="bi bi-trash3"></i> Delete Entry
+              </button>
+            </form>
+            {% endif %}
           </div>
           <p style="color:#888;font-size:0.82rem;margin-top:1rem;margin-bottom:0;">
             <i class="bi bi-info-circle"></i>
             Use <strong>Verify with Paystack</strong> to re-check an online payment against the gateway.
             Use <strong>Confirm Bank Transfer</strong> only after confirming at the bank that the holder of this
             {% if record_type == 'registration' %}Ticket ID{% else %}Reference{% endif %} has paid.
+            Use <strong>Delete Entry</strong> to remove it entirely if the payment was not successful.
           </p>
         {% endif %}
       </div>
@@ -249,7 +264,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
           <div>
             <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.15rem;">Awaiting Confirmation</div>
-            <div style="font-size:0.8rem;opacity:0.75;margin-top:0.2rem;">Unconfirmed registrations — confirm once payment is verified.</div>
+            <div style="font-size:0.8rem;opacity:0.75;margin-top:0.2rem;">Unconfirmed registrations — confirm once payment is verified, or delete if it failed.</div>
           </div>
           <span class="pv-badge pending" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);color:#fff;">
             <i class="bi bi-people-fill"></i> {{ unconfirmed_total }} pending
@@ -291,6 +306,16 @@
                     <input type="hidden" name="page" value="{{ page_obj.number }}">
                     <button type="submit" class="pv-btn pv-btn-manual" style="padding:0.45rem 0.9rem;font-size:0.8rem;">
                       <i class="bi bi-check2-circle"></i> Confirm
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'conference:payment_verification' %}" style="margin:0;display:inline;"
+                        onsubmit="return confirm('Permanently delete {{ reg.ticket_id|escapejs }} ({{ reg.full_name|escapejs }})? Only do this if the payment was NOT successful. This cannot be undone.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ reg.ticket_id }}">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="page" value="{{ page_obj.number }}">
+                    <button type="submit" class="pv-btn pv-btn-delete" style="padding:0.45rem 0.9rem;font-size:0.8rem;" title="Delete entry">
+                      <i class="bi bi-trash3"></i>
                     </button>
                   </form>
                 </td>
