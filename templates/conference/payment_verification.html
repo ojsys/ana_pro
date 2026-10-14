@@ -3,7 +3,9 @@
 {% block title %}Payment Verification — {{ conference.name }}{% endblock %}
 
 {% block extra_css %}
-.pv-wrap { max-width:920px;width:100%;margin:0 auto; }
+.pv-wrap { max-width:1320px;width:100%;margin:0 auto; }
+/* Forms and the record card stay readable-width; .pv-wide tables use the full width. */
+.pv-wrap > *:not(.pv-wide) { max-width:920px;margin-left:auto;margin-right:auto; }
 .pv-table { width:100%;border-collapse:collapse;font-size:0.86rem; }
 .pv-table thead th { text-align:left;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#999;font-weight:700;padding:0.9rem 1rem;border-bottom:2px solid #eee;background:#fafafa;white-space:nowrap; }
 .pv-table tbody td { padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;color:#333;vertical-align:middle; }
@@ -115,7 +117,7 @@
     {% endif %}
 
     {% if name_matches %}
-    <div class="pv-card" style="margin-bottom:1.5rem;">
+    <div class="pv-card pv-wide" style="margin-bottom:1.5rem;">
       <div class="pv-header" style="padding:1.5rem 2rem;">
         <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.15rem;">{{ name_matches|length }} matches for "{{ query }}"</div>
         <div style="font-size:0.8rem;opacity:0.75;margin-top:0.2rem;">Select the right person to view and confirm their payment.</div>
@@ -259,7 +261,7 @@
     {% endif %}
 
     {# ── Registrations awaiting confirmation ──────────────────────────────── #}
-    <div class="pv-card" style="margin-top:1.5rem;">
+    <div class="pv-card pv-wide" style="margin-top:1.5rem;">
       <div class="pv-header" style="padding:1.5rem 2rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
           <div>
