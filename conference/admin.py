@@ -129,6 +129,10 @@ class ConferenceAdmin(admin.ModelAdmin):
         ('Contact', {
             'fields': ('contact_email', 'contact_phone', 'website_url'),
         }),
+        ('Payment & Sponsorship', {
+            'fields': ('bank_account_name', 'bank_account_number', 'bank_name', 'sponsorship_contact_email'),
+            'description': 'Bank details shown to registrants and exhibitors who pay by bank transfer.',
+        }),
         ('Media', {
             'fields': ('hero_image', 'banner_image', 'organizer_logo'),
         }),
