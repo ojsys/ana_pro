@@ -1,3 +1,4 @@
+import csv
 import json
 import re
 import uuid
@@ -15,7 +16,7 @@ from django.conf import settings
 
 from django.core import signing
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import F, Q
 
 from .models import (
     Conference, Speaker, AbstractSubmission, AbstractThematicArea,
@@ -627,6 +628,92 @@ PV_MAX_AGE = 60 * 60 * 2  # links valid for 2 hours
 PV_SESSION_KEY = 'pv_verifier_email'
 # Max registrations (and, separately, exhibitors) listed for a name search.
 NAME_SEARCH_LIMIT = 25
+# Registrations that count as confirmed attendees.
+CONFIRMED_STATUSES = ('confirmed', 'waived')
+
+CONFIRMED_EXPORT_HEADERS = [
+    'Ticket ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Organization',
+    'Position', 'State of Origin', 'Category', 'Amount (NGN)', 'Payment Method',
+    'Payment Status', 'Paystack Reference', 'Payment Date', 'Registered At',
+    'Checked In',
+]
+
+
+def _confirmed_registrations(conference):
+    qs = (
+        Registration.objects
+        .filter(payment_status__in=CONFIRMED_STATUSES)
+        .select_related('category')
+        .order_by(F('payment_date').desc(nulls_last=True), '-registered_at')
+    )
+    if conference:
+        qs = qs.filter(conference=conference)
+    return qs
+
+
+def _export_cell(value):
+    """Neutralise values a spreadsheet would run as a formula."""
+    if isinstance(value, str) and value[:1] in ('=', '@', '\t', '\r'):
+        return "'" + value
+    return value
+
+
+def _confirmed_export_rows(registrations):
+    for r in registrations:
+        payment_date = timezone.localtime(r.payment_date).replace(tzinfo=None) if r.payment_date else None
+        registered_at = timezone.localtime(r.registered_at).replace(tzinfo=None)
+        yield [_export_cell(v) for v in (
+            r.ticket_id, r.first_name, r.last_name, r.email, r.phone, r.organization,
+            r.position, r.state_of_origin, r.category.name, r.amount,
+            r.get_payment_method_display(), r.get_payment_status_display(),
+            r.paystack_reference, payment_date, registered_at,
+            'Yes' if r.checked_in else 'No',
+        )]
+
+
+def _export_confirmed_registrations(conference, fmt):
+    """CSV or Excel download of every confirmed registration."""
+    registrations = _confirmed_registrations(conference)
+    stamp = timezone.localtime().strftime('%Y%m%d')
+    filename = f"confirmed_registrations_{stamp}"
+
+    if fmt == 'xlsx':
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Confirmed Registrations'
+        ws.append(CONFIRMED_EXPORT_HEADERS)
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+        ws.freeze_panes = 'A2'
+        for row in _confirmed_export_rows(registrations):
+            ws.append(row)
+        for col in ('N', 'O'):
+            for cell in ws[col][1:]:
+                cell.number_format = 'yyyy-mm-dd hh:mm'
+        for column in ws.columns:
+            width = max(len(str(c.value)) if c.value is not None else 0 for c in column)
+            ws.column_dimensions[column[0].column_letter].width = min(max(width, 12) + 2, 50)
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+        wb.save(response)
+        return response
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+    response.write('\ufeff')  # BOM so Excel reads accented names correctly
+    writer = csv.writer(response)
+    writer.writerow(CONFIRMED_EXPORT_HEADERS)
+    for row in _confirmed_export_rows(registrations):
+        writer.writerow([
+            v.strftime('%Y-%m-%d %H:%M') if hasattr(v, 'strftime') else v for v in row
+        ])
+    return response
 
 
 def _active_verifier_email(request):
@@ -759,6 +846,10 @@ def payment_verification(request):
         'is_superadmin': is_superadmin,
         'verifier_email': verifier_email,
     }
+
+    export_fmt = request.GET.get('export')
+    if request.method == 'GET' and export_fmt in ('csv', 'xlsx'):
+        return _export_confirmed_registrations(conference, export_fmt)
 
     raw_query = (request.GET.get('q') or request.POST.get('q') or '').strip()
     raw_query = raw_query.replace('\u2013', '-').replace('\u2014', '-').replace('\u00a0', ' ')
@@ -895,6 +986,9 @@ def payment_verification(request):
     paginator = Paginator(unconfirmed_qs, 20)
     page_obj = paginator.get_page(request.GET.get('page') or request.POST.get('page'))
 
+    confirmed_paginator = Paginator(_confirmed_registrations(conference), 20)
+    confirmed_page_obj = confirmed_paginator.get_page(request.GET.get('cpage'))
+
     context.update({
         'query': query,
         'searched': bool(query),
@@ -905,6 +999,8 @@ def payment_verification(request):
         'record_type': record_type,
         'page_obj': page_obj,
         'unconfirmed_total': paginator.count,
+        'confirmed_page_obj': confirmed_page_obj,
+        'confirmed_total': confirmed_paginator.count,
     })
     return render(request, 'conference/payment_verification.html', context)
 

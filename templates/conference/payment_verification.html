@@ -29,6 +29,8 @@
 .pv-btn-paystack { background:linear-gradient(135deg,#0a4ea3,#1e88e5);color:#fff; }
 .pv-btn-manual { background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff; }
 .pv-btn-delete { background:#fff;color:#c62828;border:1px solid #ef9a9a; }
+.pv-btn-export { background:#fff;color:#1B5E20;border:1px solid rgba(255,255,255,0.6);border-radius:10px;padding:0.5rem 0.95rem;font-size:0.82rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem; }
+.pv-btn-export:hover { background:#e8f5e9;color:#1B5E20; }
 .pv-btn-delete:hover { background:#c62828;color:#fff;border-color:#c62828; }
 .pv-alert { border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1rem;font-size:0.92rem;font-weight:600; }
 .pv-alert.success { background:#e8f5e9;color:#1B5E20;border:1px solid #a5d6a7; }
@@ -334,12 +336,12 @@
           </span>
           <div style="display:flex;gap:0.5rem;">
             {% if page_obj.has_previous %}
-              <a class="pv-page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+              <a class="pv-page-link" href="?page={{ page_obj.previous_page_number }}{% if confirmed_page_obj.number > 1 %}&cpage={{ confirmed_page_obj.number }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}">
                 <i class="bi bi-chevron-left"></i> Prev
               </a>
             {% endif %}
             {% if page_obj.has_next %}
-              <a class="pv-page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+              <a class="pv-page-link" href="?page={{ page_obj.next_page_number }}{% if confirmed_page_obj.number > 1 %}&cpage={{ confirmed_page_obj.number }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}">
                 Next <i class="bi bi-chevron-right"></i>
               </a>
             {% endif %}
@@ -351,6 +353,91 @@
         <div style="padding:2.5rem 1.5rem;text-align:center;color:#888;">
           <i class="bi bi-check2-all" style="font-size:2rem;color:#4CAF50;"></i>
           <p style="margin:0.75rem 0 0;font-weight:600;">No registrations awaiting confirmation. All caught up!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Confirmed registrations ──────────────────────────────────────────── #}
+    <div id="confirmed" class="pv-card pv-wide" style="margin-top:1.5rem;">
+      <div class="pv-header" style="padding:1.5rem 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.15rem;">Confirmed Registrations</div>
+            <div style="font-size:0.8rem;opacity:0.75;margin-top:0.2rem;">Registrations with a confirmed payment or a waived fee.</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <span class="pv-badge confirmed" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);color:#fff;">
+              <i class="bi bi-patch-check-fill"></i> {{ confirmed_total }} confirmed
+            </span>
+            {% if confirmed_total %}
+            <a class="pv-btn-export" href="?export=xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+            <a class="pv-btn-export" href="?export=csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="pv-body" style="padding:0;">
+        {% if confirmed_page_obj.object_list %}
+        <div style="overflow-x:auto;">
+          <table class="pv-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Paid On</th>
+                <th>Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for reg in confirmed_page_obj.object_list %}
+              <tr>
+                <td style="font-weight:700;color:#1B5E20;white-space:nowrap;">{{ reg.ticket_id }}</td>
+                <td>{{ reg.full_name }}</td>
+                <td>{{ reg.email }}</td>
+                <td>{{ reg.category.name }}</td>
+                <td style="white-space:nowrap;">₦{{ reg.amount|intcomma }}</td>
+                <td>{{ reg.get_payment_method_display }}</td>
+                <td style="white-space:nowrap;">{% if reg.payment_date %}{{ reg.payment_date|date:"d M Y" }}{% else %}—{% endif %}</td>
+                <td><span class="pv-badge confirmed" style="font-size:0.68rem;">{{ reg.get_payment_status_display }}</span></td>
+                <td style="text-align:right;white-space:nowrap;">
+                  <a class="pv-page-link" href="?q={{ reg.ticket_id|urlencode }}">View <i class="bi bi-chevron-right"></i></a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if confirmed_page_obj.paginator.num_pages > 1 %}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.5rem;border-top:1px solid #eee;flex-wrap:wrap;">
+          <span style="color:#888;font-size:0.85rem;">
+            Page {{ confirmed_page_obj.number }} of {{ confirmed_page_obj.paginator.num_pages }} · {{ confirmed_total }} total
+          </span>
+          <div style="display:flex;gap:0.5rem;">
+            {% if confirmed_page_obj.has_previous %}
+              <a class="pv-page-link" href="?cpage={{ confirmed_page_obj.previous_page_number }}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}#confirmed">
+                <i class="bi bi-chevron-left"></i> Prev
+              </a>
+            {% endif %}
+            {% if confirmed_page_obj.has_next %}
+              <a class="pv-page-link" href="?cpage={{ confirmed_page_obj.next_page_number }}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}#confirmed">
+                Next <i class="bi bi-chevron-right"></i>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div style="padding:2.5rem 1.5rem;text-align:center;color:#888;">
+          <i class="bi bi-inbox" style="font-size:2rem;color:#bbb;"></i>
+          <p style="margin:0.75rem 0 0;font-weight:600;">No confirmed registrations yet.</p>
         </div>
         {% endif %}
       </div>
