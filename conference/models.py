@@ -108,6 +108,14 @@ class Conference(models.Model):
         null=True, blank=True,
         help_text="Date participants must confirm physical attendance by (shown in the confirmation email).",
     )
+    virtual_join_url = models.URLField(
+        max_length=500, blank=True,
+        help_text="Link virtual attendees use to join (Zoom, Teams, YouTube…). Emailed only to paid virtual attendees.",
+    )
+    virtual_join_details = models.TextField(
+        blank=True,
+        help_text="Optional extra joining details shown under the link, e.g. meeting ID, passcode, session times.",
+    )
 
     is_active = models.BooleanField(default=True, help_text="The currently featured conference")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -474,6 +482,10 @@ class Registration(models.Model):
     attendance_email_sent_at = models.DateTimeField(
         null=True, blank=True,
         help_text="When the physical attendance confirmation email was last sent",
+    )
+    virtual_link_sent_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the virtual joining link was last emailed",
     )
 
     registered_at = models.DateTimeField(auto_now_add=True)

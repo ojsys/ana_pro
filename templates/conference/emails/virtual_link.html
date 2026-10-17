@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your virtual joining link</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f4;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f4;padding:24px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <tr><td style="background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:36px 32px;color:#ffffff;text-align:center;">
+    <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.85;">Virtual Attendance</div>
+    <div style="font-size:24px;font-weight:bold;margin-top:8px;">Your Joining Link</div>
+    <div style="font-size:14px;margin-top:8px;opacity:0.9;">{{ conference.name }}</div>
+  </td></tr>
+
+  <tr><td style="padding:28px 32px 8px;font-size:15px;line-height:1.6;color:#444;">
+    <p style="margin:0 0 14px;color:#222;">Dear {{ registration.full_name }},</p>
+    <p style="margin:0 0 14px;">
+      You are registered to attend <strong>{{ conference.name }}</strong> virtually,
+      <strong>{{ conference.start_date|date:"j" }}&ndash;{{ conference.end_date|date:"j F Y" }}</strong>.
+      Use the link below to join the conference online.
+    </p>
+  </td></tr>
+
+  {% include 'conference/emails/_virtual_join_block.html' %}
+
+  <tr><td style="padding:0 32px 24px;font-size:14px;line-height:1.6;color:#444;">
+    <p style="margin:0 0 14px;">This link is for registered participants only — please do not share it.</p>
+    <p style="margin:0;">If you have any questions, just reply to this email{% if conference.contact_email %} or reach us at <a href="mailto:{{ conference.contact_email }}" style="color:#2E7D32;">{{ conference.contact_email }}</a>{% endif %}.</p>
+    <p style="margin:16px 0 0;color:#222;">We look forward to having you online!<br><strong>The {{ conference.name }} Team</strong></p>
+    <p style="margin:18px 0 0;font-size:12px;color:#999;">Ticket ID: {{ registration.ticket_id }}</p>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#0D1B0F;padding:22px 32px;color:#9bbf9f;font-size:12px;line-height:1.6;">
+    {{ conference.name }}<br>
+    {% if conference.website_url %}<a href="{{ conference.website_url }}" style="color:#9bbf9f;">{{ conference.website_url }}</a><br>{% endif %}
+    {% if conference.contact_phone %}{{ conference.contact_phone }}{% endif %}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>

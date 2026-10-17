@@ -1,0 +1,11 @@
+{# Joining link + details, shared by the joining-link and welcome emails. #}
+<tr><td style="padding:8px 32px 18px;text-align:center;">
+  <a href="{{ conference.virtual_join_url }}" style="display:inline-block;background:#2E7D32;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;padding:14px 32px;border-radius:50px;">Join the Conference Online</a>
+  <div style="font-size:12px;color:#888;margin-top:12px;">Or copy this link:<br>
+    <a href="{{ conference.virtual_join_url }}" style="color:#2E7D32;word-break:break-all;">{{ conference.virtual_join_url }}</a></div>
+  {% if conference.virtual_join_details %}
+  <div style="margin-top:16px;background:#f1f8e9;border-radius:10px;padding:14px 18px;text-align:left;font-size:14px;line-height:1.6;color:#333;">
+    {{ conference.virtual_join_details|linebreaksbr }}
+  </div>
+  {% endif %}
+</td></tr>

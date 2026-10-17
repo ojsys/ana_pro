@@ -64,27 +64,39 @@ class ConferenceAdminForm(forms.ModelForm):
         }
 
 
-ATTENDANCE_EMAIL_BATCH = 20
-# A reminder skips anyone emailed this recently, so a reminder run that is
-# interrupted and restarted doesn't email the same people twice.
-ATTENDANCE_REMINDER_GAP = datetime.timedelta(hours=1)
+BULK_EMAIL_BATCH = 20
+# Resends skip anyone emailed this recently, so a run that is interrupted
+# and restarted doesn't email the same people twice.
+BULK_EMAIL_RESEND_GAP = datetime.timedelta(hours=1)
 
 
-def attendance_email_targets(conference, reminder=False):
-    """Who the attendance confirmation email goes to: confirmed (or fee-waived)
-    in-person participants not yet emailed — or, for a reminder, those emailed
-    (over an hour ago) who haven't answered."""
-    qs = Registration.objects.filter(
+def _paid(conference, mode):
+    return Registration.objects.filter(
         conference=conference,
         payment_status__in=Registration.TICKET_VALID_STATUSES,
-        attendance_mode='physical',
+        attendance_mode=mode,
     )
-    if reminder:
+
+
+def attendance_email_targets(conference, mode='new'):
+    """Confirmed (or fee-waived) in-person participants not yet emailed —
+    or, for a reminder, those emailed (over an hour ago) who haven't answered."""
+    qs = _paid(conference, 'physical')
+    if mode == 'reminder':
         return qs.filter(
-            attendance_email_sent_at__lt=timezone.now() - ATTENDANCE_REMINDER_GAP,
+            attendance_email_sent_at__lt=timezone.now() - BULK_EMAIL_RESEND_GAP,
             attendance_response='',
         )
     return qs.filter(attendance_email_sent_at__isnull=True)
+
+
+def virtual_link_targets(conference, mode='new'):
+    """Paid virtual attendees not yet sent the joining link — or, to resend
+    (e.g. after the link changed), all of them not sent it in the last hour."""
+    qs = _paid(conference, 'virtual')
+    if mode == 'all':
+        return qs.exclude(virtual_link_sent_at__gte=timezone.now() - BULK_EMAIL_RESEND_GAP)
+    return qs.filter(virtual_link_sent_at__isnull=True)
 
 
 def attendance_email_stats(conference):
@@ -101,8 +113,38 @@ def attendance_email_stats(conference):
         no_response=Count('pk', filter=Q(attendance_email_sent_at__isnull=False, attendance_response='')),
     )
     stats['unsent'] = attendance_email_targets(conference).count()
-    stats['reminder'] = attendance_email_targets(conference, reminder=True).count()
+    stats['reminder'] = attendance_email_targets(conference, 'reminder').count()
     return stats
+
+
+def virtual_link_stats(conference):
+    attendees = _paid(conference, 'virtual')
+    return {
+        'eligible': attendees.count(),
+        'sent': attendees.filter(virtual_link_sent_at__isnull=False).count(),
+        'unsent': virtual_link_targets(conference).count(),
+        'resend': virtual_link_targets(conference, 'all').count(),
+    }
+
+
+def _send_attendance(request, registration, mode, connection):
+    from .emails import send_attendance_confirmation_request
+    url = request.build_absolute_uri(registration.attendance_confirmation_path())
+    send_attendance_confirmation_request(registration, url, mode == 'reminder', connection)
+    return 'attendance_email_sent_at'
+
+
+def _send_virtual_link(request, registration, mode, connection):
+    from .emails import send_virtual_joining_link
+    send_virtual_joining_link(registration, connection)
+    return 'virtual_link_sent_at'
+
+
+# Each bulk email: who it goes to, how to send one, and which modes exist.
+BULK_EMAILS = {
+    'attendance': {'targets': attendance_email_targets, 'send': _send_attendance, 'modes': ('new', 'reminder')},
+    'virtual-link': {'targets': virtual_link_targets, 'send': _send_virtual_link, 'modes': ('new', 'all')},
+}
 
 
 @admin.register(Conference)
@@ -114,20 +156,20 @@ class ConferenceAdmin(admin.ModelAdmin):
     search_fields = ['name', 'theme', 'city']
     list_editable = ['is_active', 'registration_open', 'physical_registration_open',
                      'virtual_registration_open', 'abstract_submission_open']
-    readonly_fields = ['stakeholder_link', 'physical_places_status', 'attendance_email_panel']
+    readonly_fields = ['stakeholder_link', 'physical_places_status', 'attendance_email_panel', 'virtual_link_panel']
     actions = ['reset_stakeholder_link']
 
-    # ── Physical attendance confirmation email ─────────────────────────────────
+    # ── Bulk emails (attendance confirmation, virtual joining link) ────────────
 
     def get_urls(self):
         from django.urls import path
         custom = [
-            path('<int:pk>/attendance-email/',
-                 self.admin_site.admin_view(self.attendance_email_view),
-                 name='conference_conference_attendance_email'),
-            path('<int:pk>/attendance-email/send/',
-                 self.admin_site.admin_view(self.attendance_email_send),
-                 name='conference_conference_attendance_email_send'),
+            path('<int:pk>/bulk-email/<slug:kind>/',
+                 self.admin_site.admin_view(self.bulk_email_view),
+                 name='conference_conference_bulk_email'),
+            path('<int:pk>/bulk-email/<slug:kind>/send/',
+                 self.admin_site.admin_view(self.bulk_email_send),
+                 name='conference_conference_bulk_email_send'),
         ]
         return custom + super().get_urls()
 
@@ -152,62 +194,110 @@ class ConferenceAdmin(admin.ModelAdmin):
             '<a class="button" href="{}" style="padding:8px 14px;">Send attendance confirmation email…</a>',
             stats['eligible'], stats['emailed'], stats['unsent'],
             stats['physical'], stats['virtual'], stats['not_attending'], stats['no_response'],
-            reverse('admin:conference_conference_attendance_email', args=[obj.pk]),
+            reverse('admin:conference_conference_bulk_email', args=[obj.pk, 'attendance']),
         )
     attendance_email_panel.short_description = "Attendance confirmation email"
 
-    def attendance_email_view(self, request, pk):
-        """Confirmation page with the send buttons and a preview of the email."""
-        from django.shortcuts import get_object_or_404
-        from django.template.response import TemplateResponse
+    def virtual_link_panel(self, obj):
+        if not obj.pk:
+            return "Save the conference first."
+        from django.urls import reverse
+        stats = virtual_link_stats(obj)
+        return format_html(
+            '<p>{} paid virtual attendees · {} sent the link · {} not yet sent</p>'
+            '<a class="button" href="{}" style="padding:8px 14px;">Send joining link…</a>',
+            stats['eligible'], stats['sent'], stats['unsent'],
+            reverse('admin:conference_conference_bulk_email', args=[obj.pk, 'virtual-link']),
+        )
+    virtual_link_panel.short_description = "Virtual joining link email"
+
+    def _bulk_email_conference(self, request, pk, kind):
         from django.core.exceptions import PermissionDenied
+        from django.http import Http404
+        from django.shortcuts import get_object_or_404
+        if kind not in BULK_EMAILS:
+            raise Http404
         conference = get_object_or_404(Conference, pk=pk)
         if not self.has_change_permission(request, conference):
             raise PermissionDenied
-        return TemplateResponse(request, 'admin/conference/conference/attendance_email.html', {
+        return conference
+
+    def bulk_email_view(self, request, pk, kind):
+        """Confirmation page with the send buttons and a preview of the email."""
+        from django.template.response import TemplateResponse
+        conference = self._bulk_email_conference(request, pk, kind)
+        preview = Registration(ticket_id='ANC2026-T00000', conference=conference,
+                               first_name='Ada', last_name='Obi', attendance_mode='virtual')
+        if kind == 'attendance':
+            stats = attendance_email_stats(conference)
+            context = {
+                'title': 'Send physical attendance confirmation email',
+                'stats': stats,
+                'buttons': [
+                    ('new', f"Send to {stats['unsent']} participant(s) not yet emailed", stats['unsent']),
+                    ('reminder', f"Send reminder to {stats['reminder']} who haven't responded", stats['reminder']),
+                ],
+                'preview_template': 'conference/emails/attendance_confirmation.html',
+                'preview_subject': f"Please confirm your physical attendance — {conference.name}",
+            }
+        else:
+            stats = virtual_link_stats(conference)
+            context = {
+                'title': 'Send virtual joining link',
+                'stats': stats,
+                'buttons': [
+                    ('new', f"Send to {stats['unsent']} attendee(s) not yet sent the link", stats['unsent']),
+                    ('all', f"Resend to all {stats['resend']} virtual attendees (e.g. link changed)", stats['resend']),
+                ],
+                'blocked': '' if conference.virtual_join_url else
+                           'No joining link is set. Add the "Virtual join url" under Attendance & Venue Capacity first.',
+                'preview_template': 'conference/emails/virtual_link.html',
+                'preview_subject': f"Your virtual joining link — {conference.name}",
+            }
+        return TemplateResponse(request, 'admin/conference/conference/bulk_email.html', {
             **self.admin_site.each_context(request),
-            'title': 'Send physical attendance confirmation email',
+            **context,
+            'kind': kind,
             'opts': self.model._meta,
             'original': conference,
             'conference': conference,
-            'stats': attendance_email_stats(conference),
-            'preview_registration': Registration(ticket_id='ANC2026-T00000', conference=conference),
+            'preview_registration': preview,
         })
 
-    def attendance_email_send(self, request, pk):
+    def bulk_email_send(self, request, pk, kind):
         """Send one batch and report progress. The page calls this repeatedly
         (passing back ``after``) until ``done``, so no single request runs long
         enough to time out."""
-        from django.core.exceptions import PermissionDenied
         from django.core.mail import get_connection
         from django.http import JsonResponse, HttpResponseNotAllowed
-        from django.shortcuts import get_object_or_404
-        from .emails import send_attendance_confirmation_request
         if request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
-        conference = get_object_or_404(Conference, pk=pk)
-        if not self.has_change_permission(request, conference):
-            raise PermissionDenied
+        conference = self._bulk_email_conference(request, pk, kind)
+        config = BULK_EMAILS[kind]
+        if kind == 'virtual-link' and not conference.virtual_join_url:
+            return JsonResponse({'error': 'No joining link is set.'}, status=400)
 
-        reminder = request.POST.get('mode') == 'reminder'
-        targets = attendance_email_targets(conference, reminder)
+        mode = request.POST.get('mode')
+        if mode not in config['modes']:
+            mode = 'new'
+        targets = config['targets'](conference, mode)
         try:
             after = int(request.POST.get('after') or 0)
         except ValueError:
             after = 0
-        batch = list(targets.filter(pk__gt=after).order_by('pk')[:ATTENDANCE_EMAIL_BATCH])
+        batch = list(targets.filter(pk__gt=after).select_related('conference', 'category')
+                     .order_by('pk')[:BULK_EMAIL_BATCH])
 
         sent = failed = 0
         if batch:
             with get_connection() as connection:
                 for registration in batch:
-                    url = request.build_absolute_uri(registration.attendance_confirmation_path())
                     try:
-                        send_attendance_confirmation_request(registration, url, reminder, connection)
+                        field = config['send'](request, registration, mode, connection)
                     except Exception:
                         failed += 1
                         continue
-                    Registration.objects.filter(pk=registration.pk).update(attendance_email_sent_at=timezone.now())
+                    Registration.objects.filter(pk=registration.pk).update(**{field: timezone.now()})
                     sent += 1
             after = batch[-1].pk
         remaining = targets.filter(pk__gt=after).count()
@@ -256,6 +346,7 @@ class ConferenceAdmin(admin.ModelAdmin):
                 'physical_registration_open', 'virtual_registration_open',
                 'physical_capacity', 'physical_places_status',
                 'attendance_confirmation_deadline', 'attendance_email_panel',
+                'virtual_join_url', 'virtual_join_details', 'virtual_link_panel',
             ),
             'description': (
                 'Open or close in-person and virtual registration separately — the fee is the same for both. '
@@ -425,7 +516,7 @@ class RegistrationAdmin(ExportMixin, admin.ModelAdmin):
     search_fields = ['ticket_id', 'first_name', 'last_name', 'email', 'organization']
     list_editable = ['payment_status', 'checked_in']
     readonly_fields = ['ticket_id', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id',
-                       'attendance_responded_at', 'attendance_email_sent_at']
+                       'attendance_responded_at', 'attendance_email_sent_at', 'virtual_link_sent_at']
     ordering = ['-registered_at']
 
     fieldsets = (
@@ -443,7 +534,8 @@ class RegistrationAdmin(ExportMixin, admin.ModelAdmin):
             'fields': ('is_stakeholder', 'amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
         }),
         ('Attendance', {
-            'fields': ('attendance_mode', 'attendance_response', 'attendance_responded_at', 'attendance_email_sent_at')
+            'fields': ('attendance_mode', 'attendance_response', 'attendance_responded_at', 'attendance_email_sent_at',
+                       'virtual_link_sent_at')
         }),
         ('Accreditation', {
             'fields': ('checked_in', 'checked_in_at')
@@ -452,7 +544,34 @@ class RegistrationAdmin(ExportMixin, admin.ModelAdmin):
 
     actions = ['export_selected_to_csv', 'confirm_registration',
                'resend_confirmation_emails', 'resend_payment_receipt',
-               'send_attendance_confirmation', 'mark_checked_in']
+               'send_attendance_confirmation', 'send_virtual_link', 'mark_checked_in']
+
+    @admin.action(description='Send virtual joining link to selected')
+    def send_virtual_link(self, request, queryset):
+        from django.core.mail import get_connection
+        from .emails import send_virtual_joining_link
+        eligible = queryset.filter(payment_status__in=Registration.TICKET_VALID_STATUSES, attendance_mode='virtual')
+        sent = failed = 0
+        with get_connection() as connection:
+            for registration in eligible.select_related('conference'):
+                if not registration.conference.virtual_join_url:
+                    failed += 1
+                    continue
+                try:
+                    send_virtual_joining_link(registration, connection)
+                except Exception:
+                    failed += 1
+                    continue
+                Registration.objects.filter(pk=registration.pk).update(virtual_link_sent_at=timezone.now())
+                sent += 1
+        skipped = queryset.count() - eligible.count()
+        msg = f"Joining link sent to {sent} virtual attendee(s)."
+        if skipped:
+            msg += f" {skipped} skipped (not virtual, or payment not confirmed)."
+        self.message_user(request, msg, messages.SUCCESS if sent else messages.WARNING)
+        if failed:
+            self.message_user(request, f"{failed} not sent — check the joining link is set on the conference "
+                                       "and the email logs.", messages.ERROR)
 
     @admin.action(description='Send physical attendance confirmation email to selected')
     def send_attendance_confirmation(self, request, queryset):

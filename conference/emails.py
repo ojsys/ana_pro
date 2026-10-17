@@ -106,6 +106,11 @@ def send_welcome(registration):
         label='welcome',
         ref=ref,
     )
+    # The welcome email carries the joining link for virtual attendees, so
+    # the bulk "send joining link" doesn't need to email them again.
+    if registration.attendance_mode == 'virtual' and conference.virtual_join_url:
+        from django.utils import timezone
+        type(registration).objects.filter(pk=registration.pk).update(virtual_link_sent_at=timezone.now())
     return True
 
 
@@ -253,6 +258,25 @@ def send_attendance_confirmation_request(registration, confirm_url, reminder=Fal
         to_email=registration.email,
         reply_to=conference.contact_email or None,
         label='attendance-confirmation',
+        ref=registration.ticket_id,
+        connection=connection,
+    )
+
+
+def send_virtual_joining_link(registration, connection=None):
+    """Email a paid virtual attendee the conference joining link."""
+    conference = registration.conference
+    if not registration.ticket_issued or not conference.virtual_join_url:
+        logger.warning("Refusing to send joining link ref=%s status=%s url_set=%s",
+                       registration.ticket_id, registration.payment_status, bool(conference.virtual_join_url))
+        return False
+    return _send(
+        subject=f"Your virtual joining link — {conference.name}",
+        template_base='conference/emails/virtual_link',
+        context=_context_for(registration),
+        to_email=registration.email,
+        reply_to=conference.contact_email or None,
+        label='virtual-link',
         ref=registration.ticket_id,
         connection=connection,
     )

@@ -1,0 +1,19 @@
+YOUR VIRTUAL JOINING LINK — {{ conference.name }}
+
+Dear {{ registration.full_name }},
+
+You are registered to attend {{ conference.name }} virtually, {{ conference.start_date|date:"j" }}–{{ conference.end_date|date:"j F Y" }}.
+Use the link below to join the conference online:
+
+{{ conference.virtual_join_url }}
+{% if conference.virtual_join_details %}
+{{ conference.virtual_join_details }}
+{% endif %}
+This link is for registered participants only — please do not share it.
+
+If you have any questions, just reply to this email{% if conference.contact_email %} or reach us at {{ conference.contact_email }}{% endif %}.
+
+We look forward to having you online!
+The {{ conference.name }} Team
+
+Ticket ID: {{ registration.ticket_id }}

@@ -7,19 +7,19 @@
   &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
   &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
   &rsaquo; <a href="{% url opts|admin_urlname:'change' conference.pk %}">{{ conference }}</a>
-  &rsaquo; Attendance confirmation email
+  &rsaquo; {{ title }}
 </div>
 {% endblock %}
 
 {% block content %}
 <div style="max-width:820px;">
+  {% if kind == 'attendance' %}
   <p>
     Asks every <strong>confirmed (or fee-waived) in-person participant</strong> of
     <strong>{{ conference.name }}</strong> to confirm whether they will attend physically.
     Each email carries a personal link to a short form. Answers appear on each registration
     (Attendance section) and in the counts below.
   </p>
-
   <table style="margin:1rem 0;">
     <tr><th style="text-align:left;padding-right:2rem;">Confirmed in-person participants</th><td>{{ stats.eligible }}</td></tr>
     <tr><th style="text-align:left;">Already emailed</th><td>{{ stats.emailed }}</td></tr>
@@ -27,7 +27,6 @@
     <tr><th style="text-align:left;">Responses</th>
         <td>{{ stats.physical }} in person · {{ stats.virtual }} virtual · {{ stats.not_attending }} not attending · {{ stats.no_response }} no response yet</td></tr>
   </table>
-
   {% if not conference.attendance_confirmation_deadline %}
   <p class="errornote" style="display:block;">
     No confirmation deadline is set, so the email will leave out the “submit on or before” line.
@@ -37,29 +36,48 @@
   <p>Deadline shown in the email: <strong>{{ conference.attendance_confirmation_deadline|date:"l, j F Y" }}</strong></p>
   {% endif %}
 
+  {% else %}
+  <p>
+    Emails the joining link to every <strong>paid (or fee-waived) virtual attendee</strong> of
+    <strong>{{ conference.name }}</strong>. People who register virtually from now on get the link
+    in their welcome email automatically.
+  </p>
+  <table style="margin:1rem 0;">
+    <tr><th style="text-align:left;padding-right:2rem;">Paid virtual attendees</th><td>{{ stats.eligible }}</td></tr>
+    <tr><th style="text-align:left;">Already sent the link</th><td>{{ stats.sent }}</td></tr>
+    <tr><th style="text-align:left;">Not yet sent</th><td><strong>{{ stats.unsent }}</strong></td></tr>
+    <tr><th style="text-align:left;">Joining link</th><td>{{ conference.virtual_join_url|default:"— not set —" }}</td></tr>
+  </table>
+  {% endif %}
+
+  {% if blocked %}
+  <p class="errornote" style="display:block;">{{ blocked }}
+    <a href="{% url opts|admin_urlname:'change' conference.pk %}">Edit the conference</a>.</p>
+  {% endif %}
+
   <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1.5rem 0;">
-    <button type="button" class="button default" data-mode="new" data-count="{{ stats.unsent }}" {% if not stats.unsent %}disabled{% endif %}
-            style="padding:10px 18px;">Send to {{ stats.unsent }} participant{{ stats.unsent|pluralize }} not yet emailed</button>
-    <button type="button" class="button" data-mode="reminder" data-count="{{ stats.reminder }}" {% if not stats.reminder %}disabled{% endif %}
-            style="padding:10px 18px;">Send reminder to {{ stats.reminder }} who haven't responded</button>
+    {% for mode, label, count in buttons %}
+    <button type="button" class="button{% if forloop.first %} default{% endif %}" data-mode="{{ mode }}" data-count="{{ count }}"
+            {% if not count or blocked %}disabled{% endif %} style="padding:10px 18px;">{{ label }}</button>
+    {% endfor %}
   </div>
-  <p style="color:#888;">Reminders skip anyone emailed in the last hour.</p>
+  <p style="color:#888;">Resends and reminders skip anyone emailed in the last hour.</p>
   <p id="progress" style="font-weight:bold;"></p>
 
   <h2 style="margin-top:2rem;">Email preview</h2>
-  <p style="color:#888;">Subject: Please confirm your physical attendance — {{ conference.name }}</p>
-  <iframe id="preview" style="width:100%;height:760px;border:1px solid #ddd;border-radius:8px;background:#f4f5f4;"
-          srcdoc="{% filter force_escape %}{% include 'conference/emails/attendance_confirmation.html' with confirm_url='https://example.com/your-personal-link' registration=preview_registration %}{% endfilter %}"></iframe>
+  <p style="color:#888;">Subject: {{ preview_subject }}</p>
+  <iframe style="width:100%;height:760px;border:1px solid #ddd;border-radius:8px;background:#f4f5f4;"
+          srcdoc="{% filter force_escape %}{% include preview_template with confirm_url='https://example.com/your-personal-link' registration=preview_registration %}{% endfilter %}"></iframe>
 </div>
 
 <script>
 (function () {
-  var sendUrl = "{% url 'admin:conference_conference_attendance_email_send' conference.pk %}";
+  var sendUrl = "{% url 'admin:conference_conference_bulk_email_send' conference.pk kind %}";
   var csrf = "{{ csrf_token }}";
   var progress = document.getElementById('progress');
   var buttons = document.querySelectorAll('button[data-mode]');
 
-  function run(mode, total) {
+  function run(mode) {
     var sent = 0, failed = 0;
     buttons.forEach(function (b) { b.disabled = true; });
     function step(after) {
@@ -85,9 +103,8 @@
 
   buttons.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var label = btn.dataset.mode === 'reminder' ? 'a reminder' : 'the attendance confirmation email';
-      if (confirm('Send ' + label + ' to ' + btn.dataset.count + ' participant(s)? Keep this page open until it finishes.')) {
-        run(btn.dataset.mode, btn.dataset.count);
+      if (confirm(btn.textContent.trim() + '? Keep this page open until it finishes.')) {
+        run(btn.dataset.mode);
       }
     });
   });
