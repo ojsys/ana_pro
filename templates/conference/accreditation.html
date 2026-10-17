@@ -1,0 +1,152 @@
+{% extends 'conference/base.html' %}
+{% block title %}Accreditation — {{ conference.name }}{% endblock %}
+
+{% block extra_css %}
+.acc-wrap { max-width:760px;margin:0 auto; }
+.acc-card { background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:1.25rem; }
+.acc-body { padding:1.5rem 1.75rem; }
+.acc-input { font-size:1.15rem;padding:0.85rem 1rem;border:2px solid #d7e3d7;border-radius:12px;flex:1;min-width:0;width:100%; }
+.acc-input:focus { border-color:#2E7D32;box-shadow:0 0 0 0.2rem rgba(46,125,50,0.15);outline:none; }
+.acc-btn { border:none;border-radius:12px;padding:0.85rem 1.4rem;font-weight:700;font-size:1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;text-decoration:none; }
+.acc-btn-go { background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff; }
+.acc-btn-admit { background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff;width:100%;font-size:1.15rem;padding:1.1rem; }
+.acc-btn-override { background:#fff;color:#e65100;border:2px solid #f9a825;width:100%; }
+.acc-btn-undo { background:none;color:#888;text-decoration:underline;padding:0.5rem;font-weight:600;font-size:0.85rem; }
+.acc-status { padding:1.4rem 1.75rem;color:#fff;display:flex;align-items:center;gap:1rem; }
+.acc-status i { font-size:2.4rem; }
+.acc-status.ok { background:linear-gradient(135deg,#1B5E20,#43A047); }
+.acc-status.done { background:linear-gradient(135deg,#0d47a1,#1e88e5); }
+.acc-status.warn { background:linear-gradient(135deg,#e65100,#f9a825); }
+.acc-status.stop { background:linear-gradient(135deg,#b71c1c,#e53935); }
+.acc-row { display:flex;justify-content:space-between;gap:1rem;padding:0.55rem 0;border-bottom:1px dashed #eee;font-size:0.92rem; }
+.acc-row:last-child { border-bottom:none; }
+.acc-row span:first-child { color:#999;font-size:0.72rem;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;padding-top:0.15rem; }
+.acc-row span:last-child { font-weight:600;color:#222;text-align:right;word-break:break-word; }
+.acc-match { display:flex;justify-content:space-between;align-items:center;gap:0.75rem;padding:0.85rem 1.25rem;border-bottom:1px solid #f0f0f0;color:#222;text-decoration:none; }
+.acc-match:hover { background:#f8fbf8; }
+.acc-pill { border-radius:50px;padding:0.2rem 0.65rem;font-size:0.7rem;font-weight:700;white-space:nowrap; }
+.acc-pill.ok { background:#e8f5e9;color:#1B5E20; }
+.acc-pill.done { background:#e3f2fd;color:#0d47a1; }
+.acc-pill.no { background:#ffebee;color:#c62828; }
+.acc-alert { border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1rem;font-size:0.95rem;font-weight:600; }
+.acc-alert.success { background:#e8f5e9;color:#1B5E20;border:1px solid #a5d6a7; }
+.acc-alert.warning { background:#fff8e1;color:#e65100;border:1px solid #ffe082; }
+.acc-alert.error { background:#ffebee;color:#c62828;border:1px solid #ef9a9a; }
+.acc-alert.info { background:#e3f2fd;color:#1565c0;border:1px solid #90caf9; }
+@media (max-width:576px) { .acc-body, .acc-status { padding:1.1rem 1.1rem; } .acc-search { flex-direction:column; } }
+{% endblock %}
+
+{% block content %}
+<div style="min-height:85vh;background:#f9f9f9;padding:2.5rem 1rem;">
+  <div class="acc-wrap">
+
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;margin:0;"><i class="bi bi-person-badge"></i> Accreditation</h2>
+      <p style="color:#666;margin:0.4rem 0 0;">Confirm in-person participants by name or Ticket ID before entry.</p>
+    </div>
+
+    {% if needs_access %}
+      <div class="acc-card"><div class="acc-body">
+        <p style="color:#555;">This page is restricted to superadmins and authorized verifiers.</p>
+        <a class="acc-btn acc-btn-go" href="{% url 'conference:payment_verification' %}"><i class="bi bi-box-arrow-in-right"></i> Sign in</a>
+        <p style="color:#999;font-size:0.85rem;margin:1rem 0 0;">Sign in on the Payment Verification page with your authorized email, then come back here.</p>
+      </div></div>
+    {% else %}
+
+    <div style="display:flex;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;font-weight:700;color:#1B5E20;">
+      <span><i class="bi bi-people-fill"></i> {{ accredited_total }} accredited of {{ expected_total }} expected in person</span>
+      {% if verifier_email %}<span style="color:#888;font-weight:600;font-size:0.85rem;">{{ verifier_email }}</span>{% endif %}
+    </div>
+
+    {% for message in messages %}<div class="acc-alert {{ message.tags }}">{{ message }}</div>{% endfor %}
+
+    <div class="acc-card"><div class="acc-body">
+      <form method="get" class="acc-search" style="display:flex;gap:0.75rem;">
+        <input type="text" name="q" value="{{ query }}" class="acc-input" autofocus autocomplete="off"
+               placeholder="Ticket ID or name, e.g. ANC2026-T00012 or Ada Obi">
+        <button type="submit" class="acc-btn acc-btn-go"><i class="bi bi-search"></i> Find</button>
+      </form>
+    </div></div>
+
+    {% if query and not record and not matches %}
+      <div class="acc-alert error"><i class="bi bi-x-circle-fill"></i> No registration found for “{{ query }}”. Check the spelling or Ticket ID.</div>
+    {% endif %}
+
+    {% if matches %}
+    <div class="acc-card">
+      <div style="padding:0.9rem 1.25rem;border-bottom:2px solid #eee;font-weight:700;color:#555;">{{ matches|length }} matches — tap the right person</div>
+      {% for m in matches %}
+      <a class="acc-match" href="?q={{ m.ticket_id|urlencode }}">
+        <span><strong>{{ m.full_name }}</strong><br><small style="color:#888;">{{ m.ticket_id }} · {{ m.organization }}</small></span>
+        {% if m.checked_in %}<span class="acc-pill done">Accredited</span>
+        {% elif m.accreditation_issue %}<span class="acc-pill no">{{ m.accreditation_issue }}</span>
+        {% else %}<span class="acc-pill ok">Cleared</span>{% endif %}
+      </a>
+      {% endfor %}
+      {% if truncated %}<p style="color:#888;font-size:0.82rem;padding:0.75rem 1.25rem;margin:0;">Showing the first {{ name_search_limit }} — type more of the name to narrow it down.</p>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if record %}
+    <div class="acc-card">
+      {% if record.checked_in %}
+        <div class="acc-status done"><i class="bi bi-patch-check-fill"></i>
+          <div><div style="font-size:1.25rem;font-weight:800;">Already accredited</div>
+          <div style="opacity:0.9;">at {{ record.checked_in_at|date:"H:i" }} on {{ record.checked_in_at|date:"j M" }}</div></div></div>
+      {% elif not record.is_paid %}
+        <div class="acc-status stop"><i class="bi bi-x-octagon-fill"></i>
+          <div><div style="font-size:1.25rem;font-weight:800;">Do not admit</div>
+          <div style="opacity:0.9;">Payment not confirmed ({{ record.get_payment_status_display }})</div></div></div>
+      {% elif record.accreditation_issue %}
+        <div class="acc-status warn"><i class="bi bi-exclamation-triangle-fill"></i>
+          <div><div style="font-size:1.25rem;font-weight:800;">Check before admitting</div>
+          <div style="opacity:0.9;">{{ record.accreditation_issue }}</div></div></div>
+      {% else %}
+        <div class="acc-status ok"><i class="bi bi-check-circle-fill"></i>
+          <div><div style="font-size:1.25rem;font-weight:800;">Cleared for entry</div>
+          <div style="opacity:0.9;">Paid · in-person participant</div></div></div>
+      {% endif %}
+
+      <div class="acc-body">
+        <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.35rem;color:#222;">{{ record.full_name }}</div>
+        <div style="color:#1B5E20;font-weight:700;letter-spacing:1px;margin-bottom:0.75rem;">{{ record.ticket_id }}</div>
+        <div class="acc-row"><span>Organization</span><span>{{ record.organization }}</span></div>
+        <div class="acc-row"><span>Category</span><span>{{ record.category.name }}</span></div>
+        <div class="acc-row"><span>Email</span><span>{{ record.email }}</span></div>
+        <div class="acc-row"><span>Phone</span><span>{{ record.phone }}</span></div>
+        <div class="acc-row"><span>Attendance</span><span>{{ record.get_attendance_mode_display }}</span></div>
+        <div class="acc-row"><span>Confirmation</span><span>{{ record.get_attendance_response_display|default:"No response" }}</span></div>
+
+        <div style="margin-top:1.25rem;">
+          {% if record.checked_in %}
+            <form method="post" style="text-align:center;margin:0;" onsubmit="return confirm('Undo accreditation for {{ record.full_name|escapejs }}?');">
+              {% csrf_token %}
+              <input type="hidden" name="ticket_id" value="{{ record.ticket_id }}">
+              <input type="hidden" name="action" value="undo">
+              <button type="submit" class="acc-btn acc-btn-undo">Undo accreditation</button>
+            </form>
+          {% elif not record.is_paid %}
+            <p style="color:#c62828;font-weight:600;margin:0;">Send them to the registration desk to sort out payment first.</p>
+          {% else %}
+            <form method="post" style="margin:0;"
+                  {% if record.accreditation_issue %}onsubmit="return confirm('{{ record.full_name|escapejs }}: {{ record.accreditation_issue|escapejs }}. Admit anyway?');"{% endif %}>
+              {% csrf_token %}
+              <input type="hidden" name="ticket_id" value="{{ record.ticket_id }}">
+              <input type="hidden" name="action" value="admit">
+              {% if record.accreditation_issue %}
+                <input type="hidden" name="override" value="1">
+                <button type="submit" class="acc-btn acc-btn-override"><i class="bi bi-exclamation-triangle"></i> Admit anyway</button>
+              {% else %}
+                <button type="submit" class="acc-btn acc-btn-admit"><i class="bi bi-check2-circle"></i> Accredit &amp; admit</button>
+              {% endif %}
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% endif %}{# needs_access #}
+  </div>
+</div>
+{% endblock %}

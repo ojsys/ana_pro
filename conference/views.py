@@ -22,7 +22,7 @@ from .models import (
     Conference, Speaker, AbstractSubmission, AbstractThematicArea,
     RegistrationCategory, Registration, ProgramDay, Sponsor, KeyMessage,
     ContentBlock, Exhibitor, ExhibitorPackage, ExhibitorShowcase,
-    PaymentVerifier, AbstractReviewer,
+    PaymentVerifier, AbstractReviewer, ATTENDANCE_TOKEN_SALT,
 )
 from .forms import (
     AbstractSubmissionForm, RegistrationForm, StakeholderRegistrationForm,
@@ -191,13 +191,14 @@ class RegistrationView(FormView):
             conference.early_bird_deadline and
             timezone.now().date() <= conference.early_bird_deadline
         )
-        if not conference.registration_open:
+        context['open_modes'] = conference.open_attendance_modes()
+        if not conference.registration_open or not context['open_modes']:
             context['registration_closed'] = True
         return context
 
     def form_valid(self, form):
         conference = self.get_conference()
-        if not conference.registration_open:
+        if not conference.registration_open or not conference.open_attendance_modes():
             messages.error(self.request, "Registration is currently closed.")
             return redirect('conference:register')
 
@@ -291,7 +292,7 @@ class StakeholderRegistrationView(RegistrationView):
     def form_valid(self, form):
         conference = self.get_conference()
         stakeholder_url = reverse('conference:stakeholder_register', args=[conference.stakeholder_access_token])
-        if not conference.registration_open:
+        if not conference.registration_open or not conference.open_attendance_modes():
             messages.error(self.request, "Registration is currently closed.")
             return redirect(stakeholder_url)
 
@@ -360,6 +361,55 @@ class RegistrationSuccessView(TemplateView):
             context['registration'] = Registration.objects.filter(ticket_id=ticket_id).first()
         context['conference'] = get_active_conference()
         return context
+
+
+def attendance_confirm(request, token):
+    """
+    Personal form, linked from the physical attendance confirmation email,
+    where a participant says whether they will attend in person. Choosing
+    virtual moves them to virtual attendance, freeing their seat.
+    """
+    try:
+        pk = signing.loads(token, salt=ATTENDANCE_TOKEN_SALT)
+    except signing.BadSignature:
+        raise Http404("Invalid attendance confirmation link.")
+    registration = get_object_or_404(
+        Registration.objects.select_related('conference', 'category'), pk=pk
+    )
+    conference = registration.conference
+
+    # In person stays available to anyone already holding a place; anyone
+    # else needs a free seat. Virtual is offered only while it's open.
+    options = []
+    if registration.holds_physical_place or conference.physical_registration_available():
+        options.append('physical')
+    if registration.attendance_mode == 'virtual' or conference.virtual_registration_open:
+        options.append('virtual')
+    options.append('not_attending')
+    choices = [c for c in Registration.ATTENDANCE_RESPONSE_CHOICES if c[0] in options]
+
+    submitted = False
+    if request.method == 'POST' and registration.is_paid:
+        response = request.POST.get('response')
+        if response not in options:
+            messages.error(request, "Please choose one of the options below.")
+        else:
+            registration.attendance_response = response
+            registration.attendance_responded_at = timezone.now()
+            if response in ('physical', 'virtual'):
+                registration.attendance_mode = response
+            registration.save(update_fields=[
+                'attendance_response', 'attendance_responded_at', 'attendance_mode', 'updated_at',
+            ])
+            logger.info("Attendance response %s=%s", registration.ticket_id, response)
+            submitted = True
+
+    return render(request, 'conference/attendance_confirm.html', {
+        'conference': conference,
+        'registration': registration,
+        'choices': choices,
+        'submitted': submitted,
+    })
 
 
 def ticket_verify(request, ticket_id):
@@ -635,7 +685,7 @@ CONFIRMED_EXPORT_HEADERS = [
     'Ticket ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Organization',
     'Position', 'State of Origin', 'Category', 'Amount (NGN)', 'Payment Method',
     'Payment Status', 'Paystack Reference', 'Payment Date', 'Registered At',
-    'Checked In',
+    'Accredited', 'Attendance Mode', 'Attendance Response',
 ]
 
 
@@ -668,6 +718,8 @@ def _confirmed_export_rows(registrations):
             r.get_payment_method_display(), r.get_payment_status_display(),
             r.paystack_reference, payment_date, registered_at,
             'Yes' if r.checked_in else 'No',
+            r.get_attendance_mode_display(),
+            r.get_attendance_response_display() or 'No response',
         )]
 
 
@@ -1003,6 +1055,112 @@ def payment_verification(request):
         'confirmed_total': confirmed_paginator.count,
     })
     return render(request, 'conference/payment_verification.html', context)
+
+
+# ─── Accreditation (venue entry) ──────────────────────────────────────────────
+
+# Finds a ticket ID anywhere in the input, so a scanned ticket URL works too.
+TICKET_ID_RE = re.compile(r'[A-Z]{3}\d{4}-T\d+', re.IGNORECASE)
+
+
+def accreditation(request):
+    """
+    Venue entry check for in-person participants.
+
+    Look someone up by Ticket ID (typed, or a scanned ticket link) or by
+    name, check they are cleared to enter, and record them as accredited.
+    Same access as Payment Verification: superadmins, or allowlisted
+    verifiers signed in with a magic link.
+    """
+    conference = get_active_conference()
+    is_superadmin = _is_pv_staff(request)
+    verifier_email = _active_verifier_email(request)
+    if not (is_superadmin or verifier_email):
+        return render(request, 'conference/accreditation.html', {
+            'conference': conference,
+            'needs_access': True,
+        })
+
+    actor = str(request.user) if is_superadmin else f"verifier:{verifier_email}"
+    registrations = Registration.objects.select_related('category')
+    if conference:
+        registrations = registrations.filter(conference=conference)
+
+    # ── Admit / undo ───────────────────────────────────────────────────────────
+    if request.method == 'POST':
+        ticket_id = request.POST.get('ticket_id', '')
+        record = registrations.filter(ticket_id=ticket_id).first()
+        action = request.POST.get('action')
+        url = reverse('conference:accreditation')
+        if not record:
+            messages.error(request, "Registration not found.")
+            return redirect(url)
+
+        issue = record.accreditation_issue
+        if action == 'admit':
+            if record.checked_in:
+                messages.warning(
+                    request,
+                    f"{record.full_name} was already accredited at "
+                    f"{timezone.localtime(record.checked_in_at):%H:%M on %d %b}.",
+                )
+            elif not record.is_paid:
+                messages.error(request, f"{record.full_name} cannot be accredited: payment is not confirmed.")
+            elif issue and not request.POST.get('override'):
+                messages.error(request, f"{record.full_name}: {issue}.")
+            else:
+                record.checked_in = True
+                record.checked_in_at = timezone.now()
+                record.save(update_fields=['checked_in', 'checked_in_at', 'updated_at'])
+                logger.info("Accredited %s (%s) by %s%s", record.ticket_id, record.full_name, actor,
+                            f" — override: {issue}" if issue else "")
+                messages.success(request, f"{record.full_name} ({record.ticket_id}) is accredited.")
+        elif action == 'undo' and record.checked_in:
+            record.checked_in = False
+            record.checked_in_at = None
+            record.save(update_fields=['checked_in', 'checked_in_at', 'updated_at'])
+            logger.info("Accreditation undone for %s by %s", record.ticket_id, actor)
+            messages.info(request, f"Accreditation for {record.full_name} has been undone.")
+        return redirect(f"{url}?q={record.ticket_id}")
+
+    # ── Lookup ─────────────────────────────────────────────────────────────────
+    raw_query = (request.GET.get('q') or '').strip()
+    record = None
+    matches = []
+    truncated = False
+    ticket_match = TICKET_ID_RE.search(raw_query)
+    if ticket_match:
+        record = registrations.filter(ticket_id__iexact=ticket_match.group(0)).first()
+    elif raw_query:
+        name_query = ' '.join(re.sub(r"[^\w'\-@. ]", ' ', raw_query).split())
+        if '@' in name_query:
+            qs = registrations.filter(email__iexact=name_query)
+        else:
+            q = Q()
+            for word in name_query.split():
+                q &= Q(first_name__icontains=word) | Q(last_name__icontains=word)
+            qs = registrations.filter(q) if name_query else registrations.none()
+        matches = list(qs.order_by('last_name', 'first_name')[:NAME_SEARCH_LIMIT + 1])
+        truncated = len(matches) > NAME_SEARCH_LIMIT
+        matches = matches[:NAME_SEARCH_LIMIT]
+        if len(matches) == 1:
+            record, matches = matches[0], []
+
+    expected = registrations.filter(
+        payment_status__in=Registration.TICKET_VALID_STATUSES, attendance_mode='physical',
+    ).exclude(attendance_response='not_attending')
+
+    return render(request, 'conference/accreditation.html', {
+        'conference': conference,
+        'verifier_email': verifier_email,
+        'query': raw_query,
+        'record': record,
+        'matches': matches,
+        'truncated': truncated,
+        'name_search_limit': NAME_SEARCH_LIMIT,
+        'expected_total': expected.count(),
+        'accredited_total': registrations.filter(checked_in=True).count(),
+    })
 
 
 # ─── Abstract review (staff + email exceptions) ───────────────────────────────

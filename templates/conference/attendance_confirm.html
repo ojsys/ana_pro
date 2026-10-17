@@ -1,0 +1,80 @@
+{% extends 'conference/base.html' %}
+{% block title %}Confirm Attendance — {{ conference.name }}{% endblock %}
+
+{% block extra_css %}
+.ac-card { background:#fff;border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,0.1);overflow:hidden;max-width:640px;margin:0 auto; }
+.ac-header { background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:2rem 2.5rem;color:#fff; }
+.ac-body { padding:2rem 2.5rem; }
+.ac-option { display:flex;align-items:center;gap:0.85rem;border:2px solid #e0e0e0;border-radius:14px;padding:1rem 1.25rem;cursor:pointer;margin-bottom:0.75rem;transition:all 0.2s; }
+.ac-option:hover { border-color:#4CAF50;background:#f1f8e9; }
+.ac-option input { accent-color:#2E7D32;width:1.15rem;height:1.15rem; }
+.ac-option:has(input:checked) { border-color:#2E7D32;background:#f1f8e9; }
+.ac-btn { background:linear-gradient(135deg,#1B5E20,#4CAF50);color:#fff;border:none;border-radius:50px;padding:0.9rem 2rem;font-weight:700;width:100%;margin-top:0.75rem; }
+.ac-alert { border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1rem;font-size:0.92rem;font-weight:600; }
+.ac-alert.error { background:#ffebee;color:#c62828;border:1px solid #ef9a9a; }
+@media (max-width:576px) { .ac-header, .ac-body { padding:1.5rem 1.25rem; } }
+{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh;background:#f9f9f9;padding:3rem 1rem;">
+  <div class="ac-card">
+    <div class="ac-header">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">Physical Attendance Confirmation</div>
+      <div style="font-family:'Poppins',sans-serif;font-weight:800;font-size:1.35rem;margin-top:0.3rem;">{{ registration.full_name }}</div>
+      <div style="font-size:0.85rem;opacity:0.8;margin-top:0.2rem;">Ticket ID {{ registration.ticket_id }} · {{ conference.start_date|date:"j" }}–{{ conference.end_date|date:"j F Y" }} · {{ conference.venue }}</div>
+    </div>
+    <div class="ac-body">
+      {% if not registration.is_paid %}
+        <p style="color:#555;margin:0;">This registration's payment has not been confirmed yet, so attendance can't be confirmed.
+        {% if conference.contact_email %}Please contact <a href="mailto:{{ conference.contact_email }}">{{ conference.contact_email }}</a>.{% endif %}</p>
+
+      {% elif submitted %}
+        <div style="text-align:center;">
+          <i class="bi bi-check-circle-fill" style="font-size:3rem;color:#4CAF50;"></i>
+          <h4 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;margin-top:0.75rem;">Thank you!</h4>
+          <p style="color:#555;">
+            {% if registration.attendance_response == 'physical' %}
+              We've recorded that you will attend <strong>in person</strong>. Please bring your Ticket ID
+              (<strong>{{ registration.ticket_id }}</strong>) for accreditation at the venue.
+            {% elif registration.attendance_response == 'virtual' %}
+              We've recorded that you will join <strong>virtually</strong>. Your place at the venue has been released.
+            {% else %}
+              We've recorded that you will <strong>not attend</strong>. Your place at the venue has been released.
+            {% endif %}
+          </p>
+          <p style="color:#999;font-size:0.85rem;margin:0;">Plans changed? You can use this same link to update your answer.</p>
+        </div>
+
+      {% else %}
+        {% for message in messages %}<div class="ac-alert {{ message.tags }}">{{ message }}</div>{% endfor %}
+        {% if registration.attendance_response %}
+          <p style="background:#e3f2fd;color:#1565c0;border-radius:10px;padding:0.75rem 1rem;font-size:0.9rem;">
+            Your current answer: <strong>{{ registration.get_attendance_response_display }}</strong>. You can change it below.
+          </p>
+        {% endif %}
+        <p style="color:#555;">
+          To help the Local Organising Committee plan seating, refreshments and other venue requirements,
+          please confirm whether you will attend the conference physically.
+          {% if conference.attendance_confirmation_deadline %}
+            Kindly respond on or before <strong>{{ conference.attendance_confirmation_deadline|date:"j F Y" }}</strong>.
+          {% endif %}
+        </p>
+        <form method="post">
+          {% csrf_token %}
+          {% for value, label in choices %}
+          <label class="ac-option">
+            <input type="radio" name="response" value="{{ value }}" required
+                   {% if registration.attendance_response == value %}checked{% endif %}>
+            <span>
+              <strong>{% if value == 'physical' %}Yes, I will attend in person{% elif value == 'virtual' %}I will join virtually instead{% else %}No, I will not attend{% endif %}</strong>
+              {% if value == 'physical' %}<br><small style="color:#888;">at {{ conference.venue }}</small>{% endif %}
+            </span>
+          </label>
+          {% endfor %}
+          <button type="submit" class="ac-btn"><i class="bi bi-send-check me-1"></i> Submit my response</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

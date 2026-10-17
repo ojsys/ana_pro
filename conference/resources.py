@@ -31,7 +31,8 @@ class RegistrationResource(resources.ModelResource):
             'amount', 'is_stakeholder', 'payment_method', 'payment_status',
             'paystack_reference', 'paystack_transaction_id', 'payment_date',
             'confirmation_email_sent', 'receipt_email_sent',
-            'terms_accepted', 'checked_in', 'checked_in_at', 'registered_at',
+            'terms_accepted', 'attendance_mode', 'attendance_response', 'attendance_responded_at',
+            'checked_in', 'checked_in_at', 'registered_at',
         )
         export_order = fields
 

@@ -87,6 +87,28 @@ class Conference(models.Model):
         help_text="Override the 'Days' number. Blank = calculate it from the start and end dates."
     )
 
+    # ─── Attendance mode & venue capacity ────────────────────────────────────
+    # In-person and virtual registration open and close independently, so
+    # in-person sign-ups can stop once the venue is full while virtual
+    # registration carries on. The fee is the same for both.
+    physical_registration_open = models.BooleanField(
+        default=True,
+        help_text="Untick to stop new in-person registrations (e.g. when the venue is full).",
+    )
+    virtual_registration_open = models.BooleanField(
+        default=False,
+        help_text="Allow people to register to attend online. The fee is the same as in person.",
+    )
+    physical_capacity = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Venue capacity. In-person registration closes automatically once this many "
+                  "in-person places are taken. Blank = no limit.",
+    )
+    attendance_confirmation_deadline = models.DateField(
+        null=True, blank=True,
+        help_text="Date participants must confirm physical attendance by (shown in the confirmation email).",
+    )
+
     is_active = models.BooleanField(default=True, help_text="The currently featured conference")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -103,6 +125,35 @@ class Conference(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+    # ─── Attendance mode & capacity ──────────────────────────────────────────
+
+    def physical_places_taken(self):
+        """In-person places held: every in-person registration that isn't
+        failed or cancelled (pending ones included, so unpaid bank transfers
+        can't push the venue over capacity) and hasn't said it won't attend."""
+        return (
+            self.registrations
+            .filter(attendance_mode='physical')
+            .exclude(payment_status__in=['failed', 'cancelled'])
+            .exclude(attendance_response='not_attending')
+            .count()
+        )
+
+    def physical_is_full(self):
+        return self.physical_capacity is not None and self.physical_places_taken() >= self.physical_capacity
+
+    def physical_registration_available(self):
+        return self.physical_registration_open and not self.physical_is_full()
+
+    def open_attendance_modes(self):
+        """Attendance modes new registrants can currently choose."""
+        modes = []
+        if self.physical_registration_available():
+            modes.append('physical')
+        if self.virtual_registration_open:
+            modes.append('virtual')
+        return modes
 
     def get_objectives_list(self):
         return [o.strip() for o in self.objectives.split('\n') if o.strip()]
@@ -341,6 +392,9 @@ def _next_id_number(model, field, prefix):
     return highest + 1
 
 
+ATTENDANCE_TOKEN_SALT = 'conference.attendance-confirmation'
+
+
 class Registration(models.Model):
     """Conference participant registration"""
     PAYMENT_STATUS_CHOICES = [
@@ -401,10 +455,31 @@ class Registration(models.Model):
     # Consent
     terms_accepted = models.BooleanField(default=False)
 
+    # Attendance
+    ATTENDANCE_MODE_CHOICES = [
+        ('physical', 'In person'),
+        ('virtual', 'Virtual'),
+    ]
+    ATTENDANCE_RESPONSE_CHOICES = [
+        ('physical', 'Will attend in person'),
+        ('virtual', 'Will join virtually instead'),
+        ('not_attending', 'Will not attend'),
+    ]
+    attendance_mode = models.CharField(max_length=10, choices=ATTENDANCE_MODE_CHOICES, default='physical')
+    attendance_response = models.CharField(
+        max_length=15, choices=ATTENDANCE_RESPONSE_CHOICES, blank=True,
+        help_text="The participant's answer to the physical attendance confirmation email. Blank = no answer yet.",
+    )
+    attendance_responded_at = models.DateTimeField(null=True, blank=True)
+    attendance_email_sent_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the physical attendance confirmation email was last sent",
+    )
+
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    checked_in = models.BooleanField(default=False)
-    checked_in_at = models.DateTimeField(null=True, blank=True)
+    checked_in = models.BooleanField(default=False, verbose_name="Accredited")
+    checked_in_at = models.DateTimeField(null=True, blank=True, verbose_name="Accredited at")
 
     class Meta:
         ordering = ['-registered_at']
@@ -437,6 +512,28 @@ class Registration(models.Model):
         because there is no fee to collect.
         """
         return self.is_paid
+
+    @property
+    def holds_physical_place(self):
+        return self.attendance_mode == 'physical' and self.attendance_response != 'not_attending'
+
+    @property
+    def accreditation_issue(self):
+        """Why this person shouldn't be admitted to the venue, or '' if they can be."""
+        if not self.is_paid:
+            return "Payment not confirmed"
+        if self.attendance_mode == 'virtual':
+            return "Registered for virtual attendance"
+        if self.attendance_response == 'not_attending':
+            return "Said they will not attend"
+        return ''
+
+    def attendance_confirmation_path(self):
+        """Personal link to the physical attendance confirmation form."""
+        from django.core import signing
+        from django.urls import reverse
+        token = signing.dumps(self.pk, salt=ATTENDANCE_TOKEN_SALT)
+        return reverse('conference:attendance_confirm', args=[token])
 
     def save(self, *args, **kwargs):
         if not self.ticket_id:

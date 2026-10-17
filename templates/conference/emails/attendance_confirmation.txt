@@ -1,0 +1,24 @@
+{% if reminder %}REMINDER: {% endif %}PLEASE CONFIRM YOUR PHYSICAL ATTENDANCE — {{ conference.name }}
+
+Dear Participant,
+
+Thank you for registering for the upcoming ANA Conference scheduled for {{ conference.start_date|date:"j" }}–{{ conference.end_date|date:"j F Y" }}.
+
+To help the Local Organising Committee make adequate arrangements for seating, refreshments and other venue requirements, we kindly ask you to confirm whether you will attend the conference physically.
+
+Please complete the short confirmation form using the link below:
+
+{{ confirm_url }}
+{% if conference.attendance_confirmation_deadline %}
+Kindly submit your response on or before {{ conference.attendance_confirmation_deadline|date:"l, j F Y" }}.
+{% endif %}
+Your prompt confirmation will help us prepare effectively and provide a better conference experience for all participants.
+
+If your plans have changed and you will no longer attend physically, please indicate this in the form as well.
+
+Thank you for your cooperation. We look forward to welcoming you to the conference.
+
+Best Regards
+ANA Conference 2026 Planning Committee
+
+Ticket ID: {{ registration.ticket_id }}

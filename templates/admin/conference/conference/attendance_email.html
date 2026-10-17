@@ -1,0 +1,96 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' conference.pk %}">{{ conference }}</a>
+  &rsaquo; Attendance confirmation email
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:820px;">
+  <p>
+    Asks every <strong>confirmed (or fee-waived) in-person participant</strong> of
+    <strong>{{ conference.name }}</strong> to confirm whether they will attend physically.
+    Each email carries a personal link to a short form. Answers appear on each registration
+    (Attendance section) and in the counts below.
+  </p>
+
+  <table style="margin:1rem 0;">
+    <tr><th style="text-align:left;padding-right:2rem;">Confirmed in-person participants</th><td>{{ stats.eligible }}</td></tr>
+    <tr><th style="text-align:left;">Already emailed</th><td>{{ stats.emailed }}</td></tr>
+    <tr><th style="text-align:left;">Not yet emailed</th><td><strong>{{ stats.unsent }}</strong></td></tr>
+    <tr><th style="text-align:left;">Responses</th>
+        <td>{{ stats.physical }} in person · {{ stats.virtual }} virtual · {{ stats.not_attending }} not attending · {{ stats.no_response }} no response yet</td></tr>
+  </table>
+
+  {% if not conference.attendance_confirmation_deadline %}
+  <p class="errornote" style="display:block;">
+    No confirmation deadline is set, so the email will leave out the “submit on or before” line.
+    <a href="{% url opts|admin_urlname:'change' conference.pk %}">Set the deadline</a> under Attendance &amp; Venue Capacity first if you want it included.
+  </p>
+  {% else %}
+  <p>Deadline shown in the email: <strong>{{ conference.attendance_confirmation_deadline|date:"l, j F Y" }}</strong></p>
+  {% endif %}
+
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1.5rem 0;">
+    <button type="button" class="button default" data-mode="new" data-count="{{ stats.unsent }}" {% if not stats.unsent %}disabled{% endif %}
+            style="padding:10px 18px;">Send to {{ stats.unsent }} participant{{ stats.unsent|pluralize }} not yet emailed</button>
+    <button type="button" class="button" data-mode="reminder" data-count="{{ stats.reminder }}" {% if not stats.reminder %}disabled{% endif %}
+            style="padding:10px 18px;">Send reminder to {{ stats.reminder }} who haven't responded</button>
+  </div>
+  <p style="color:#888;">Reminders skip anyone emailed in the last hour.</p>
+  <p id="progress" style="font-weight:bold;"></p>
+
+  <h2 style="margin-top:2rem;">Email preview</h2>
+  <p style="color:#888;">Subject: Please confirm your physical attendance — {{ conference.name }}</p>
+  <iframe id="preview" style="width:100%;height:760px;border:1px solid #ddd;border-radius:8px;background:#f4f5f4;"
+          srcdoc="{% filter force_escape %}{% include 'conference/emails/attendance_confirmation.html' with confirm_url='https://example.com/your-personal-link' registration=preview_registration %}{% endfilter %}"></iframe>
+</div>
+
+<script>
+(function () {
+  var sendUrl = "{% url 'admin:conference_conference_attendance_email_send' conference.pk %}";
+  var csrf = "{{ csrf_token }}";
+  var progress = document.getElementById('progress');
+  var buttons = document.querySelectorAll('button[data-mode]');
+
+  function run(mode, total) {
+    var sent = 0, failed = 0;
+    buttons.forEach(function (b) { b.disabled = true; });
+    function step(after) {
+      var body = new URLSearchParams({mode: mode, after: after});
+      fetch(sendUrl, {method: 'POST', headers: {'X-CSRFToken': csrf}, body: body, credentials: 'same-origin'})
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+          sent += data.sent; failed += data.failed;
+          progress.textContent = 'Sending… ' + sent + ' sent' + (failed ? ', ' + failed + ' failed' : '') + ' — ' + data.remaining + ' to go';
+          if (data.done) {
+            progress.textContent = 'Done: ' + sent + ' email(s) sent' + (failed ? ', ' + failed + ' failed (reload and send again to retry them)' : '') + '.';
+            setTimeout(function () { location.reload(); }, 2500);
+          } else {
+            step(data.after);
+          }
+        })
+        .catch(function (err) {
+          progress.textContent = 'Stopped after ' + sent + ' sent (' + err.message + '). Reload and click again to continue — nobody is emailed twice.';
+        });
+    }
+    step(0);
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var label = btn.dataset.mode === 'reminder' ? 'a reminder' : 'the attendance confirmation email';
+      if (confirm('Send ' + label + ' to ' + btn.dataset.count + ' participant(s)? Keep this page open until it finishes.')) {
+        run(btn.dataset.mode, btn.dataset.count);
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

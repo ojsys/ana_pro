@@ -23,7 +23,8 @@ def _ticket_url(registration):
     return f"{base}/conference/ticket/{registration.ticket_id}/"
 
 
-def _send(subject, template_base, context, to_email, reply_to=None, label=None, ref=None):
+def _send(subject, template_base, context, to_email, reply_to=None, label=None, ref=None,
+          connection=None):
     """Render an HTML/plain-text pair and send a single email.
 
     ``label`` (e.g. "receipt"/"welcome") and ``ref`` (e.g. the ticket id) are
@@ -42,6 +43,7 @@ def _send(subject, template_base, context, to_email, reply_to=None, label=None, 
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[to_email],
         reply_to=[reply_to] if reply_to else None,
+        connection=connection,
     )
     message.attach_alternative(html_body, "text/html")
     try:
@@ -229,3 +231,28 @@ def send_registration_confirmation(registration):
         registration.ticket_id, registration.email,
     )
     return True
+
+
+def send_attendance_confirmation_request(registration, confirm_url, reminder=False, connection=None):
+    """Ask a confirmed participant to confirm whether they will attend in
+    person, via their personal ``confirm_url``. Pass a shared ``connection``
+    when sending in bulk."""
+    conference = registration.conference
+    subject = f"Please confirm your physical attendance — {conference.name}"
+    if reminder:
+        subject = f"Reminder: {subject}"
+    return _send(
+        subject=subject,
+        template_base='conference/emails/attendance_confirmation',
+        context={
+            'registration': registration,
+            'conference': conference,
+            'confirm_url': confirm_url,
+            'reminder': reminder,
+        },
+        to_email=registration.email,
+        reply_to=conference.contact_email or None,
+        label='attendance-confirmation',
+        ref=registration.ticket_id,
+        connection=connection,
+    )

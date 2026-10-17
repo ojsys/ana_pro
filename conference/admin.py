@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 from django.contrib import admin, messages
 from django.utils.html import format_html
@@ -62,15 +64,157 @@ class ConferenceAdminForm(forms.ModelForm):
         }
 
 
+ATTENDANCE_EMAIL_BATCH = 20
+# A reminder skips anyone emailed this recently, so a reminder run that is
+# interrupted and restarted doesn't email the same people twice.
+ATTENDANCE_REMINDER_GAP = datetime.timedelta(hours=1)
+
+
+def attendance_email_targets(conference, reminder=False):
+    """Who the attendance confirmation email goes to: confirmed (or fee-waived)
+    in-person participants not yet emailed — or, for a reminder, those emailed
+    (over an hour ago) who haven't answered."""
+    qs = Registration.objects.filter(
+        conference=conference,
+        payment_status__in=Registration.TICKET_VALID_STATUSES,
+        attendance_mode='physical',
+    )
+    if reminder:
+        return qs.filter(
+            attendance_email_sent_at__lt=timezone.now() - ATTENDANCE_REMINDER_GAP,
+            attendance_response='',
+        )
+    return qs.filter(attendance_email_sent_at__isnull=True)
+
+
+def attendance_email_stats(conference):
+    from django.db.models import Count, Q
+    paid = Registration.objects.filter(
+        conference=conference, payment_status__in=Registration.TICKET_VALID_STATUSES,
+    )
+    stats = paid.aggregate(
+        eligible=Count('pk', filter=Q(attendance_mode='physical')),
+        emailed=Count('pk', filter=Q(attendance_email_sent_at__isnull=False)),
+        physical=Count('pk', filter=Q(attendance_response='physical')),
+        virtual=Count('pk', filter=Q(attendance_response='virtual')),
+        not_attending=Count('pk', filter=Q(attendance_response='not_attending')),
+        no_response=Count('pk', filter=Q(attendance_email_sent_at__isnull=False, attendance_response='')),
+    )
+    stats['unsent'] = attendance_email_targets(conference).count()
+    stats['reminder'] = attendance_email_targets(conference, reminder=True).count()
+    return stats
+
+
 @admin.register(Conference)
 class ConferenceAdmin(admin.ModelAdmin):
     form = ConferenceAdminForm
-    list_display = ['name', 'theme', 'start_date', 'end_date', 'city', 'is_active', 'registration_open', 'abstract_submission_open']
+    list_display = ['name', 'theme', 'start_date', 'end_date', 'city', 'is_active', 'registration_open',
+                    'physical_registration_open', 'virtual_registration_open', 'abstract_submission_open']
     list_filter = ['is_active', 'registration_open', 'abstract_submission_open']
     search_fields = ['name', 'theme', 'city']
-    list_editable = ['is_active', 'registration_open', 'abstract_submission_open']
-    readonly_fields = ['stakeholder_link']
+    list_editable = ['is_active', 'registration_open', 'physical_registration_open',
+                     'virtual_registration_open', 'abstract_submission_open']
+    readonly_fields = ['stakeholder_link', 'physical_places_status', 'attendance_email_panel']
     actions = ['reset_stakeholder_link']
+
+    # ── Physical attendance confirmation email ─────────────────────────────────
+
+    def get_urls(self):
+        from django.urls import path
+        custom = [
+            path('<int:pk>/attendance-email/',
+                 self.admin_site.admin_view(self.attendance_email_view),
+                 name='conference_conference_attendance_email'),
+            path('<int:pk>/attendance-email/send/',
+                 self.admin_site.admin_view(self.attendance_email_send),
+                 name='conference_conference_attendance_email_send'),
+        ]
+        return custom + super().get_urls()
+
+    def physical_places_status(self, obj):
+        if not obj.pk:
+            return "—"
+        taken = obj.physical_places_taken()
+        if obj.physical_capacity is None:
+            return f"{taken} in-person places taken (no capacity limit set)"
+        state = "FULL — in-person registration closed" if taken >= obj.physical_capacity else f"{obj.physical_capacity - taken} left"
+        return f"{taken} of {obj.physical_capacity} in-person places taken · {state}"
+    physical_places_status.short_description = "In-person places"
+
+    def attendance_email_panel(self, obj):
+        if not obj.pk:
+            return "Save the conference first."
+        from django.urls import reverse
+        stats = attendance_email_stats(obj)
+        return format_html(
+            '<p>{} confirmed in-person participants · {} emailed · {} not yet emailed<br>'
+            'Responses: {} in person · {} virtual · {} not attending · {} no response yet</p>'
+            '<a class="button" href="{}" style="padding:8px 14px;">Send attendance confirmation email…</a>',
+            stats['eligible'], stats['emailed'], stats['unsent'],
+            stats['physical'], stats['virtual'], stats['not_attending'], stats['no_response'],
+            reverse('admin:conference_conference_attendance_email', args=[obj.pk]),
+        )
+    attendance_email_panel.short_description = "Attendance confirmation email"
+
+    def attendance_email_view(self, request, pk):
+        """Confirmation page with the send buttons and a preview of the email."""
+        from django.shortcuts import get_object_or_404
+        from django.template.response import TemplateResponse
+        from django.core.exceptions import PermissionDenied
+        conference = get_object_or_404(Conference, pk=pk)
+        if not self.has_change_permission(request, conference):
+            raise PermissionDenied
+        return TemplateResponse(request, 'admin/conference/conference/attendance_email.html', {
+            **self.admin_site.each_context(request),
+            'title': 'Send physical attendance confirmation email',
+            'opts': self.model._meta,
+            'original': conference,
+            'conference': conference,
+            'stats': attendance_email_stats(conference),
+            'preview_registration': Registration(ticket_id='ANC2026-T00000', conference=conference),
+        })
+
+    def attendance_email_send(self, request, pk):
+        """Send one batch and report progress. The page calls this repeatedly
+        (passing back ``after``) until ``done``, so no single request runs long
+        enough to time out."""
+        from django.core.exceptions import PermissionDenied
+        from django.core.mail import get_connection
+        from django.http import JsonResponse, HttpResponseNotAllowed
+        from django.shortcuts import get_object_or_404
+        from .emails import send_attendance_confirmation_request
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+        conference = get_object_or_404(Conference, pk=pk)
+        if not self.has_change_permission(request, conference):
+            raise PermissionDenied
+
+        reminder = request.POST.get('mode') == 'reminder'
+        targets = attendance_email_targets(conference, reminder)
+        try:
+            after = int(request.POST.get('after') or 0)
+        except ValueError:
+            after = 0
+        batch = list(targets.filter(pk__gt=after).order_by('pk')[:ATTENDANCE_EMAIL_BATCH])
+
+        sent = failed = 0
+        if batch:
+            with get_connection() as connection:
+                for registration in batch:
+                    url = request.build_absolute_uri(registration.attendance_confirmation_path())
+                    try:
+                        send_attendance_confirmation_request(registration, url, reminder, connection)
+                    except Exception:
+                        failed += 1
+                        continue
+                    Registration.objects.filter(pk=registration.pk).update(attendance_email_sent_at=timezone.now())
+                    sent += 1
+            after = batch[-1].pk
+        remaining = targets.filter(pk__gt=after).count()
+        return JsonResponse({
+            'sent': sent, 'failed': failed, 'after': after,
+            'remaining': remaining, 'done': not batch or remaining == 0,
+        })
 
     def stakeholder_link(self, obj):
         if not obj.pk:
@@ -106,6 +250,17 @@ class ConferenceAdmin(admin.ModelAdmin):
         ('Status & Registration', {
             'fields': ('is_active', 'registration_open', 'abstract_submission_open', 'stakeholder_link'),
             'description': 'Toggle these to open or close the conference, registration, and abstract submission.',
+        }),
+        ('Attendance & Venue Capacity', {
+            'fields': (
+                'physical_registration_open', 'virtual_registration_open',
+                'physical_capacity', 'physical_places_status',
+                'attendance_confirmation_deadline', 'attendance_email_panel',
+            ),
+            'description': (
+                'Open or close in-person and virtual registration separately — the fee is the same for both. '
+                'Registration is closed when neither is open (or when "Registration open" above is off).'
+            ),
         }),
         ('Dates & Venue', {
             'fields': ('start_date', 'end_date', 'venue', 'city', 'state', 'country'),
@@ -263,11 +418,14 @@ class RegistrationCategoryAdmin(admin.ModelAdmin):
 @admin.register(Registration)
 class RegistrationAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = RegistrationResource
-    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status', 'is_stakeholder', 'checked_in', 'registered_at']
-    list_filter = ['conference', 'is_stakeholder', 'payment_method', 'payment_status', 'category', 'checked_in']
+    list_display = ['ticket_id', 'full_name', 'email', 'category', 'amount', 'payment_method', 'payment_status',
+                    'attendance_mode', 'attendance_response', 'is_stakeholder', 'checked_in', 'registered_at']
+    list_filter = ['conference', 'is_stakeholder', 'payment_method', 'payment_status', 'attendance_mode',
+                   'attendance_response', 'category', 'checked_in']
     search_fields = ['ticket_id', 'first_name', 'last_name', 'email', 'organization']
     list_editable = ['payment_status', 'checked_in']
-    readonly_fields = ['ticket_id', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id']
+    readonly_fields = ['ticket_id', 'registered_at', 'updated_at', 'paystack_reference', 'paystack_transaction_id',
+                       'attendance_responded_at', 'attendance_email_sent_at']
     ordering = ['-registered_at']
 
     fieldsets = (
@@ -284,14 +442,41 @@ class RegistrationAdmin(ExportMixin, admin.ModelAdmin):
         ('Payment', {
             'fields': ('is_stakeholder', 'amount', 'payment_method', 'payment_status', 'paystack_reference', 'paystack_transaction_id', 'payment_date')
         }),
-        ('Check-in', {
+        ('Attendance', {
+            'fields': ('attendance_mode', 'attendance_response', 'attendance_responded_at', 'attendance_email_sent_at')
+        }),
+        ('Accreditation', {
             'fields': ('checked_in', 'checked_in_at')
         }),
     )
 
     actions = ['export_selected_to_csv', 'confirm_registration',
                'resend_confirmation_emails', 'resend_payment_receipt',
-               'mark_checked_in']
+               'send_attendance_confirmation', 'mark_checked_in']
+
+    @admin.action(description='Send physical attendance confirmation email to selected')
+    def send_attendance_confirmation(self, request, queryset):
+        from django.core.mail import get_connection
+        from .emails import send_attendance_confirmation_request
+        eligible = queryset.filter(payment_status__in=Registration.TICKET_VALID_STATUSES)
+        sent = failed = 0
+        with get_connection() as connection:
+            for registration in eligible.select_related('conference'):
+                url = request.build_absolute_uri(registration.attendance_confirmation_path())
+                try:
+                    send_attendance_confirmation_request(registration, url, connection=connection)
+                except Exception:
+                    failed += 1
+                    continue
+                Registration.objects.filter(pk=registration.pk).update(attendance_email_sent_at=timezone.now())
+                sent += 1
+        skipped = queryset.count() - eligible.count()
+        msg = f"Attendance confirmation email sent to {sent} participant(s)."
+        if skipped:
+            msg += f" {skipped} skipped (payment not confirmed)."
+        self.message_user(request, msg, messages.SUCCESS if sent else messages.WARNING)
+        if failed:
+            self.message_user(request, f"{failed} email(s) failed — check the email logs.", messages.ERROR)
 
     @admin.action(description='⬇ Export selected registrations to CSV')
     def export_selected_to_csv(self, request, queryset):

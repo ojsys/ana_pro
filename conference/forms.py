@@ -64,7 +64,7 @@ class RegistrationForm(forms.ModelForm):
             'first_name', 'last_name', 'email', 'phone',
             'organization', 'position', 'state_of_origin',
             'category', 'dietary_requirements', 't_shirt_size',
-            'abstract_reference', 'payment_method', 'terms_accepted',
+            'abstract_reference', 'attendance_mode', 'payment_method', 'terms_accepted',
         ]
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
@@ -78,6 +78,7 @@ class RegistrationForm(forms.ModelForm):
             'dietary_requirements': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Vegetarian, Halal, None'}),
             't_shirt_size': forms.Select(attrs={'class': 'form-select'}),
             'abstract_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., ANC2026-0012 (if applicable)'}),
+            'attendance_mode': forms.RadioSelect(attrs={'class': 'mode-radio'}),
             'payment_method': forms.RadioSelect(attrs={'class': 'pay-method-radio'}),
             'terms_accepted': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -88,6 +89,17 @@ class RegistrationForm(forms.ModelForm):
             conference=conference, is_active=True
         )
         self.fields['terms_accepted'].required = True
+
+        # Offer only the attendance modes that are open right now, so nobody
+        # can register in person once that's closed or the venue is full.
+        modes = conference.open_attendance_modes() if conference else []
+        mode_field = self.fields['attendance_mode']
+        mode_field.choices = [c for c in Registration.ATTENDANCE_MODE_CHOICES if c[0] in modes]
+        mode_field.error_messages['invalid_choice'] = (
+            "That attendance option is no longer available. Please choose another."
+        )
+        if modes and not self.is_bound:
+            mode_field.initial = modes[0]
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -106,7 +118,7 @@ class StakeholderRegistrationForm(RegistrationForm):
             'first_name', 'last_name', 'email', 'phone',
             'organization', 'position', 'state_of_origin',
             'category', 'dietary_requirements', 't_shirt_size',
-            'abstract_reference', 'terms_accepted',
+            'abstract_reference', 'attendance_mode', 'terms_accepted',
         ]
 
     def __init__(self, conference, *args, **kwargs):

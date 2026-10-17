@@ -126,6 +126,10 @@
                 <span class="ticket-value">{% if registration.payment_method == 'manual' %}Bank Transfer{% else %}Online (Paystack){% endif %}</span>
             </div>
             {% endif %}
+            <div class="ticket-row">
+                <span class="ticket-label">Attendance</span>
+                <span class="ticket-value">{{ registration.get_attendance_mode_display }}</span>
+            </div>
             {% if conference %}
             <div class="ticket-row">
                 <span class="ticket-label">Conference</span>

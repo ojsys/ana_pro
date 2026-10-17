@@ -9,6 +9,7 @@ Your Ticket ID:  {{ registration.ticket_id }}
 
 EVENT DETAILS
 Dates:     {{ conference.start_date|date:"d M" }} - {{ conference.end_date|date:"d M Y" }}
+Attendance: {{ registration.get_attendance_mode_display }}
 Venue:     {{ conference.venue }}
 Location:  {{ conference.city }}, {{ conference.state }}, {{ conference.country }}
 {% if registration.category.get_includes_list %}
