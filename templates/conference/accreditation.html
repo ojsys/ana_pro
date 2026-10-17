@@ -46,16 +46,28 @@
     </div>
 
     {% if needs_access %}
+      {% for message in messages %}<div class="acc-alert {{ message.tags }}">{{ message }}</div>{% endfor %}
       <div class="acc-card"><div class="acc-body">
-        <p style="color:#555;">This page is restricted to superadmins and authorized verifiers.</p>
-        <a class="acc-btn acc-btn-go" href="{% url 'conference:payment_verification' %}"><i class="bi bi-box-arrow-in-right"></i> Sign in</a>
-        <p style="color:#999;font-size:0.85rem;margin:1rem 0 0;">Sign in on the Payment Verification page with your authorized email, then come back here.</p>
+        <p style="color:#555;">This page is restricted. Enter your authorized email address and we'll send you a
+          secure sign-in link (valid for 2 hours).</p>
+        <form method="post" class="acc-search" style="display:flex;gap:0.75rem;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="request_access">
+          <input type="email" name="email" required autofocus class="acc-input" placeholder="you@example.com">
+          <button type="submit" class="acc-btn acc-btn-go"><i class="bi bi-envelope-arrow-up"></i> Send link</button>
+        </form>
+        <p style="color:#999;font-size:0.85rem;margin:1rem 0 0;"><i class="bi bi-lock"></i> Superadmins signed in to the admin can use this page directly.</p>
       </div></div>
     {% else %}
 
     <div style="display:flex;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;font-weight:700;color:#1B5E20;">
       <span><i class="bi bi-people-fill"></i> {{ accredited_total }} accredited of {{ expected_total }} expected in person</span>
-      {% if verifier_email %}<span style="color:#888;font-weight:600;font-size:0.85rem;">{{ verifier_email }}</span>{% endif %}
+      {% if officer_email %}
+      <form method="post" action="{% url 'conference:accreditation_logout' %}" style="margin:0;color:#888;font-weight:600;font-size:0.85rem;">
+        {% csrf_token %}{{ officer_email }} ·
+        <button type="submit" style="background:none;border:none;padding:0;color:#1565c0;font-weight:700;text-decoration:underline;cursor:pointer;">Sign out</button>
+      </form>
+      {% endif %}
     </div>
 
     {% for message in messages %}<div class="acc-alert {{ message.tags }}">{{ message }}</div>{% endfor %}

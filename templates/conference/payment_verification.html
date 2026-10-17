@@ -49,7 +49,7 @@
       </div>
       <h2 style="font-family:'Poppins',sans-serif;font-weight:800;color:#1B5E20;margin:0;">Payment Verification</h2>
       <p style="color:#666;margin-top:0.5rem;">Verify and confirm Paystack &amp; bank-transfer payments by Ticket ID, Reference or name.</p>
-      {% if authorized %}<a href="{% url 'conference:accreditation' %}" style="color:#1B5E20;font-weight:700;font-size:0.9rem;"><i class="bi bi-person-badge"></i> Go to Accreditation</a>{% endif %}
+      {% if is_superadmin %}<a href="{% url 'conference:accreditation' %}" style="color:#1B5E20;font-weight:700;font-size:0.9rem;"><i class="bi bi-person-badge"></i> Go to Accreditation</a>{% endif %}
     </div>
 
     {% if messages %}

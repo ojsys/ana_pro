@@ -109,33 +109,33 @@ def send_welcome(registration):
     return True
 
 
-def send_verifier_magic_link(verifier, login_url, conference=None):
-    """Email a payment verifier a time-limited sign-in link for the
-    Payment Verification page."""
+def send_verifier_magic_link(verifier, login_url, conference=None, page_name="Payment Verification"):
+    """Email a payment verifier (or, with ``page_name``, an accreditation
+    officer) a time-limited sign-in link for that page."""
     name = verifier.name or "there"
     org = conference.name if conference else "the conference"
     subject = (
-        f"Payment Verification access — {conference.name}"
-        if conference else "Payment Verification access link"
+        f"{page_name} access — {conference.name}"
+        if conference else f"{page_name} access link"
     )
     text_body = (
         f"Hi {name},\n\n"
-        f"Use the link below to sign in to the Payment Verification page for {org}.\n"
+        f"Use the link below to sign in to the {page_name} page for {org}.\n"
         f"This link expires in 2 hours and only works while your access is active.\n\n"
         f"{login_url}\n\n"
         f"If you didn't request this, you can safely ignore this email.\n"
     )
     html_body = (
         '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#222;">'
-        '<h2 style="color:#1B5E20;">Payment Verification Access</h2>'
+        f'<h2 style="color:#1B5E20;">{page_name} Access</h2>'
         f'<p>Hi {name},</p>'
-        f'<p>Use the button below to sign in to the Payment Verification page for '
+        f'<p>Use the button below to sign in to the {page_name} page for '
         f'<strong>{org}</strong>. This link expires in <strong>2 hours</strong> and only '
         f'works while your access is active.</p>'
         '<p style="text-align:center;margin:2rem 0;">'
         f'<a href="{login_url}" style="background:#1B5E20;color:#fff;text-decoration:none;'
         'padding:0.85rem 1.75rem;border-radius:10px;font-weight:bold;display:inline-block;">'
-        'Open Payment Verification</a></p>'
+        f'Open {page_name}</a></p>'
         '<p style="color:#888;font-size:0.85rem;">If the button doesn\'t work, copy and paste this link:<br>'
         f'<a href="{login_url}">{login_url}</a></p>'
         '<p style="color:#888;font-size:0.85rem;">If you didn\'t request this, you can safely ignore this email.</p>'

@@ -12,7 +12,7 @@ from .models import (
     Conference, SubTheme, Speaker, AbstractThematicArea, AbstractSubmission,
     RegistrationCategory, Registration, ProgramDay, ProgramSession, Sponsor,
     KeyMessage, ContentBlock, LOCMember, ExhibitorPackage, Exhibitor,
-    ExhibitorShowcase, PaymentVerifier, AbstractReviewer,
+    ExhibitorShowcase, PaymentVerifier, AccreditationOfficer, AbstractReviewer,
     SponsorshipPackage, SponsorshipBenefit, SponsorshipPackageBenefit,
 )
 
@@ -764,6 +764,29 @@ class PaymentVerifierAdmin(admin.ModelAdmin):
                 'People listed here can access the Payment Verification page without being '
                 'staff. They visit /conference/payment/verification/, enter this email, and '
                 'receive a 2-hour sign-in link. Untick "is active" to revoke access immediately.'
+            ),
+        }),
+        ('Activity', {
+            'fields': ('last_login_at', 'created_at'),
+        }),
+    )
+
+
+@admin.register(AccreditationOfficer)
+class AccreditationOfficerAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'is_active', 'last_login_at', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'email']
+    list_editable = ['is_active']
+    readonly_fields = ['last_login_at', 'created_at']
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'email', 'is_active'),
+            'description': (
+                'People listed here can use the Accreditation page at the venue entrance, '
+                'without access to payment verification. They visit /conference/accreditation/, '
+                'enter this email, and receive a 2-hour sign-in link. Untick "is active" to '
+                'revoke access immediately.'
             ),
         }),
         ('Activity', {

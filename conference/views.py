@@ -22,7 +22,7 @@ from .models import (
     Conference, Speaker, AbstractSubmission, AbstractThematicArea,
     RegistrationCategory, Registration, ProgramDay, Sponsor, KeyMessage,
     ContentBlock, Exhibitor, ExhibitorPackage, ExhibitorShowcase,
-    PaymentVerifier, AbstractReviewer, ATTENDANCE_TOKEN_SALT,
+    PaymentVerifier, AccreditationOfficer, AbstractReviewer, ATTENDANCE_TOKEN_SALT,
 )
 from .forms import (
     AbstractSubmissionForm, RegistrationForm, StakeholderRegistrationForm,
@@ -1062,6 +1062,87 @@ def payment_verification(request):
 # Finds a ticket ID anywhere in the input, so a scanned ticket URL works too.
 TICKET_ID_RE = re.compile(r'[A-Z]{3}\d{4}-T\d+', re.IGNORECASE)
 
+# Magic-link config for accreditation officers (a separate allowlist from
+# payment verifiers, so door staff can't confirm payments).
+AC_SALT = 'conference.accreditation.magic-link'
+AC_SESSION_KEY = 'ac_officer_email'
+
+
+def _active_officer_email(request):
+    """Return the session's officer email if it still maps to an active
+    AccreditationOfficer, else None (so revoking access ends the session too)."""
+    email = request.session.get(AC_SESSION_KEY)
+    if email and AccreditationOfficer.objects.filter(email__iexact=email, is_active=True).exists():
+        return email
+    return None
+
+
+def accreditation_login(request, token):
+    """Consume an accreditation magic link and grant a session."""
+    try:
+        email = signing.loads(token, salt=AC_SALT, max_age=PV_MAX_AGE)
+    except signing.SignatureExpired:
+        messages.error(request, "That sign-in link has expired. Please request a new one.")
+        return redirect('conference:accreditation')
+    except signing.BadSignature:
+        messages.error(request, "That sign-in link is invalid.")
+        return redirect('conference:accreditation')
+
+    officer = AccreditationOfficer.objects.filter(email__iexact=email, is_active=True).first()
+    if not officer:
+        messages.error(request, "Access for this email is no longer active.")
+        return redirect('conference:accreditation')
+
+    request.session[AC_SESSION_KEY] = officer.email
+    AccreditationOfficer.objects.filter(pk=officer.pk).update(last_login_at=timezone.now())
+    messages.success(request, f"Welcome, {officer.name or officer.email}. You now have accreditation access.")
+    return redirect('conference:accreditation')
+
+
+@require_POST
+def accreditation_logout(request):
+    request.session.pop(AC_SESSION_KEY, None)
+    messages.info(request, "You have been signed out of Accreditation.")
+    return redirect('conference:accreditation')
+
+
+def _request_accreditation_access(request, conference):
+    """Email an allowlisted officer a sign-in link (explicit feedback, as on
+    Payment Verification, since the allowlist is small and known)."""
+    email = (request.POST.get('email') or '').strip()
+    officer = AccreditationOfficer.objects.filter(email__iexact=email).first()
+    if not officer:
+        messages.error(
+            request,
+            f"“{email}” is not authorized for accreditation. "
+            "Ask an administrator to add it under Accreditation Officers.",
+        )
+    elif not officer.is_active:
+        messages.error(
+            request,
+            f"Access for “{email}” has been deactivated. Ask an administrator to re-activate it.",
+        )
+    else:
+        try:
+            token = signing.dumps(officer.email, salt=AC_SALT)
+            login_url = request.build_absolute_uri(reverse('conference:accreditation_login', args=[token]))
+            from .emails import send_verifier_magic_link
+            send_verifier_magic_link(officer, login_url, conference, page_name="Accreditation")
+        except Exception as exc:
+            logger.error("Failed to send accreditation magic link to %s: %s", email, exc, exc_info=True)
+            messages.error(
+                request,
+                "We couldn't send the sign-in link due to a mail server error. "
+                "Please try again, or contact the site administrator.",
+            )
+        else:
+            messages.success(
+                request,
+                f"A sign-in link has been sent to {officer.email}. "
+                "It expires in 2 hours — check your inbox (and spam folder).",
+            )
+    return redirect('conference:accreditation')
+
 
 def accreditation(request):
     """
@@ -1069,19 +1150,21 @@ def accreditation(request):
 
     Look someone up by Ticket ID (typed, or a scanned ticket link) or by
     name, check they are cleared to enter, and record them as accredited.
-    Same access as Payment Verification: superadmins, or allowlisted
-    verifiers signed in with a magic link.
+    Open to superadmins and to people on the AccreditationOfficer allowlist,
+    who sign in with an emailed magic link.
     """
     conference = get_active_conference()
     is_superadmin = _is_pv_staff(request)
-    verifier_email = _active_verifier_email(request)
-    if not (is_superadmin or verifier_email):
+    officer_email = _active_officer_email(request)
+    if not (is_superadmin or officer_email):
+        if request.method == 'POST' and request.POST.get('action') == 'request_access':
+            return _request_accreditation_access(request, conference)
         return render(request, 'conference/accreditation.html', {
             'conference': conference,
             'needs_access': True,
         })
 
-    actor = str(request.user) if is_superadmin else f"verifier:{verifier_email}"
+    actor = str(request.user) if is_superadmin else f"officer:{officer_email}"
     registrations = Registration.objects.select_related('category')
     if conference:
         registrations = registrations.filter(conference=conference)
@@ -1152,7 +1235,7 @@ def accreditation(request):
 
     return render(request, 'conference/accreditation.html', {
         'conference': conference,
-        'verifier_email': verifier_email,
+        'officer_email': officer_email,
         'query': raw_query,
         'record': record,
         'matches': matches,

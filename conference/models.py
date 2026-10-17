@@ -921,6 +921,29 @@ class PaymentVerifier(models.Model):
         return self.name or self.email
 
 
+class AccreditationOfficer(models.Model):
+    """A person allowed to use the Accreditation page at the venue entrance.
+
+    Separate from :class:`PaymentVerifier` so door staff can admit people
+    without being able to confirm payments. Access is granted via a
+    time-limited magic link emailed to ``email``; untick ``is_active`` to
+    revoke it immediately, including any active session.
+    """
+    name = models.CharField(max_length=200, blank=True, help_text="For your own reference")
+    email = models.EmailField(unique=True, help_text="The link is sent here, and only this inbox can sign in")
+    is_active = models.BooleanField(default=True, help_text="Untick to immediately revoke access")
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'email']
+        verbose_name = "Accreditation Officer"
+        verbose_name_plural = "Accreditation Officers"
+
+    def __str__(self):
+        return self.name or self.email
+
+
 class AbstractReviewer(models.Model):
     """A non-staff person allowed to view the Abstract Review page.
 
