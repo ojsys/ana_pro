@@ -219,6 +219,26 @@
                             </a>
                         </div>
                     </div>
+
+                    {% if conf_attendance_stats %}
+                    <div style="background:#f9f9f9;border-radius:12px;padding:1rem;margin-top:1rem;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:0.75rem;">Bulk Emails to Confirmed Registrants</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <a href="{% url 'admin:conference_conference_bulk_email' active_conference.pk 'attendance' %}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#1B5E20;">how_to_reg</span>
+                                <span style="flex:1;">Send attendance confirmation email
+                                    <span style="display:block;font-size:0.7rem;color:#888;">{{ conf_attendance_stats.eligible }} in-person · {{ conf_attendance_stats.emailed }} emailed · {{ conf_attendance_stats.no_response }} no response</span>
+                                </span>
+                            </a>
+                            <a href="{% url 'admin:conference_conference_bulk_email' active_conference.pk 'virtual-link' %}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#1565c0;">videocam</span>
+                                <span style="flex:1;">Send virtual joining link
+                                    <span style="display:block;font-size:0.7rem;color:#888;">{{ conf_virtual_stats.sent }} sent · {{ conf_virtual_stats.unsent }} not yet sent</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

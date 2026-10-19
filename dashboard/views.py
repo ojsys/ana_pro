@@ -262,6 +262,10 @@ class DashboardHomeView(TemplateView):
                 conference=active_conference, status='pending'
             ).count()
             context['conf_speakers'] = active_conference.speakers.filter(is_active=True).count()
+            if self.request.user.is_staff:
+                from conference.admin import attendance_email_stats, virtual_link_stats
+                context['conf_attendance_stats'] = attendance_email_stats(active_conference)
+                context['conf_virtual_stats'] = virtual_link_stats(active_conference)
 
         return context
 
