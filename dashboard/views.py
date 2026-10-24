@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -26,6 +27,10 @@ from .decorators import require_active_subscription
 from conference.models import Conference, Registration as ConferenceRegistration, AbstractSubmission
 
 logger = logging.getLogger(__name__)
+
+# Only individual membership is offered on the website for now. Organization
+# pricing and memberships stay in the database but are not shown or charged.
+MEMBERSHIP_SIGNUP_TYPE = 'individual'
 
 @method_decorator(require_active_subscription, name='dispatch')
 class DashboardHomeView(TemplateView):
@@ -664,8 +669,10 @@ class RegisterView(FormView):
         else:
             messages.success(
                 self.request,
-                f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created successfully.'
+                f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created. '
+                f'Pay your membership fees below to unlock the dashboard.'
             )
+            return redirect('dashboard:payment_selection')
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -673,6 +680,12 @@ class RegisterView(FormView):
         context['partner_organizations'] = PartnerOrganization.objects.filter(is_active=True)
         from .membership_service import is_free_registration_mode
         context['free_registration'] = is_free_registration_mode()
+        if not context['free_registration']:
+            prices = dict(MembershipPricing.objects.filter(
+                membership_type=MEMBERSHIP_SIGNUP_TYPE, is_active=True,
+            ).values_list('payment_type', 'price'))
+            context['registration_fee'] = prices.get('registration')
+            context['annual_dues_fee'] = prices.get('annual_dues')
         return context
 
 
@@ -1201,30 +1214,24 @@ def initiate_payment(request):
                 'redirect_url': reverse('dashboard:home'),
             })
 
-        # Parse request data
+        # Parse request data. Only the payment purpose comes from the browser: the
+        # membership type, amount and year are decided here so they can't be tampered with.
         data = json.loads(request.body)
-        membership_type = data.get('membership_type', 'individual')
-
-        # Clean amount - remove commas if present (from thousand separator formatting)
-        amount_raw = data.get('amount', 10000)
-        amount_str = str(amount_raw).replace(',', '').replace(' ', '').strip()
-        amount = Decimal(amount_str)
-        logger.info(f"Cleaned amount: {amount_raw} -> {amount}")
-
         payment_purpose = data.get('payment_purpose', 'registration')  # 'registration' or 'annual_dues'
+        if payment_purpose not in ('registration', 'annual_dues'):
+            return JsonResponse({'error': 'Invalid payment type.'}, status=400)
 
-        # Clean subscription_year - remove commas and convert to int
-        subscription_year_raw = data.get('subscription_year')
-        subscription_year = None
-        if subscription_year_raw:
-            try:
-                # Convert to string, remove commas and any whitespace, then convert to int
-                year_str = str(subscription_year_raw).replace(',', '').replace(' ', '').strip()
-                subscription_year = int(year_str)
-                logger.info(f"Cleaned subscription_year: {subscription_year_raw} -> {subscription_year}")
-            except (ValueError, TypeError) as e:
-                logger.error(f"Failed to parse subscription_year '{subscription_year_raw}': {e}")
-                subscription_year = None
+        membership_type = MEMBERSHIP_SIGNUP_TYPE
+        pricing = MembershipPricing.objects.filter(
+            membership_type=membership_type, payment_type=payment_purpose, is_active=True,
+        ).first()
+        if not pricing or pricing.price <= 0:
+            logger.error(f"No active {membership_type} {payment_purpose} price configured")
+            return JsonResponse({
+                'error': 'Membership fees have not been set up yet. Please contact the administrator.'
+            }, status=400)
+        amount = pricing.price
+        subscription_year = date.today().year if payment_purpose == 'annual_dues' else None
 
         # Get or create membership for current user
         membership, created = Membership.objects.get_or_create(
@@ -1240,9 +1247,12 @@ def initiate_payment(request):
             membership.membership_type = membership_type
             membership.save()
 
-        # Set subscription year for annual dues
-        if payment_purpose == 'annual_dues' and not subscription_year:
-            subscription_year = date.today().year
+        if payment_purpose == 'registration' and membership.registration_paid:
+            return JsonResponse({'error': 'Your registration fee has already been paid.'}, status=400)
+        if payment_purpose == 'annual_dues' and not membership.registration_paid:
+            return JsonResponse({'error': 'Please pay the registration fee first.'}, status=400)
+        if payment_purpose == 'annual_dues' and membership.annual_dues_paid_for_year == subscription_year:
+            return JsonResponse({'error': f'Your annual dues for {subscription_year} have already been paid.'}, status=400)
 
         # Generate unique payment reference
         purpose_code = 'REG' if payment_purpose == 'registration' else 'DUES'
@@ -1329,14 +1339,39 @@ def verify_payment(request):
         paystack = PaystackService()
         verification_response = paystack.verify_transaction(reference)
 
-        if verification_response.get('status') and verification_response['data']['status'] == 'success':
+        if payment.status == 'successful':
+            messages.info(request, 'This payment has already been confirmed.')
+            return redirect('dashboard:home')
+
+        data = verification_response.get('data') or {}
+        # Paystack reports the amount in kobo; it must cover what we charged.
+        paid_enough = (
+            data.get('currency', 'NGN') == payment.currency
+            and int(data.get('amount') or 0) >= int(payment.amount * 100)
+        )
+        if verification_response.get('status') and data.get('status') == 'success' and not paid_enough:
+            payment.status = 'failed'
+            payment.gateway_response = data
+            payment.save()
+            logger.error(
+                f"Payment {reference} amount mismatch: paid {data.get('amount')} {data.get('currency')} kobo, "
+                f"expected {int(payment.amount * 100)} {payment.currency}"
+            )
+            messages.error(request, 'The amount paid does not match the membership fee. Please contact support.')
+            return redirect('dashboard:payment_selection')
+
+        if verification_response.get('status') and data.get('status') == 'success':
             # Payment successful - update payment status
             # Note: Membership will be automatically updated by signals
             payment.status = 'successful'
             payment.paid_at = timezone.now()
+            payment.gateway_response = data
             payment.save()
 
             logger.info(f"Payment verified successfully: {reference}")
+            if payment.payment_purpose == 'registration':
+                messages.success(request, 'Registration fee paid! Please pay your annual dues to unlock the dashboard.')
+                return redirect('dashboard:payment_selection')
             messages.success(request, 'Payment successful! Your membership has been updated.')
             return redirect('dashboard:home')
         else:
@@ -1382,9 +1417,9 @@ def payment_selection(request):
         defaults={'status': 'pending'}
     )
 
-    # Determine what payment options to show
+    # Determine what payment options to show: registration first, then annual dues
     show_registration = not membership.registration_paid
-    show_annual_dues = membership.registration_paid or not created
+    show_annual_dues = membership.registration_paid
 
     # Get current year for annual dues
     current_year = date.today().year
@@ -1397,11 +1432,13 @@ def payment_selection(request):
 
     # Get pricing information
     registration_pricing = MembershipPricing.objects.filter(
+        membership_type=MEMBERSHIP_SIGNUP_TYPE,
         payment_type='registration',
         is_active=True
-    ).order_by('membership_type')
+    )
 
     annual_dues_pricing = MembershipPricing.objects.filter(
+        membership_type=MEMBERSHIP_SIGNUP_TYPE,
         payment_type='annual_dues',
         is_active=True
     ).first()
@@ -1461,6 +1498,7 @@ def renewal(request):
 
     # Get annual dues pricing
     annual_dues_pricing = MembershipPricing.objects.filter(
+        membership_type=MEMBERSHIP_SIGNUP_TYPE,
         payment_type='annual_dues',
         is_active=True
     ).first()

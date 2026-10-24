@@ -424,7 +424,7 @@ class SiteSettings(models.Model):
     registration_mode = models.CharField(
         max_length=10,
         choices=REGISTRATION_MODE_CHOICES,
-        default=REGISTRATION_MODE_FREE,
+        default=REGISTRATION_MODE_PAID,
         verbose_name="Registration Mode",
         help_text=(
             "Free: new sign-ups get an active membership straight away (use this to grow the "

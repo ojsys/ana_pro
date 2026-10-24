@@ -1,4 +1,5 @@
 {% extends 'auth/auth_base.html' %}
+{% load humanize %}
 
 {% block title %}Register - AKILIMO Nigeria Association{% endblock %}
 
@@ -18,6 +19,15 @@
         <div>
             <strong>Membership is free right now.</strong>
             Sign up and your membership is active immediately &mdash; no registration fee, no annual dues.
+        </div>
+    </div>
+    {% elif registration_fee %}
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+        <span class="material-icons me-2">payments</span>
+        <div>
+            <strong>Individual membership:</strong>
+            ₦{{ registration_fee|floatformat:0|intcomma }} registration fee{% if annual_dues_fee %} + ₦{{ annual_dues_fee|floatformat:0|intcomma }} annual dues{% endif %}.
+            You'll pay securely online after creating your account.
         </div>
     </div>
     {% endif %}

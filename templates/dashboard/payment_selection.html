@@ -85,7 +85,22 @@
             </button>
         </div>
     </div>
+    {% empty %}
+    <div class="col-md-8">
+        <div class="alert alert-warning text-center">
+            Membership fees have not been set up yet. Please check back shortly or contact the administrator.
+        </div>
+    </div>
     {% endfor %}
+    {% if registration_pricing and annual_dues_pricing %}
+    <div class="col-12">
+        <p class="text-center text-muted mt-2">
+            After your registration fee, you'll pay the annual dues of
+            <strong>₦{{ annual_dues_pricing.price|floatformat:0|intcomma }}</strong> for {{ current_year|unlocalize }}
+            to unlock the dashboard.
+        </p>
+    </div>
+    {% endif %}
     {% endif %}
 
     {% if show_annual_dues and annual_dues_pricing %}
@@ -557,8 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             const membershipTypeLabels = {
-                'individual': 'Individual Membership',
-                'organization': 'Partner Organization Membership'
+                'individual': 'Individual Membership'
             };
 
             // Store payment data

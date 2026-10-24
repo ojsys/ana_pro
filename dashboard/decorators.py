@@ -35,6 +35,10 @@ def require_active_subscription(view_func):
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
+        # Admins can always access
+        if request.user.is_staff or request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+
         # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
         if get_payment_bypass_setting():
             # Free mode: make sure the member holds an active free membership so
@@ -95,6 +99,10 @@ def require_registration_payment(view_func):
     @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
+        # Admins can always access
+        if request.user.is_staff or request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+
         # BYPASS: Skip all payment checks if bypass is enabled in Site Settings
         if get_payment_bypass_setting():
             # Free mode: make sure the member holds an active free membership so

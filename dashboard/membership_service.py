@@ -26,8 +26,8 @@ def get_registration_mode():
     """
     Return the current registration mode ('free' or 'paid').
 
-    Defaults to 'free' when settings are unavailable (fresh install, mid-migration)
-    so that sign-ups are never blocked by a missing configuration row.
+    Defaults to 'paid' when settings are unavailable (fresh install, mid-migration)
+    so that a missing configuration row never gives membership away for free.
     """
     try:
         from website.models import SiteSettings
@@ -36,7 +36,7 @@ def get_registration_mode():
             return site_settings.registration_mode
     except Exception:
         pass
-    return FREE
+    return PAID
 
 
 def is_free_registration_mode():

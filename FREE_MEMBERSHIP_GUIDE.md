@@ -5,8 +5,8 @@ admin under **Website → Site Settings → Registration & Membership → Regist
 
 | Mode | What a new sign-up gets |
 |------|-------------------------|
-| **Free** (default) | An active membership for the current year, immediately. No registration fee, no annual dues. Dashboard, certificate and ID card unlock right away. |
-| **Paid** | A `pending` membership. Registration fee and annual dues are enforced through the existing Paystack flow before the dashboard unlocks. |
+| **Free** | An active membership for the current year, immediately. No registration fee, no annual dues. Dashboard, certificate and ID card unlock right away. |
+| **Paid** (default) | A `pending` membership. Registration fee and annual dues are enforced through the existing Paystack flow before the dashboard unlocks. |
 
 Use **Free** to grow the member base, then flip to **Paid** when you are ready to charge.
 
@@ -43,6 +43,18 @@ until it expires on 31 December, then get the normal renewal flow. To end free
 memberships sooner, select them in **Memberships** and run the
 **"↩ Revoke free membership"** action — that clears the free grant and moves them back
 to `pending`. Members who genuinely paid a registration fee keep it.
+
+## Paid mode details
+
+- Only **Individual** membership is offered on the website. Organization pricing rows
+  are kept in the database but are not shown or charged.
+- New members pay the **registration fee** first, then the **annual dues** for the
+  current year; the dashboard unlocks once both are paid.
+- The amounts always come from **Membership Pricing** (Individual - New Registration Fee,
+  and Individual - Annual Membership Dues). Change the price there at any time; it applies
+  to the next payment started. The browser cannot change the amount, and a Paystack
+  payment for less than the fee is rejected.
+- Staff and superusers can always open the dashboard without paying.
 
 ## How to tell free members apart
 
