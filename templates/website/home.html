@@ -1,5 +1,5 @@
 {% extends 'website/base.html' %}
-{% load static %}
+{% load static humanize %}
 
 {% block title %}{{ site_settings.site_title|default:"AKILIMO Nigeria Association" }} - {{ site_settings.site_tagline|default:"Advancing Cassava Production Through Innovation" }}{% endblock %}
 
@@ -596,6 +596,9 @@
                                 {% endif %}
                                 <div class="card-body p-2">
                                     <small class="text-muted">{{ partner.name }}</small>
+                                    {% if partner.farmers_reached %}
+                                        <div class="small text-success mt-1">{{ partner.farmers_reached|intcomma }} farmers reached</div>
+                                    {% endif %}
                                     {% if partner.website %}
                                         <div class="mt-2">
                                             <a href="{{ partner.website }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">

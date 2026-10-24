@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, TemplateView, RedirectView
 from django.urls import reverse_lazy
 from django.db.models import Q, Count
+from django.core.cache import cache
 from django.core.paginator import Paginator
 import json
 
@@ -19,6 +20,51 @@ from .models import (
     SocialMediaLink, SocialPost
 )
 from dashboard.models import PartnerOrganization, AkilimoParticipant, ANANigeriaPartner
+
+
+HOME_PARTNERS_LIMIT = 10
+
+
+def _nigeria_farmers_by_partner():
+    """Farmers reached in Nigeria per partner name (lower-cased), cached for an hour."""
+    def compute():
+        rows = (
+            AkilimoParticipant.objects.filter(country='nigeria')
+            .exclude(partner__isnull=True).exclude(partner='')
+            .values('partner').annotate(count=Count('id'))
+        )
+        counts = {}
+        for row in rows:
+            key = row['partner'].strip().lower()
+            counts[key] = counts.get(key, 0) + row['count']
+        return counts
+    return cache.get_or_set('home_nigeria_farmers_by_partner', compute, 60 * 60)
+
+
+def top_partners(limit=HOME_PARTNERS_LIMIT):
+    """
+    Partners for the homepage: those marked Featured (in their feature order),
+    then approved partners ranked by farmers reached in Nigeria, up to ``limit``.
+    """
+    counts = _nigeria_farmers_by_partner()
+
+    def farmers(partner):
+        names = {partner.name.strip().lower(), (partner.code or '').strip().lower()} - {''}
+        return sum(counts.get(name, 0) for name in names)
+
+    partners = list(PartnerOrganization.objects.filter(
+        is_active=True, is_featured=True,
+    ).order_by('feature_order', 'name')[:limit])
+
+    others = PartnerOrganization.objects.filter(
+        is_active=True, is_featured=False, status=PartnerOrganization.STATUS_APPROVED,
+    )
+    ranked = sorted(others, key=lambda p: (-farmers(p), p.name.lower()))
+    partners += ranked[:limit - len(partners)]
+
+    for partner in partners:
+        partner.farmers_reached = farmers(partner)
+    return partners
 
 
 class HomeView(TemplateView):
@@ -67,10 +113,7 @@ class HomeView(TemplateView):
             is_featured=True
         )[:3]
 
-        context['featured_partners'] = PartnerOrganization.objects.filter(
-            is_active=True,
-            is_featured=True
-        ).order_by('feature_order', 'name')[:10]
+        context['featured_partners'] = top_partners()
 
         # Get site settings
         try:
@@ -96,7 +139,7 @@ class HomeView(TemplateView):
         """
         try:
             # Filter for Nigeria by default
-            queryset = AkilimoParticipant.objects.filter(country__iexact='nigeria')
+            queryset = AkilimoParticipant.objects.filter(country='nigeria')
 
             if not queryset.exists():
                 # Fallback to static statistics if no data
@@ -652,7 +695,7 @@ def get_live_statistics(request):
         total_participants = queryset.count()
 
         # States: always Nigeria-only regardless of country_filter
-        nigeria_qs = AkilimoParticipant.objects.filter(country__iexact='nigeria')
+        nigeria_qs = AkilimoParticipant.objects.filter(country='nigeria')
         unique_states = nigeria_qs.exclude(
             admin_level1__isnull=True
         ).exclude(admin_level1='').values('admin_level1').distinct().count()

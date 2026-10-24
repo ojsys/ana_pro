@@ -457,6 +457,7 @@ class AkilimoParticipant(models.Model):
             models.Index(fields=['event_date']),
             models.Index(fields=['farmer_gender']),
             models.Index(fields=['partner']),
+            models.Index(fields=['country', 'partner']),
             models.Index(fields=['event_type']),
             models.Index(fields=['age_category']),
         ]
