@@ -1,0 +1,113 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' conference.pk %}">{{ conference }}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .ar-tabs { display:flex; gap:0.5rem; flex-wrap:wrap; margin:1rem 0; }
+  .ar-tabs a { padding:8px 14px; border:1px solid var(--hairline-color, #ddd); border-radius:6px; text-decoration:none; }
+  .ar-tabs a.active { background:var(--primary, #417690); color:#fff; border-color:transparent; }
+  .ar-tabs .count { font-weight:bold; margin-left:4px; }
+  .ar-tools { display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
+  .ar-table { width:100%; }
+  .ar-badge { padding:2px 8px; border-radius:10px; font-size:0.75rem; white-space:nowrap; }
+  .ar-physical { background:#e8f5e9; color:#1b5e20; }
+  .ar-virtual { background:#e3f2fd; color:#0d47a1; }
+  .ar-not_attending { background:#ffebee; color:#b71c1c; }
+  .ar-none { background:#f5f5f5; color:#555; }
+</style>
+
+<div>
+  <p>
+    Answers from confirmed (or fee-waived) participants of <strong>{{ conference.name }}</strong>
+    to the physical attendance confirmation email.
+    {% if unsent %}<strong>{{ unsent }}</strong> in-person participant(s) have not been emailed yet and are not listed.
+    <a href="{% url 'admin:conference_conference_bulk_email' conference.pk 'attendance' %}">Send the email…</a>{% endif %}
+  </p>
+
+  <div class="ar-tabs">
+    <a href="?status=all{% if query %}&q={{ query|urlencode }}{% endif %}" class="{% if status == 'all' %}active{% endif %}">All<span class="count">{{ total }}</span></a>
+    {% for key, label, count in tabs %}
+    <a href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="{% if status == key %}active{% endif %}">{{ label }}<span class="count">{{ count }}</span></a>
+    {% endfor %}
+  </div>
+
+  <div class="ar-tools">
+    <form method="get" style="display:flex;gap:0.5rem;">
+      <input type="hidden" name="status" value="{{ status }}">
+      <input type="search" name="q" value="{{ query }}" placeholder="Name, email, organisation or Ticket ID" style="min-width:280px;">
+      <input type="submit" value="Search">
+      {% if query %}<a href="?status={{ status }}" style="align-self:center;">Clear</a>{% endif %}
+    </form>
+    <a class="button default" href="?status={{ status }}{% if query %}&q={{ query|urlencode }}{% endif %}&export=xlsx" style="padding:8px 14px;">
+      Export {% if status == 'all' %}all lists{% else %}this list{% endif %} to Excel
+    </a>
+    {% if emails %}
+    <button type="button" class="button" id="copy-emails" style="padding:8px 14px;">Copy email addresses ({{ page.paginator.count }})</button>
+    <span id="copy-status" style="color:#888;"></span>
+    {% endif %}
+  </div>
+
+  {% if page.paginator.count %}
+  <table class="ar-table">
+    <thead>
+      <tr>
+        <th>Ticket ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Organisation</th>
+        <th>Category</th><th>Response</th><th>Responded</th><th>Emailed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for label, r in page %}
+      <tr>
+        <td><a href="{% url 'admin:conference_registration_change' r.pk %}">{{ r.ticket_id }}</a></td>
+        <td>{{ r.full_name }}</td>
+        <td><a href="mailto:{{ r.email }}">{{ r.email }}</a></td>
+        <td>{{ r.phone }}</td>
+        <td>{{ r.organization }}</td>
+        <td>{{ r.category.name }}</td>
+        <td><span class="ar-badge ar-{{ r.attendance_response|default:'none' }}">{{ label }}</span></td>
+        <td>{{ r.attendance_responded_at|date:"j M Y, H:i"|default:"—" }}</td>
+        <td>{{ r.attendance_email_sent_at|date:"j M Y, H:i"|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page.has_other_pages %}
+  <p class="paginator">
+    {% if page.has_previous %}<a href="?status={{ status }}{% if query %}&q={{ query|urlencode }}{% endif %}&page={{ page.previous_page_number }}">&lsaquo; Previous</a>{% endif %}
+    Page {{ page.number }} of {{ page.paginator.num_pages }}
+    {% if page.has_next %}<a href="?status={{ status }}{% if query %}&q={{ query|urlencode }}{% endif %}&page={{ page.next_page_number }}">Next &rsaquo;</a>{% endif %}
+  </p>
+  {% endif %}
+  {% else %}
+  <p style="color:#888;">Nobody in this list{% if query %} matches “{{ query }}”{% endif %}.</p>
+  {% endif %}
+</div>
+
+{{ emails|json_script:"ar-emails" }}
+<script>
+(function () {
+  var btn = document.getElementById('copy-emails');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var emails = JSON.parse(document.getElementById('ar-emails').textContent);
+    var status = document.getElementById('copy-status');
+    navigator.clipboard.writeText(emails).then(function () {
+      status.textContent = 'Copied — paste into the To or Bcc field of your email.';
+    }, function () {
+      status.textContent = 'Could not copy automatically. Use the Excel export instead.';
+    });
+  });
+})();
+</script>
+{% endblock %}

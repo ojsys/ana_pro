@@ -230,6 +230,12 @@
                                     <span style="display:block;font-size:0.7rem;color:#888;">{{ conf_attendance_stats.eligible }} in-person · {{ conf_attendance_stats.emailed }} emailed · {{ conf_attendance_stats.no_response }} no response</span>
                                 </span>
                             </a>
+                            <a href="{% url 'admin:conference_conference_attendance_responses' active_conference.pk %}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
+                                <span class="material-icons" style="font-size:1rem;color:#6a1b9a;">fact_check</span>
+                                <span style="flex:1;">Attendance responses &amp; Excel export
+                                    <span style="display:block;font-size:0.7rem;color:#888;">{{ conf_attendance_stats.physical|add:conf_attendance_stats.virtual }} attending · {{ conf_attendance_stats.not_attending }} not attending · {{ conf_attendance_stats.no_response }} no response</span>
+                                </span>
+                            </a>
                             <a href="{% url 'admin:conference_conference_bulk_email' active_conference.pk 'virtual-link' %}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fff;text-decoration:none;font-size:0.82rem;color:#333;border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:1rem;color:#1565c0;">videocam</span>
                                 <span style="flex:1;">Send virtual joining link

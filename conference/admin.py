@@ -127,6 +127,85 @@ def virtual_link_stats(conference):
     }
 
 
+# Answers to the attendance confirmation email, in the groups the responses
+# page and its Excel export use. Same filters as attendance_email_stats.
+ATTENDANCE_RESPONSE_GROUPS = [
+    ('physical', 'Attending in person', {'attendance_response': 'physical'}),
+    ('virtual', 'Attending virtually', {'attendance_response': 'virtual'}),
+    ('not_attending', 'Not attending', {'attendance_response': 'not_attending'}),
+    ('no_response', 'No response yet', {'attendance_email_sent_at__isnull': False, 'attendance_response': ''}),
+]
+
+ATTENDANCE_EXPORT_HEADERS = [
+    'Ticket ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Organization', 'Position',
+    'Category', 'Response', 'Responded At', 'Email Sent At', 'Accredited',
+]
+
+
+def attendance_response_group(conference, filters):
+    return (
+        Registration.objects
+        .filter(conference=conference, payment_status__in=Registration.TICKET_VALID_STATUSES, **filters)
+        .select_related('category')
+        .order_by('last_name', 'first_name')
+    )
+
+
+def _attendance_export_row(r):
+    from .views import _export_cell
+
+    def local(dt):
+        return timezone.localtime(dt).replace(tzinfo=None) if dt else None
+    return [_export_cell(v) for v in (
+        r.ticket_id, r.first_name, r.last_name, r.email, r.phone, r.organization, r.position,
+        r.category.name, r.get_attendance_response_display() or 'No response',
+        local(r.attendance_responded_at), local(r.attendance_email_sent_at),
+        'Yes' if r.checked_in else 'No',
+    )]
+
+
+def export_attendance_responses(conference, groups):
+    """Excel workbook with a summary sheet and one sheet per response group."""
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    wb = Workbook()
+    summary = wb.active
+    summary.title = 'Summary'
+    summary.append(['Response', 'Count'])
+    for _, label, qs in groups:
+        summary.append([label, qs.count()])
+    summary.append(['Exported', timezone.localtime().replace(tzinfo=None)])
+    summary.column_dimensions['A'].width = 24
+    summary.column_dimensions['B'].width = 18
+    summary['B%d' % summary.max_row].number_format = 'yyyy-mm-dd hh:mm'
+    for cell in summary[1]:
+        cell.font = Font(bold=True)
+
+    for _, label, qs in groups:
+        ws = wb.create_sheet(label[:31])
+        ws.append(ATTENDANCE_EXPORT_HEADERS)
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+        ws.freeze_panes = 'A2'
+        for r in qs:
+            ws.append(_attendance_export_row(r))
+        for col in ('J', 'K'):
+            for cell in ws[col][1:]:
+                cell.number_format = 'yyyy-mm-dd hh:mm'
+        for column in ws.columns:
+            width = max(len(str(c.value)) if c.value is not None else 0 for c in column)
+            ws.column_dimensions[column[0].column_letter].width = min(max(width, 12) + 2, 50)
+
+    stamp = timezone.localtime().strftime('%Y%m%d')
+    suffix = groups[0][0] if len(groups) == 1 else 'all'
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="attendance_responses_{suffix}_{stamp}.xlsx"'
+    wb.save(response)
+    return response
+
+
 def _send_attendance(request, registration, mode, connection):
     from .emails import send_attendance_confirmation_request
     url = request.build_absolute_uri(registration.attendance_confirmation_path())
@@ -170,6 +249,9 @@ class ConferenceAdmin(admin.ModelAdmin):
             path('<int:pk>/bulk-email/<slug:kind>/send/',
                  self.admin_site.admin_view(self.bulk_email_send),
                  name='conference_conference_bulk_email_send'),
+            path('<int:pk>/attendance-responses/',
+                 self.admin_site.admin_view(self.attendance_responses_view),
+                 name='conference_conference_attendance_responses'),
         ]
         return custom + super().get_urls()
 
@@ -191,10 +273,12 @@ class ConferenceAdmin(admin.ModelAdmin):
         return format_html(
             '<p>{} confirmed in-person participants · {} emailed · {} not yet emailed<br>'
             'Responses: {} in person · {} virtual · {} not attending · {} no response yet</p>'
-            '<a class="button" href="{}" style="padding:8px 14px;">Send attendance confirmation email…</a>',
+            '<a class="button" href="{}" style="padding:8px 14px;">Send attendance confirmation email…</a> '
+            '<a class="button" href="{}" style="padding:8px 14px;">View responses &amp; export…</a>',
             stats['eligible'], stats['emailed'], stats['unsent'],
             stats['physical'], stats['virtual'], stats['not_attending'], stats['no_response'],
             reverse('admin:conference_conference_bulk_email', args=[obj.pk, 'attendance']),
+            reverse('admin:conference_conference_attendance_responses', args=[obj.pk]),
         )
     attendance_email_panel.short_description = "Attendance confirmation email"
 
@@ -262,6 +346,54 @@ class ConferenceAdmin(admin.ModelAdmin):
             'original': conference,
             'conference': conference,
             'preview_registration': preview,
+        })
+
+    def attendance_responses_view(self, request, pk):
+        """Who said they'll attend, who won't, and who hasn't answered the
+        attendance confirmation email — with an Excel export."""
+        from django.core.exceptions import PermissionDenied
+        from django.core.paginator import Paginator
+        from django.db.models import Q
+        from django.shortcuts import get_object_or_404
+        from django.template.response import TemplateResponse
+        conference = get_object_or_404(Conference, pk=pk)
+        if not self.has_view_permission(request, conference):
+            raise PermissionDenied
+
+        query = (request.GET.get('q') or '').strip()
+        groups = []
+        for key, label, filters in ATTENDANCE_RESPONSE_GROUPS:
+            qs = attendance_response_group(conference, filters)
+            for word in query.split():
+                qs = qs.filter(Q(first_name__icontains=word) | Q(last_name__icontains=word)
+                               | Q(email__icontains=word) | Q(organization__icontains=word)
+                               | Q(ticket_id__icontains=word))
+            groups.append((key, label, qs))
+
+        status = request.GET.get('status')
+        if status not in {key for key, _, _ in groups}:
+            status = 'all'
+        selected = groups if status == 'all' else [g for g in groups if g[0] == status]
+
+        if request.GET.get('export') == 'xlsx':
+            return export_attendance_responses(conference, selected)
+
+        rows = [(label, r) for _, label, qs in selected for r in qs]
+        page = Paginator(rows, 100).get_page(request.GET.get('page'))
+        tabs = [(key, label, qs.count()) for key, label, qs in groups]
+        return TemplateResponse(request, 'admin/conference/conference/attendance_responses.html', {
+            **self.admin_site.each_context(request),
+            'title': 'Attendance confirmation responses',
+            'opts': self.model._meta,
+            'original': conference,
+            'conference': conference,
+            'tabs': tabs,
+            'total': sum(count for _, _, count in tabs),
+            'status': status,
+            'query': query,
+            'page': page,
+            'emails': ', '.join(dict.fromkeys(r.email for _, r in rows)),
+            'unsent': attendance_email_targets(conference).count(),
         })
 
     def bulk_email_send(self, request, pk, kind):
