@@ -22,7 +22,7 @@ from .models import (
 from dashboard.models import PartnerOrganization, AkilimoParticipant, ANANigeriaPartner
 
 
-HOME_PARTNERS_LIMIT = 10
+HOME_PARTNERS_LIMIT = 12
 
 
 def _nigeria_farmers_by_partner():

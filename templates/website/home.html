@@ -5,6 +5,25 @@
 
 {% block extra_css %}
 <style>
+  /* Partners: a 6-across grid on large screens, a swipeable strip below that.
+     Cards are a little narrower than a full column so the next one peeks in. */
+  @media (max-width: 991.98px) {
+    .partners-strip {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .partners-strip::-webkit-scrollbar { display: none; }
+    .partners-strip > div { width: 42%; scroll-snap-align: start; }
+  }
+  @media (min-width: 576px) and (max-width: 991.98px) {
+    .partners-strip > div { width: 30%; }
+  }
+  @media (min-width: 768px) and (max-width: 991.98px) {
+    .partners-strip > div { width: 23%; }
+  }
   /* Platform embeds bring their own width; keep them inside the card. */
   .social-embed { overflow-x: auto; }
   .social-embed iframe,
@@ -575,7 +594,7 @@
                     Working together to transform agriculture in Nigeria
                 </p>
                 
-                <div class="row">
+                <div class="row partners-strip">
                     {% for partner in featured_partners %}
                         <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
                             <div class="card h-100 text-center p-3 partner-card">
@@ -611,6 +630,9 @@
                         </div>
                     {% endfor %}
                 </div>
+                <p class="text-center text-muted small d-lg-none mb-0">
+                    <i class="bi bi-arrow-left-right me-1"></i>Swipe to see more partners
+                </p>
                 
                 <div class="text-center mt-4" data-aos="fade-up">
                     <a href="{% url 'website:partners' %}" class="btn btn-outline-primary">
