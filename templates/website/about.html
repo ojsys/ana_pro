@@ -12,7 +12,7 @@
             <div class="row align-items-center min-vh-50">
                 <div class="col-lg-8 mx-auto text-center">
                     <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--primary-accent);">
+                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--ana-green-mid);">
                             <i class="bi bi-people me-2"></i>About Our Organization
                         </span>
                     </div>
@@ -48,10 +48,6 @@
             </div>
         </div>
         
-        <!-- Background Pattern -->
-        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10">
-            <div style="background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"2\" fill=\"white\" opacity=\"0.3\"/></svg>'); background-size: 50px 50px; background-repeat: repeat; width: 100%; height: 100%;"></div>
-        </div>
     </section>
 
     <!-- Mission & Vision Section -->
@@ -63,9 +59,9 @@
                         <div class="card h-100 border-0 shadow-lg">
                             <div class="card-body text-center p-5">
                                 <div class="mb-4">
-                                    <i class="{{ mission_vision.mission_icon|default:'bi-crosshair' }} display-4" style="color: var(--primary-accent);"></i>
+                                    <i class="{{ mission_vision.mission_icon|default:'bi-crosshair' }} display-4" style="color: var(--ana-green-mid);"></i>
                                 </div>
-                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">{{ mission_vision.mission_title }}</h3>
+                                <h3 class="card-title mb-4">{{ mission_vision.mission_title }}</h3>
                                 <p class="card-text lead">{{ mission_vision.mission_content }}</p>
                             </div>
                         </div>
@@ -74,9 +70,9 @@
                         <div class="card h-100 border-0 shadow-lg">
                             <div class="card-body text-center p-5">
                                 <div class="mb-4">
-                                    <i class="{{ mission_vision.vision_icon|default:'bi-lightbulb' }} display-3" style="color: var(--primary-accent);"></i>
+                                    <i class="{{ mission_vision.vision_icon|default:'bi-lightbulb' }} display-3" style="color: var(--ana-green-mid);"></i>
                                 </div>
-                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">{{ mission_vision.vision_title }}</h3>
+                                <h3 class="card-title mb-4">{{ mission_vision.vision_title }}</h3>
                                 <p class="card-text lead">{{ mission_vision.vision_content }}</p>
                             </div>
                         </div>
@@ -87,9 +83,9 @@
                         <div class="card h-100 border-0 shadow-lg">
                             <div class="card-body text-center p-5">
                                 <div class="mb-4">
-                                    <i class="bi bi-crosshair display-4" style="color: var(--primary-accent);"></i>
+                                    <i class="bi bi-crosshair display-4" style="color: var(--ana-green-mid);"></i>
                                 </div>
-                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">Our Mission</h3>
+                                <h3 class="card-title mb-4">Our Mission</h3>
                                 <p class="card-text lead">To promote and scale the use of AKILIMO's evidence-based agronomic advisory services across Nigeria, empowering smallholder farmers with site-specific recommendations that optimize productivity and profitability.</p>
                             </div>
                         </div>
@@ -98,9 +94,9 @@
                         <div class="card h-100 border-0 shadow-lg">
                             <div class="card-body text-center p-5">
                                 <div class="mb-4">
-                                    <i class="bi bi-lightbulb display-3" style="color: var(--primary-accent);"></i>
+                                    <i class="bi bi-lightbulb display-3" style="color: var(--ana-green-mid);"></i>
                                 </div>
-                                <h3 class="card-title mb-4" style="color: var(--primary-accent);">Our Vision</h3>
+                                <h3 class="card-title mb-4">Our Vision</h3>
                                 <p class="card-text lead">A thriving agricultural sector in Nigeria where every smallholder farmer has access to data-driven decision support tools, leading to improved livelihoods, sustainable practices, and enhanced food security.</p>
                             </div>
                         </div>
@@ -126,12 +122,12 @@
                                 <div class="card-body p-4">
                                     <div class="d-flex align-items-start">
                                         <div class="me-3">
-                                            <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                            <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--ana-green-mid);">
                                                 <i class="{{ pillar.icon }}"></i>
                                             </div>
                                         </div>
                                         <div>
-                                            <h5 class="card-title" style="color: var(--primary-accent);">{{ pillar.title }}</h5>
+                                            <h5 class="card-title">{{ pillar.title }}</h5>
                                             <p class="card-text">{{ pillar.description }}</p>
                                         </div>
                                     </div>
@@ -146,12 +142,12 @@
                             <div class="card-body p-4">
                                 <div class="d-flex align-items-start">
                                     <div class="me-3">
-                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--ana-green-mid);">
                                             <i class="bi bi-clipboard-data"></i>
                                         </div>
                                     </div>
                                     <div>
-                                        <h5 class="card-title" style="color: var(--primary-accent);">Advisory Service</h5>
+                                        <h5 class="card-title">Advisory Service</h5>
                                         <p class="card-text">Providing customized decision support for farm operations through evidence-based, site-specific recommendations that account for major production limiting factors using advanced data analytics.</p>
                                     </div>
                                 </div>
@@ -163,12 +159,12 @@
                             <div class="card-body p-4">
                                 <div class="d-flex align-items-start">
                                     <div class="me-3">
-                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--ana-green-mid);">
                                             <i class="bi bi-people-fill"></i>
                                         </div>
                                     </div>
                                     <div>
-                                        <h5 class="card-title" style="color: var(--primary-accent);">Research Community</h5>
+                                        <h5 class="card-title">Research Community</h5>
                                         <p class="card-text">Collaborating with farmers, researchers, and global organizations on predictive modeling and agricultural innovation to continuously improve recommendation algorithms.</p>
                                     </div>
                                 </div>
@@ -180,12 +176,12 @@
                             <div class="card-body p-4">
                                 <div class="d-flex align-items-start">
                                     <div class="me-3">
-                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--ana-green-mid);">
                                             <i class="bi bi-handshake"></i>
                                         </div>
                                     </div>
                                     <div>
-                                        <h5 class="card-title" style="color: var(--primary-accent);">Strategic Partnership</h5>
+                                        <h5 class="card-title">Strategic Partnership</h5>
                                         <p class="card-text">Building win-win scenarios that maximize profitability across value chain networks, connecting farmers with markets, inputs, and financial services through strategic alliances.</p>
                                     </div>
                                 </div>
@@ -197,12 +193,12 @@
                             <div class="card-body p-4">
                                 <div class="d-flex align-items-start">
                                     <div class="me-3">
-                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--primary-accent);">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: var(--ana-green-mid);">
                                             <i class="bi bi-mortarboard"></i>
                                         </div>
                                     </div>
                                     <div>
-                                        <h5 class="card-title" style="color: var(--primary-accent);">Training Platform</h5>
+                                        <h5 class="card-title">Training Platform</h5>
                                         <p class="card-text">Developing comprehensive training materials and capacity building programs for extension agents, aggregators, and last-mile delivery partners to effectively disseminate AKILIMO recommendations.</p>
                                     </div>
                                 </div>
@@ -227,7 +223,7 @@
                     <div class="card border-0 shadow-lg" data-aos="fade-up" data-aos-delay="200">
                         <div class="card-body p-5">
                             <div class="text-center mb-5">
-                                <h4 style="color: var(--primary-accent);" class="mb-3">AKILIMO Support Teams</h4>
+                                <h4 class="mb-3">AKILIMO Support Teams</h4>
                                 <p class="text-muted">Core teams supporting the functionality of AKILIMO</p>
                             </div>
 
@@ -236,8 +232,8 @@
                                     {% for team in support_teams %}
                                         <div class="col-lg-4 mb-4">
                                             <div class="p-4 bg-light-green rounded-3">
-                                                <i class="{{ team.icon }} display-4 mb-3" style="color: var(--primary-accent);"></i>
-                                                <h5 style="color: var(--primary-accent);">{{ team.name }}</h5>
+                                                <i class="{{ team.icon }} display-4 mb-3" style="color: var(--ana-green-mid);"></i>
+                                                <h5>{{ team.name }}</h5>
                                                 {% if team.description %}
                                                     <p class="text-muted small">{{ team.description }}</p>
                                                 {% endif %}
@@ -255,8 +251,8 @@
                                     <!-- Default teams if no CMS content exists -->
                                     <div class="col-lg-4 mb-4">
                                         <div class="p-4 bg-light-green rounded-3">
-                                            <i class="bi bi-file-text display-4 mb-3" style="color: var(--primary-accent);"></i>
-                                            <h5 style="color: var(--primary-accent);">CONTENT Team</h5>
+                                            <i class="bi bi-file-text display-4 mb-3" style="color: var(--ana-green-mid);"></i>
+                                            <h5>CONTENT Team</h5>
                                             <ul class="list-unstyled text-start mt-3">
                                                 <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Content development and review</li>
                                                 <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Translation into local languages</li>
@@ -267,8 +263,8 @@
                                     </div>
                                     <div class="col-lg-4 mb-4">
                                         <div class="p-4 bg-light-green rounded-3">
-                                            <i class="bi bi-gear display-4 mb-3" style="color: var(--primary-accent);"></i>
-                                            <h5 style="color: var(--primary-accent);">TECH Team</h5>
+                                            <i class="bi bi-gear display-4 mb-3" style="color: var(--ana-green-mid);"></i>
+                                            <h5>TECH Team</h5>
                                             <ul class="list-unstyled text-start mt-3">
                                                 <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Technical solutions development</li>
                                                 <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Data analysis and monitoring</li>
@@ -279,8 +275,8 @@
                                     </div>
                                     <div class="col-lg-4 mb-4">
                                         <div class="p-4 bg-light-green rounded-3">
-                                            <i class="bi bi-briefcase display-4 mb-3" style="color: var(--primary-accent);"></i>
-                                            <h5 style="color: var(--primary-accent);">BUSINESS Team</h5>
+                                            <i class="bi bi-briefcase display-4 mb-3" style="color: var(--ana-green-mid);"></i>
+                                            <h5>BUSINESS Team</h5>
                                             <ul class="list-unstyled text-start mt-3">
                                                 <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Business development and grants</li>
                                                 <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Marketing and promotion</li>
@@ -327,7 +323,7 @@
 
                                 <!-- Content Section -->
                                 <div class="card-body p-4">
-                                    <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">{{ member.position }}</p>
+                                    <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">{{ member.position }}</p>
                                     {% if member.bio %}
                                         <p class="text-secondary small mb-3">{{ member.bio|truncatewords:25 }}</p>
                                     {% endif %}
@@ -363,7 +359,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">National Root Crops Research Institute (NRCRI)</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">National Root Crops Research Institute (NRCRI)</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -380,7 +376,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">NOTORE</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">NOTORE</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -397,7 +393,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Executive Director, NAERLS</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">Executive Director, NAERLS</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -414,7 +410,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Sasakawa Africa Association</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">Sasakawa Africa Association</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -431,7 +427,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">International Institute of Tropical Agriculture (IITA)</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">International Institute of Tropical Agriculture (IITA)</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -448,7 +444,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Psaltry International</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">Psaltry International</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -465,7 +461,7 @@
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--primary-accent) !important;">Former Governor of Oyo State</p>
+                                <p class="text-muted mb-3" style="font-weight: 600; color: var(--ana-green-mid) !important;">Former Governor of Oyo State</p>
                                 <p class="text-secondary small">Board Member</p>
                             </div>
                         </div>
@@ -553,7 +549,7 @@
         </section>
     {% else %}
         <!-- Default CTA if no CMS content exists -->
-        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
+        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--ana-gold-dark) 0%, #EF6C00 45%, var(--ana-gold) 100%);">
             <div class="container text-center">
                 <div class="row justify-content-center">
                     <div class="col-lg-8">

@@ -18,8 +18,8 @@
     transform: translateY(-4px);
     box-shadow: 0 .75rem 1.75rem rgba(0,0,0,.12) !important;
   }
-  a.partner-card:focus-visible { outline: 3px solid var(--primary-accent); outline-offset: 3px; }
-  a.partner-card:hover .card-title { color: var(--primary-accent) !important; }
+  a.partner-card:focus-visible { outline: 3px solid var(--ana-green-mid); outline-offset: 3px; }
+  a.partner-card:hover .card-title { color: var(--ana-green-mid) !important; }
   a.partner-card .view-profile { opacity: .75; transition: opacity .2s ease; }
   a.partner-card:hover .view-profile { opacity: 1; }
   a.partner-card:hover .view-profile i { transform: translateX(3px); }
@@ -31,7 +31,7 @@
     transform: translateY(-2px);
     box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.1) !important;
   }
-  a.partner-directory-tile:hover .fw-bold { color: var(--primary-accent) !important; }
+  a.partner-directory-tile:hover .fw-bold { color: var(--ana-green-mid) !important; }
 </style>
 {% endblock %}
 
@@ -42,7 +42,7 @@
             <div class="row align-items-center min-vh-50">
                 <div class="col-lg-6">
                     <div class="mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--primary-accent);">
+                        <span class="badge bg-light px-4 py-2 rounded-pill fs-6" style="color: var(--ana-green-mid);">
                             <i class="bi bi-handshake me-2"></i>Strategic Partnerships
                         </span>
                     </div>
@@ -70,7 +70,7 @@
                                 <p class="text-muted small mb-0">ANA Nigeria Partner Summary</p>
                             </div>
                             <div class="col-4">
-                                <div class="text-white rounded-3 p-3" style="background-color: var(--primary-accent);">
+                                <div class="text-white rounded-3 p-3" style="background-color: var(--ana-green-mid);">
                                     <i class="bi bi-building fs-3 d-block mb-1"></i>
                                     <span class="fw-bold fs-5">{{ ana_partners_total }}</span>
                                     <h6 class="mb-0 small">Total Partners</h6>
@@ -109,7 +109,7 @@
             <div class="row g-3 mb-5" data-aos="fade-up" data-aos-delay="150">
                 <div class="col-md-4">
                     <div class="d-flex align-items-center gap-3 p-3 rounded-3 border">
-                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background-color:var(--primary-accent);">
+                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background-color:var(--ana-green-mid);">
                             <i class="bi bi-building fs-5"></i>
                         </div>
                         <div>
@@ -156,7 +156,7 @@
 
                             <!-- Logo / icon -->
                             <div class="mb-3">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white overflow-hidden" style="width:48px;height:48px;background-color:var(--primary-accent);">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white overflow-hidden" style="width:48px;height:48px;background-color:var(--ana-green-mid);">
                                     {% if partner.partner_organization.logo %}
                                         <img src="{{ partner.partner_organization.logo.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
                                     {% else %}
@@ -169,7 +169,7 @@
                             <h6 class="card-title fw-bold mb-2 text-dark">{{ partner.organization }}</h6>
 
                             <!-- Primary category -->
-                            <span class="badge rounded-pill mb-3" style="background-color:var(--primary-accent);font-size:0.7rem;width:fit-content;">
+                            <span class="badge rounded-pill mb-3" style="background-color:var(--ana-green-mid);font-size:0.7rem;width:fit-content;">
                                 {{ partner.primary_category }}
                             </span>
 
@@ -187,7 +187,7 @@
                                 {% endif %}
                             </div>
 
-                            <span class="mt-2 view-profile" style="font-size:0.78rem;font-weight:600;color:var(--primary-accent);">
+                            <span class="mt-2 view-profile" style="font-size:0.78rem;font-weight:600;color:var(--ana-green-mid);">
                                 View profile <i class="bi bi-arrow-right"></i>
                             </span>
 
@@ -283,7 +283,7 @@
                         </div>
                         {% endif %}
                         <div class="card-body p-4">
-                            <h5 class="card-title style="color: var(--primary-accent);"">{{ showcase.partner.name }}</h5>
+                            <h5 class="card-title">{{ showcase.partner.name }}</h5>
                             <p class="card-text">{{ showcase.description }}</p>
                             
                             {% if showcase.success_story %}
@@ -322,7 +322,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-handshake display-4 style="color: var(--primary-accent);""></i>
+                                <i class="bi bi-handshake display-4 style="color: var(--ana-green-mid);""></i>
                             </div>
                             <h5 class="card-title">Strategic Partnerships</h5>
                             <p class="card-text">Long-term collaborations for sustainable agricultural development and innovation.</p>
@@ -334,7 +334,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-gear display-4 style="color: var(--primary-accent);""></i>
+                                <i class="bi bi-gear display-4 style="color: var(--ana-green-mid);""></i>
                             </div>
                             <h5 class="card-title">Technology Integration</h5>
                             <p class="card-text">Collaborate on integrating AKILIMO tools with existing agricultural systems and platforms.</p>
@@ -346,7 +346,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-people display-4 style="color: var(--primary-accent);""></i>
+                                <i class="bi bi-people display-4 style="color: var(--ana-green-mid);""></i>
                             </div>
                             <h5 class="card-title">Capacity Building</h5>
                             <p class="card-text">Joint training programs and knowledge sharing initiatives for farmers and extension agents.</p>
@@ -358,7 +358,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-graph-up display-4 style="color: var(--primary-accent);""></i>
+                                <i class="bi bi-graph-up display-4 style="color: var(--ana-green-mid);""></i>
                             </div>
                             <h5 class="card-title">Research Collaboration</h5>
                             <p class="card-text">Joint research projects on cassava production, processing, and market development.</p>
@@ -370,7 +370,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-currency-dollar display-4 style="color: var(--primary-accent);""></i>
+                                <i class="bi bi-currency-dollar display-4 style="color: var(--ana-green-mid);""></i>
                             </div>
                             <h5 class="card-title">Funding & Investment</h5>
                             <p class="card-text">Investment opportunities in agricultural technology and farmer empowerment programs.</p>
@@ -382,7 +382,7 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-shield-check display-4 style="color: var(--primary-accent);""></i>
+                                <i class="bi bi-shield-check display-4 style="color: var(--ana-green-mid);""></i>
                             </div>
                             <h5 class="card-title">Policy Advocacy</h5>
                             <p class="card-text">Collaborative advocacy for agricultural policies that support smallholder farmers.</p>
@@ -404,8 +404,8 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
                     <div class="bg-light-green rounded-3 p-5 text-center">
-                        <i class="bi bi-star display-1 style="color: var(--primary-accent);""></i>
-                        <h4 class="mt-3 style="color: var(--primary-accent);"">Partnership Excellence</h4>
+                        <i class="bi bi-star display-1 style="color: var(--ana-green-mid);""></i>
+                        <h4 class="mt-3">Partnership Excellence</h4>
                         <p class="text-muted">Collaborative innovation for agricultural transformation</p>
                     </div>
                 </div>
@@ -454,7 +454,7 @@
     </section>
 
     <!-- Call to Action -->
-    <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
+    <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--ana-gold-dark) 0%, #EF6C00 45%, var(--ana-gold) 100%);">
         <div class="container text-center">
             <div class="row justify-content-center">
                 <div class="col-lg-8">

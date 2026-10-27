@@ -30,134 +30,127 @@
   .social-embed blockquote { max-width: 100% !important; margin: 0 auto !important; }
 </style>
 <style>
-    /* Hero Slider Custom Styles */
-    #heroCarousel .carousel-item {
-        transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
+    /* ── Hero ── */
+    .home-hero {
+        position: relative; overflow: hidden; color: #fff;
+        background: linear-gradient(135deg, #0D1B0F 0%, #1B4020 40%, #2E7D32 100%);
+    }
+    .home-hero-circles .c {
+        position: absolute; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.035);
+        animation: heroFloat 12s ease-in-out infinite;
+    }
+    @keyframes heroFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+    .home-hero .carousel-item { min-height: clamp(560px, 82vh, 760px); }
+    .hero-slide-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+    .hero-slide-shade {
+        position: absolute; inset: 0;
+        background: linear-gradient(90deg, rgba(13, 27, 15, 0.92) 0%, rgba(13, 27, 15, 0.7) 50%, rgba(13, 27, 15, 0.35) 100%);
+    }
+    .hero-slide-content {
+        position: relative; z-index: 1;
+        min-height: clamp(560px, 82vh, 760px);
+        display: flex; align-items: center;
+        padding-top: 4rem; padding-bottom: 6rem;
+    }
+    .hero-slide-content > .row { width: 100%; }
+    .home-hero-title {
+        font-family: 'Poppins', sans-serif; font-weight: 800; color: #fff;
+        font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.15;
+        margin-bottom: 1.25rem;
+    }
+    .home-hero-title span { color: var(--ana-gold); }
+    .home-hero-sub {
+        font-size: clamp(1rem, 2vw, 1.25rem); color: rgba(255, 255, 255, 0.8);
+        font-style: italic; line-height: 1.6;
+        border-left: 4px solid var(--ana-gold); padding-left: 1rem; margin-bottom: 1.25rem;
+    }
+    .home-hero-text {
+        font-size: 1.08rem; color: rgba(255, 255, 255, 0.75);
+        line-height: 1.75; max-width: 620px; margin-bottom: 2rem;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .home-hero .carousel-indicators { margin-bottom: 2rem; justify-content: flex-start; margin-left: max(12px, calc((100vw - 1320px) / 2 + 12px)); }
+    .home-hero .carousel-indicators [data-bs-target] {
+        width: 10px; height: 10px; border-radius: 50%; border: 0; margin: 0 5px;
+        background-color: rgba(255, 255, 255, 0.45); opacity: 1; transition: all 0.3s;
+    }
+    .home-hero .carousel-indicators .active { width: 32px; border-radius: 5px; background-color: var(--ana-gold); }
+    .home-hero .carousel-control-prev, .home-hero .carousel-control-next { width: 6%; opacity: 0; transition: opacity 0.3s; }
+    .home-hero:hover .carousel-control-prev, .home-hero:hover .carousel-control-next { opacity: 0.7; }
+
+    /* ── Stats bar ── */
+    .stats-bar { background: #fff; border-bottom: 1px solid var(--ana-border); padding: 1.6rem 0; }
+    .stat-item { text-align: center; padding: 0.75rem 1rem; }
+    .stat-item + .stat-item { border-left: 1px solid #e6eee6; }
+    .stat-item .val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.9rem; color: var(--ana-green); line-height: 1.15; }
+    .stat-item .lbl { font-size: 0.74rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-top: 0.2rem; }
+    .stat-item .desc { font-size: 0.75rem; color: #aaa; margin-top: 0.15rem; }
+    @media (max-width: 991.98px) {
+        .stat-item:nth-child(odd) { border-left: 0; }
+        .stat-item:nth-child(n+3) { border-top: 1px solid #e6eee6; }
     }
 
-    #heroCarousel .carousel-fade .carousel-item {
-        opacity: 0;
-        transition-property: opacity;
-        transform: none;
+    /* ── Cards ── */
+    .feature-card, .theme-card {
+        background: #fff; border: 1px solid var(--ana-border); border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); height: 100%;
+        transition: all 0.3s;
     }
-
-    #heroCarousel .carousel-fade .carousel-item.active {
-        opacity: 1;
+    .feature-card { padding: 2.25rem; }
+    .theme-card { padding: 1.75rem; }
+    .feature-card:hover, .theme-card:hover {
+        transform: translateY(-4px); border-color: var(--ana-green-light);
+        box-shadow: 0 12px 32px rgba(46, 125, 50, 0.15);
     }
+    .feature-card h3 { font-size: 1.3rem; margin-bottom: 0.75rem; }
+    .feature-card p { color: #555; line-height: 1.75; margin: 0; }
+    .theme-card h6 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .theme-card p { font-size: 0.86rem; color: #666; line-height: 1.65; margin: 0; }
 
-    #heroCarousel .carousel-control-prev,
-    #heroCarousel .carousel-control-next {
-        width: 60px;
-        height: 60px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        backdrop-filter: blur(10px);
-        opacity: 0;
-        transition: all 0.3s ease;
+    /* ── Conference glass panel ── */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px); border-radius: 20px; padding: 1.75rem;
     }
+    .glass-card-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ana-gold); margin-bottom: 1rem; }
+    .glass-row { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 0; }
+    .glass-row + .glass-row { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-row .icon-tile { width: 42px; height: 42px; font-size: 1.05rem; border-radius: 10px; }
+    .glass-row strong { display: block; color: #fff; font-size: 0.95rem; }
+    .glass-row small { color: rgba(255, 255, 255, 0.55); font-size: 0.8rem; }
 
-    #heroCarousel:hover .carousel-control-prev,
-    #heroCarousel:hover .carousel-control-next {
-        opacity: 1;
+    /* ── Partner tiles ── */
+    .partner-tile {
+        display: flex; flex-direction: column; align-items: center; text-align: center;
+        height: 100%; padding: 1.25rem 0.75rem; text-decoration: none;
+        background: #fff; border: 1px solid var(--ana-border); border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); transition: all 0.3s;
     }
-
-    #heroCarousel .carousel-control-prev {
-        left: 30px;
+    .partner-tile:hover { transform: translateY(-4px); border-color: var(--ana-green-light); box-shadow: 0 12px 32px rgba(46, 125, 50, 0.15); }
+    .partner-tile-logo { height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; }
+    .partner-tile-logo img { max-height: 64px; max-width: 100%; object-fit: contain; }
+    .partner-tile-name {
+        font-size: 0.82rem; font-weight: 600; color: var(--ana-dark); line-height: 1.35;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        word-break: break-word;
     }
+    .partner-tile-meta { font-size: 0.74rem; color: var(--ana-green-mid); font-weight: 600; margin-top: 0.35rem; }
 
-    #heroCarousel .carousel-control-next {
-        right: 30px;
-    }
-
-    #heroCarousel .carousel-control-prev:hover,
-    #heroCarousel .carousel-control-next:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-50%) scale(1.1);
-    }
-
-    #heroCarousel .carousel-indicators {
-        margin-bottom: 2rem;
-    }
-
-    #heroCarousel .carousel-indicators button {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin: 0 6px;
-        border: 2px solid rgba(255, 255, 255, 0.8);
-        background-color: transparent;
-        transition: all 0.3s ease;
-    }
-
-    #heroCarousel .carousel-indicators button.active {
-        background-color: white;
-        width: 40px;
-        border-radius: 6px;
-    }
-
-    /* Bounce Animation for Scroll Indicator */
-    .animate-bounce {
-        animation: bounce 2s infinite;
-    }
-
-    @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0);
-        }
-        40% {
-            transform: translateY(-10px);
-        }
-        60% {
-            transform: translateY(-5px);
-        }
-    }
-
-    /* Responsive Text Sizes */
-    @media (max-width: 768px) {
-        .hero-title {
-            font-size: 2.5rem !important;
-        }
-
-        .hero-subtitle {
-            font-size: 1.3rem !important;
-        }
-
-        .lead {
-            font-size: 1rem !important;
-        }
-
-        #heroCarousel .carousel-control-prev,
-        #heroCarousel .carousel-control-next {
-            width: 40px;
-            height: 40px;
-        }
-
-        #heroCarousel .carousel-control-prev {
-            left: 10px;
-        }
-
-        #heroCarousel .carousel-control-next {
-            right: 10px;
-        }
-    }
-
-    /* Smooth scroll */
-    html {
-        scroll-behavior: smooth;
-    }
+    html { scroll-behavior: smooth; }
 </style>
 {% endblock %}
 
 {% block content %}
-    <!-- Hero Section with Slider -->
-    <section class="hero-section position-relative" style="min-height: 100vh; overflow: hidden;">
-        <!-- Hero Slider -->
-        <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
-
-            <!-- Indicators -->
-            <div class="carousel-indicators" style="bottom: 50px;">
+    <!-- Hero slider (slides are managed in Admin > Hero Slides) -->
+    <section class="home-hero">
+        <div class="home-hero-circles" aria-hidden="true">
+            <div class="c" style="width:600px;height:600px;top:-220px;right:-160px;"></div>
+            <div class="c" style="width:340px;height:340px;bottom:-120px;left:-90px;animation-delay:4s;"></div>
+            <div class="c" style="width:200px;height:200px;top:45%;left:58%;animation-delay:2s;"></div>
+        </div>
+        <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="6000">
+            <div class="carousel-indicators">
                 {% if hero_slides %}
                     {% for slide in hero_slides %}
                         <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
@@ -175,45 +168,26 @@
                 {% if hero_slides %}
                     {% for slide in hero_slides %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <!-- Background -->
                             {% if slide.background_image %}
-                                <div class="position-absolute top-0 start-0 w-100 h-100"
-                                     style="background-image: url('{{ slide.background_image.url }}');
-                                            background-size: cover;
-                                            background-position: center;"></div>
-                                <!-- Dark overlay for text readability -->
-                                <div class="position-absolute top-0 start-0 w-100 h-100"
-                                     style="background: rgba(0,0,0,0.5);"></div>
-                            {% else %}
-                                <div class="position-absolute top-0 start-0 w-100 h-100"
-                                     style="background: {{ slide.background_color }};"></div>
+                                <div class="hero-slide-bg" style="background-image: url('{{ slide.background_image.url }}');"></div>
+                                <div class="hero-slide-shade"></div>
+                            {% elif slide.background_color %}
+                                <div class="hero-slide-bg" style="background: {{ slide.background_color }};"></div>
                             {% endif %}
-
-                            <!-- Content -->
-                            <div class="container position-relative" style="z-index: 1; min-height: 100vh; display: flex; align-items: center;">
-                                <div class="row justify-content-center text-center w-100">
-                                    <div class="col-lg-10">
-                                        <h1 class="hero-title mb-4 text-white" style="font-size: 4rem; font-weight: 700; line-height: 1.2;">
-                                            {{ slide.title }}
-                                        </h1>
-                                        {% if slide.subtitle %}
-                                            <h2 class="hero-subtitle mb-4 text-white" style="font-size: 1.8rem; font-weight: 300; opacity: 0.95;">
-                                                {{ slide.subtitle }}
-                                            </h2>
-                                        {% endif %}
-                                        {% if slide.description %}
-                                            <p class="lead mb-5 text-white" style="font-size: 1.2rem; max-width: 800px; margin: 0 auto 2rem; opacity: 0.9;">
-                                                {{ slide.description }}
-                                            </p>
-                                        {% endif %}
-                                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <div class="container hero-slide-content">
+                                <div class="row">
+                                    <div class="col-lg-8 col-xl-7">
+                                        <h1 class="home-hero-title">{{ slide.title }}</h1>
+                                        {% if slide.subtitle %}<p class="home-hero-sub">{{ slide.subtitle }}</p>{% endif %}
+                                        {% if slide.description %}<p class="home-hero-text">{{ slide.description }}</p>{% endif %}
+                                        <div class="hero-actions">
                                             {% if slide.button_1_text %}
-                                                <a href="{{ slide.button_1_url }}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px; font-weight: 600;">
+                                                <a href="{{ slide.button_1_url }}" class="btn btn-gold btn-lg">
                                                     {% if slide.button_1_icon %}<i class="{{ slide.button_1_icon }} me-2"></i>{% endif %}{{ slide.button_1_text }}
                                                 </a>
                                             {% endif %}
                                             {% if slide.button_2_text %}
-                                                <a href="{{ slide.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
+                                                <a href="{{ slide.button_2_url }}" class="btn btn-outline-light btn-lg">
                                                     {% if slide.button_2_icon %}<i class="{{ slide.button_2_icon }} me-2"></i>{% endif %}{{ slide.button_2_text }}
                                                 </a>
                                             {% endif %}
@@ -224,89 +198,47 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Default slides — upload images via Admin > Hero Slides to replace these -->
-
-                    <!-- Slide 1 -->
+                    <!-- Default slides — add slides in Admin > Hero Slides to replace these -->
                     <div class="carousel-item active">
-                        <div class="position-absolute top-0 start-0 w-100 h-100"
-                             style="background: linear-gradient(135deg, #1C4523 0%, #2d6a32 50%, #4CAF50 100%);"></div>
-                        <div class="container position-relative" style="z-index: 1; min-height: 100vh; display: flex; align-items: center;">
-                            <div class="row justify-content-center text-center w-100">
-                                <div class="col-lg-10">
-                                    <span class="badge bg-white text-success px-4 py-2 mb-4 d-inline-block" style="font-size: 0.9rem; border-radius: 50px;">
-                                        <i class="bi bi-leaf me-2"></i>AKILIMO Nigeria Association
-                                    </span>
-                                    <h1 class="hero-title mb-4 text-white" style="font-size: 4rem; font-weight: 700; line-height: 1.2;">
-                                        Transforming Cassava Farming Across Nigeria
-                                    </h1>
-                                    <p class="lead mb-5 text-white" style="font-size: 1.2rem; max-width: 750px; margin: 0 auto 2rem; opacity: 0.9;">
-                                        Evidence-based agronomic advisory services providing site-specific recommendations that optimize productivity and profits for smallholder farmers.
-                                    </p>
-                                    <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                        <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px; font-weight: 600;">
-                                            <i class="bi bi-person-plus me-2"></i>Join ANA
-                                        </a>
-                                        <a href="{% url 'website:about' %}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
-                                            <i class="bi bi-info-circle me-2"></i>Learn More
-                                        </a>
+                        <div class="container hero-slide-content">
+                            <div class="row">
+                                <div class="col-lg-8 col-xl-7">
+                                    <div class="hero-eyebrow mb-4"><i class="bi bi-flower1 me-1"></i> AKILIMO Nigeria Association</div>
+                                    <h1 class="home-hero-title">Transforming <span>Cassava Farming</span> Across Nigeria</h1>
+                                    <p class="home-hero-text">Evidence-based agronomic advisory services providing site-specific recommendations that optimize productivity and profits for smallholder farmers.</p>
+                                    <div class="hero-actions">
+                                        <a href="{% url 'website:register_redirect' %}" class="btn btn-gold btn-lg"><i class="bi bi-building-add me-2"></i>Join ANA</a>
+                                        <a href="{% url 'website:about' %}" class="btn btn-outline-light btn-lg"><i class="bi bi-info-circle me-2"></i>Learn More</a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Slide 2 -->
                     <div class="carousel-item">
-                        <div class="position-absolute top-0 start-0 w-100 h-100"
-                             style="background: linear-gradient(135deg, #0d3b1f 0%, #1a5c2e 50%, #2e7d32 100%);"></div>
-                        <div class="container position-relative" style="z-index: 1; min-height: 100vh; display: flex; align-items: center;">
-                            <div class="row justify-content-center text-center w-100">
-                                <div class="col-lg-10">
-                                    <span class="badge bg-white text-success px-4 py-2 mb-4 d-inline-block" style="font-size: 0.9rem; border-radius: 50px;">
-                                        <i class="bi bi-people me-2"></i>Our Partners
-                                    </span>
-                                    <h1 class="hero-title mb-4 text-white" style="font-size: 4rem; font-weight: 700; line-height: 1.2;">
-                                        {{ homepage_statistics.1.value|default:"144+" }} Nigerian Partners Working Together
-                                    </h1>
-                                    <p class="lead mb-5 text-white" style="font-size: 1.2rem; max-width: 750px; margin: 0 auto 2rem; opacity: 0.9;">
-                                        A growing network of NGOs, agro-input suppliers, processors, financial institutions and government bodies driving agricultural transformation.
-                                    </p>
-                                    <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                        <a href="{% url 'website:partners' %}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px; font-weight: 600;">
-                                            <i class="bi bi-handshake me-2"></i>View Partners
-                                        </a>
-                                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
-                                            <i class="bi bi-envelope me-2"></i>Partner With Us
-                                        </a>
+                        <div class="container hero-slide-content">
+                            <div class="row">
+                                <div class="col-lg-8 col-xl-7">
+                                    <div class="hero-eyebrow mb-4"><i class="bi bi-people me-1"></i> Our Partners</div>
+                                    <h1 class="home-hero-title">{{ homepage_statistics.1.value|default:"144+" }} <span>Nigerian Partners</span> Working Together</h1>
+                                    <p class="home-hero-text">A growing network of NGOs, agro-input suppliers, processors, financial institutions and government bodies driving agricultural transformation.</p>
+                                    <div class="hero-actions">
+                                        <a href="{% url 'website:partners' %}" class="btn btn-gold btn-lg"><i class="bi bi-diagram-3 me-2"></i>View Partners</a>
+                                        <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg"><i class="bi bi-envelope me-2"></i>Partner With Us</a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Slide 3 -->
                     <div class="carousel-item">
-                        <div class="position-absolute top-0 start-0 w-100 h-100"
-                             style="background: linear-gradient(135deg, #1b4020 0%, #388e3c 60%, #66bb6a 100%);"></div>
-                        <div class="container position-relative" style="z-index: 1; min-height: 100vh; display: flex; align-items: center;">
-                            <div class="row justify-content-center text-center w-100">
-                                <div class="col-lg-10">
-                                    <span class="badge bg-white text-success px-4 py-2 mb-4 d-inline-block" style="font-size: 0.9rem; border-radius: 50px;">
-                                        <i class="bi bi-graph-up me-2"></i>Impact & Reach
-                                    </span>
-                                    <h1 class="hero-title mb-4 text-white" style="font-size: 4rem; font-weight: 700; line-height: 1.2;">
-                                        Data-Driven Impact Across Nigerian States
-                                    </h1>
-                                    <p class="lead mb-5 text-white" style="font-size: 1.2rem; max-width: 750px; margin: 0 auto 2rem; opacity: 0.9;">
-                                        Reaching farmers in all Nigerian states through training events, extension agents and digital advisory tools powered by real-time field data.
-                                    </p>
-                                    <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                        <a href="{% url 'website:programs' %}" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 50px; font-weight: 600;">
-                                            <i class="bi bi-clipboard-data me-2"></i>Our Programs
-                                        </a>
-                                        <a href="{% url 'website:login_redirect' %}" class="btn btn-outline-light btn-lg px-5 py-3" style="border-radius: 50px; border-width: 2px;">
-                                            <i class="bi bi-bar-chart me-2"></i>View Dashboard
-                                        </a>
+                        <div class="container hero-slide-content">
+                            <div class="row">
+                                <div class="col-lg-8 col-xl-7">
+                                    <div class="hero-eyebrow mb-4"><i class="bi bi-graph-up me-1"></i> Impact &amp; Reach</div>
+                                    <h1 class="home-hero-title">Data-Driven Impact Across <span>Nigerian States</span></h1>
+                                    <p class="home-hero-text">Reaching farmers in all Nigerian states through training events, extension agents and digital advisory tools powered by real-time field data.</p>
+                                    <div class="hero-actions">
+                                        <a href="{% url 'website:programs' %}" class="btn btn-gold btn-lg"><i class="bi bi-clipboard-data me-2"></i>Our Programs</a>
+                                        <a href="{% url 'website:analytics' %}" class="btn btn-outline-light btn-lg"><i class="bi bi-bar-chart me-2"></i>See the Data</a>
                                     </div>
                                 </div>
                             </div>
@@ -315,7 +247,6 @@
                 {% endif %}
             </div>
 
-            <!-- Prev / Next Controls -->
             <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Previous</span>
@@ -325,146 +256,52 @@
                 <span class="visually-hidden">Next</span>
             </button>
         </div>
-
-        <!-- Scroll Indicator -->
-        <div class="position-absolute bottom-0 start-50 translate-middle-x mb-5" style="z-index: 10;">
-            <div class="text-center">
-                <a href="#mission-section" class="text-decoration-none">
-                    <div class="text-white mb-2 animate-bounce">
-                        <i class="bi bi-chevron-down fs-3"></i>
-                    </div>
-                    <small class="text-white" style="opacity: 0.8;">Scroll to explore</small>
-                </a>
-            </div>
-        </div>
     </section>
 
-    <!-- Mission & Vision Section -->
-    <section id="mission-section" class="section-padding bg-light-green">
+    <!-- Statistics -->
+    <section class="stats-bar">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Mission & Vision</h2>
-            <div class="row">
-                {% if mission_vision %}
-                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <i class="{{ mission_vision.mission_icon|default:'bi-crosshair' }} display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">{{ mission_vision.mission_title }}</h4>
-                                <p class="card-text">{{ mission_vision.mission_content }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <i class="{{ mission_vision.vision_icon|default:'bi-lightbulb' }} display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">{{ mission_vision.vision_title }}</h4>
-                                <p class="card-text">{{ mission_vision.vision_content }}</p>
-                            </div>
-                        </div>
-                    </div>
-                {% else %}
-                    <!-- Default mission & vision if no CMS content exists -->
-                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-crosshair display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">Our Mission</h4>
-                                <p class="card-text">To promote and scale the use of AKILIMO's evidence-based agronomic advisory services across Nigeria, empowering smallholder farmers with site-specific recommendations that optimize productivity and profitability.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-lightbulb display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h4 class="card-title mb-3" style="color: var(--primary-accent);">Our Vision</h4>
-                                <p class="card-text">A thriving agricultural sector in Nigeria where every smallholder farmer has access to data-driven decision support tools, leading to improved livelihoods, sustainable practices, and enhanced food security.</p>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-
-    <!-- Conference Section -->
-    <section class="section-padding bg-light">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Annual ANA Conference</h2>
-            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Join us for our annual conference, bringing together researchers, farmers, and stakeholders.
-            </p>
-
-            <div class="row justify-content-center">
-                <div class="col-lg-8 text-center" data-aos="fade-up" data-aos-delay="200">
-                    <p class="lead mb-4">
-                        Discover the latest innovations in cassava production, network with experts, and contribute to the future of sustainable agriculture in Nigeria.
-                    </p>
-                    <a href="/conference/" class="btn btn-primary btn-lg px-5 py-3">
-                        <i class="bi bi-calendar-event me-2"></i>Learn More About the Conference
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Statistics Section -->
-    <section class="section-padding">
-        <div class="container">
-            <div class="row text-center">
+            <div class="row g-0 justify-content-center" id="homeStats">
                 {% if homepage_statistics %}
                     {% for stat in homepage_statistics %}
-                        <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
-                            <div class="stat-card">
-                                {% if stat.icon %}
-                                    <div class="mb-3">
-                                        <i class="{{ stat.icon }} display-4" style="color: var(--primary-accent);"></i>
-                                    </div>
-                                {% endif %}
-                                <div class="stat-number">{{ stat.value }}</div>
-                                <div class="stat-label">{{ stat.label }}</div>
-                                {% if stat.description %}
-                                    <small class="text-muted">{{ stat.description }}</small>
-                                {% endif %}
-                            </div>
+                        <div class="col-6 col-lg-3 stat-item">
+                            <div class="val">{{ stat.value }}</div>
+                            <div class="lbl">{{ stat.label }}</div>
+                            {% if stat.description %}<div class="desc">{{ stat.description }}</div>{% endif %}
                         </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Default statistics if no CMS statistics -->
-                    <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <div class="stat-card">
-                            <div class="stat-number">500+</div>
-                            <div class="stat-label">Active Farmers</div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                        <div class="stat-card">
-                            <div class="stat-number">50+</div>
-                            <div class="stat-label">Partner Organizations</div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
-                        <div class="stat-card">
-                            <div class="stat-number">25</div>
-                            <div class="stat-label">States Covered</div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
-                        <div class="stat-card">
-                            <div class="stat-number">100k+</div>
-                            <div class="stat-label">Hectares Improved</div>
-                        </div>
-                    </div>
+                    <div class="col-6 col-lg-3 stat-item"><div class="val">500+</div><div class="lbl">Active Farmers</div></div>
+                    <div class="col-6 col-lg-3 stat-item"><div class="val">50+</div><div class="lbl">Partner Organizations</div></div>
+                    <div class="col-6 col-lg-3 stat-item"><div class="val">25</div><div class="lbl">States Covered</div></div>
+                    <div class="col-6 col-lg-3 stat-item"><div class="val">100k+</div><div class="lbl">Hectares Improved</div></div>
                 {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission & Vision -->
+    <section id="mission-section" class="section-padding">
+        <div class="container">
+            <div class="section-head" data-aos="fade-up">
+                <span class="section-badge">Who We Are</span>
+                <h2 class="section-title">Mission &amp; Vision</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-card">
+                        <div class="icon-tile lg mb-3"><i class="{{ mission_vision.mission_icon|default:'bi-crosshair' }}"></i></div>
+                        <h3>{{ mission_vision.mission_title|default:"Our Mission" }}</h3>
+                        <p>{{ mission_vision.mission_content|default:"To promote and scale the use of AKILIMO's evidence-based agronomic advisory services across Nigeria, empowering smallholder farmers with site-specific recommendations that optimize productivity and profitability." }}</p>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-card">
+                        <div class="icon-tile lg gold mb-3"><i class="{{ mission_vision.vision_icon|default:'bi-lightbulb' }}"></i></div>
+                        <h3>{{ mission_vision.vision_title|default:"Our Vision" }}</h3>
+                        <p>{{ mission_vision.vision_content|default:"A thriving agricultural sector in Nigeria where every smallholder farmer has access to data-driven decision support tools, leading to improved livelihoods, sustainable practices, and enhanced food security." }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -478,7 +315,7 @@
                         <div class="row align-items-center">
                             <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
                                 {% if section.image %}
-                                    <img src="{{ section.image.url }}" alt="{{ section.title }}" class="img-fluid rounded-3 shadow">
+                                    <img src="{{ section.image.url }}" alt="{{ section.title }}" class="img-fluid shadow" style="border-radius: 16px;">
                                 {% else %}
                                     <div class="bg-light-green rounded-3 p-5 text-center">
                                         <i class="bi bi-people display-1 text-success"></i>
@@ -487,8 +324,9 @@
                                 {% endif %}
                             </div>
                             <div class="col-lg-6" data-aos="fade-left">
+                                <span class="section-badge">About Us</span>
                                 <h2 class="section-title text-start mb-4">{{ section.title|default:"About AKILIMO Nigeria" }}</h2>
-                                <p class="lead">{{ section.subtitle|default:"Empowering farmers with technology and knowledge" }}</p>
+                                <p class="lead" style="color: var(--ana-green-mid); font-weight: 500;">{{ section.subtitle|default:"Empowering farmers with technology and knowledge" }}</p>
                                 <div class="content">
                                     {{ section.content|linebreaks|default:"We are dedicated to transforming cassava production in Nigeria through innovative agricultural practices, technology adoption, and sustainable farming solutions. Our programs connect farmers with resources, training, and markets to improve their livelihoods." }}
                                 </div>
@@ -511,76 +349,85 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Aims & Objectives Section -->
+    <!-- Operational Pillars -->
     <section class="section-padding bg-light-green">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">AKILIMO's Four Operational Pillars</h2>
-            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Building on AKILIMO's proven framework to advance agricultural innovation in Nigeria
-            </p>
+            <div class="section-head" data-aos="fade-up">
+                <span class="section-badge">What We Do</span>
+                <h2 class="section-title">AKILIMO's Four Operational Pillars</h2>
+                <p class="section-subtitle">Building on AKILIMO's proven framework to advance agricultural innovation in Nigeria</p>
+            </div>
 
-            <div class="row justify-content-center">
+            <div class="row g-4">
                 {% if operational_pillars %}
                     {% for pillar in operational_pillars %}
-                        <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <div class="mb-3">
-                                        <i class="{{ pillar.icon }} display-4" style="color: var(--primary-accent);"></i>
-                                    </div>
-                                    <h5 class="card-title">{{ pillar.title }}</h5>
-                                    <p class="card-text">{{ pillar.description }}</p>
-                                </div>
+                        <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+                            <div class="theme-card">
+                                <div class="icon-tile mb-3"><i class="{{ pillar.icon|default:'bi-check2-circle' }}"></i></div>
+                                <h6>{{ pillar.title }}</h6>
+                                <p>{{ pillar.description }}</p>
                             </div>
                         </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Default pillars if no CMS content exists -->
-                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body p-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-clipboard-data display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h5 class="card-title">Advisory Service</h5>
-                                <p class="card-text">Providing customized decision support for farm operations through evidence-based, site-specific recommendations that account for major production limiting factors using advanced data analytics.</p>
-                            </div>
+                    <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                        <div class="theme-card">
+                            <div class="icon-tile mb-3"><i class="bi bi-clipboard-data"></i></div>
+                            <h6>Advisory Service</h6>
+                            <p>Providing customized decision support for farm operations through evidence-based, site-specific recommendations that account for major production limiting factors using advanced data analytics.</p>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body p-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-people-fill display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h5 class="card-title">Research Community</h5>
-                                <p class="card-text">Collaborating with farmers, researchers, and global organizations on predictive modeling and agricultural innovation to continuously improve recommendation algorithms.</p>
-                            </div>
+                    <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                        <div class="theme-card">
+                            <div class="icon-tile mb-3"><i class="bi bi-people-fill"></i></div>
+                            <h6>Research Community</h6>
+                            <p>Collaborating with farmers, researchers, and global organizations on predictive modeling and agricultural innovation to continuously improve recommendation algorithms.</p>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body p-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-handshake display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h5 class="card-title">Strategic Partnership</h5>
-                                <p class="card-text">Building win-win scenarios that maximize profitability across value chain networks, connecting farmers with markets, inputs, and financial services through strategic alliances.</p>
-                            </div>
+                    <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                        <div class="theme-card">
+                            <div class="icon-tile mb-3"><i class="bi bi-diagram-3"></i></div>
+                            <h6>Strategic Partnership</h6>
+                            <p>Building win-win scenarios that maximize profitability across value chain networks, connecting farmers with markets, inputs, and financial services through strategic alliances.</p>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body p-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-mortarboard display-4" style="color: var(--primary-accent);"></i>
-                                </div>
-                                <h5 class="card-title">Training Platform</h5>
-                                <p class="card-text">Developing comprehensive training materials and capacity building programs for extension agents, aggregators, and last-mile delivery partners to effectively disseminate AKILIMO recommendations.</p>
-                            </div>
+                    <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="400">
+                        <div class="theme-card">
+                            <div class="icon-tile mb-3"><i class="bi bi-mortarboard"></i></div>
+                            <h6>Training Platform</h6>
+                            <p>Developing comprehensive training materials and capacity building programs for extension agents, aggregators, and last-mile delivery partners to effectively disseminate AKILIMO recommendations.</p>
                         </div>
                     </div>
                 {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Conference -->
+    <section class="section-padding section-dark">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7" data-aos="fade-up">
+                    <span class="section-badge gold">Annual Conference</span>
+                    <h2 class="section-title text-start">AKILIMO International Conference</h2>
+                    <p class="mb-4" style="font-size: 1.05rem; line-height: 1.8;">
+                        Our annual conference brings together researchers, farmers, agribusinesses and policymakers.
+                        Discover the latest innovations in cassava production, network with experts, and help shape
+                        the future of sustainable agriculture in Nigeria.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="/conference/" class="btn btn-gold btn-lg"><i class="bi bi-calendar-event me-2"></i>Explore the Conference</a>
+                        <a href="/conference/register/" class="btn btn-outline-light btn-lg"><i class="bi bi-ticket-perforated me-2"></i>Register</a>
+                    </div>
+                </div>
+                <div class="col-lg-5" data-aos="fade-up" data-aos-delay="150">
+                    <div class="glass-card">
+                        <div class="glass-card-label">At the conference</div>
+                        <div class="glass-row"><span class="icon-tile gold"><i class="bi bi-mic"></i></span><div><strong>Keynotes &amp; panels</strong><small>Leading scientists and practitioners</small></div></div>
+                        <div class="glass-row"><span class="icon-tile"><i class="bi bi-file-earmark-text"></i></span><div><strong>Research abstracts</strong><small>Present your work to the community</small></div></div>
+                        <div class="glass-row"><span class="icon-tile"><i class="bi bi-shop"></i></span><div><strong>Exhibitions</strong><small>Products and services across the value chain</small></div></div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -589,55 +436,39 @@
     {% if featured_partners %}
         <section class="section-padding">
             <div class="container">
-                <h2 class="section-title" data-aos="fade-up">Our Partners</h2>
-                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                    Working together to transform agriculture in Nigeria
-                </p>
-                
-                <div class="row partners-strip">
+                <div class="section-head" data-aos="fade-up">
+                    <span class="section-badge">Our Network</span>
+                    <h2 class="section-title">Our Partners</h2>
+                    <p class="section-subtitle">Working together to transform agriculture in Nigeria</p>
+                </div>
+
+                <div class="row g-3 partners-strip">
                     {% for partner in featured_partners %}
-                        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
-                            <div class="card h-100 text-center p-3 partner-card">
-                                {% if partner.logo %}
-                                    <div class="partner-logo mb-3">
-                                        {% if partner.website %}
-                                            <a href="{{ partner.website }}" target="_blank" rel="noopener">
-                                                <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" class="img-fluid" style="max-height: 80px; object-fit: contain; transition: transform 0.3s ease;">
-                                            </a>
-                                        {% else %}
-                                            <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" class="img-fluid" style="max-height: 80px; object-fit: contain;">
-                                        {% endif %}
-                                    </div>
-                                {% else %}
-                                    <div class="text-center p-3">
-                                        <i class="bi bi-building display-6 text-muted"></i>
-                                    </div>
-                                {% endif %}
-                                <div class="card-body p-2">
-                                    <small class="text-muted">{{ partner.name }}</small>
-                                    {% if partner.farmers_reached %}
-                                        <div class="small text-success mt-1">{{ partner.farmers_reached|intcomma }} farmers reached</div>
-                                    {% endif %}
-                                    {% if partner.website %}
-                                        <div class="mt-2">
-                                            <a href="{{ partner.website }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-globe me-1"></i>
-                                            </a>
-                                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 col-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}0">
+                            <a class="partner-tile" href="{% if partner.has_public_page and partner.slug %}{{ partner.get_absolute_url }}{% elif partner.website %}{{ partner.website }}{% else %}{% url 'website:partners' %}{% endif %}"
+                               {% if not partner.has_public_page and partner.website %}target="_blank" rel="noopener"{% endif %}>
+                                <div class="partner-tile-logo">
+                                    {% if partner.logo %}
+                                        <img src="{{ partner.logo.url }}" alt="{{ partner.name }}">
+                                    {% else %}
+                                        <span class="icon-tile"><i class="bi bi-building"></i></span>
                                     {% endif %}
                                 </div>
-                            </div>
+                                <div class="partner-tile-name">{{ partner.name }}</div>
+                                {% if partner.farmers_reached %}
+                                    <div class="partner-tile-meta">{{ partner.farmers_reached|intcomma }} farmers</div>
+                                {% endif %}
+                            </a>
                         </div>
                     {% endfor %}
                 </div>
-                <p class="text-center text-muted small d-lg-none mb-0">
+                <p class="text-center text-muted small d-lg-none mt-3 mb-0">
                     <i class="bi bi-arrow-left-right me-1"></i>Swipe to see more partners
                 </p>
-                
+
                 <div class="text-center mt-4" data-aos="fade-up">
                     <a href="{% url 'website:partners' %}" class="btn btn-outline-primary">
-                        View All Partners
-                        <i class="bi bi-arrow-right ms-2"></i>
+                        View All Partners <i class="bi bi-arrow-right ms-2"></i>
                     </a>
                 </div>
             </div>
@@ -648,10 +479,11 @@
     {% if featured_testimonials %}
         <section class="section-padding bg-light-green">
             <div class="container">
-                <h2 class="section-title" data-aos="fade-up">What Our Farmers Say</h2>
-                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                    Real stories from farmers who have benefited from our programs
-                </p>
+                <div class="section-head" data-aos="fade-up">
+                    <span class="section-badge">Testimonials</span>
+                    <h2 class="section-title">What Our Farmers Say</h2>
+                    <p class="section-subtitle">Real stories from farmers who have benefited from our programs</p>
+                </div>
                 
                 <div class="row">
                     {% for testimonial in featured_testimonials %}
@@ -688,7 +520,7 @@
                                             </div>
                                         {% endif %}
                                         <div>
-                                            <h6 class="mb-1" style="color: var(--primary-accent);">{{ testimonial.name }}</h6>
+                                            <h6 class="mb-1">{{ testimonial.name }}</h6>
                                             <small class="text-muted">
                                                 {% if testimonial.position %}{{ testimonial.position }}{% endif %}
                                                 {% if testimonial.organization %}
@@ -718,12 +550,13 @@
 
     <!-- Gallery Section -->
     {% if gallery_images %}
-    <section class="section-padding bg-light-green">
+    <section class="section-padding">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Photo Gallery</h2>
-            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                Moments from our programs, training events and field activities
-            </p>
+            <div class="section-head" data-aos="fade-up">
+                <span class="section-badge">In the Field</span>
+                <h2 class="section-title">Photo Gallery</h2>
+                <p class="section-subtitle">Moments from our programs, training events and field activities</p>
+            </div>
 
             <div class="row g-3">
                 {% for image in gallery_images %}
@@ -785,12 +618,13 @@
 
     <!-- Latest News -->
     {% if featured_news %}
-        <section class="section-padding">
+        <section class="section-padding bg-light-green">
             <div class="container">
-                <h2 class="section-title" data-aos="fade-up">Latest News & Updates</h2>
-                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                    Stay informed with the latest developments in our programs
-                </p>
+                <div class="section-head" data-aos="fade-up">
+                    <span class="section-badge">News</span>
+                    <h2 class="section-title">Latest News &amp; Updates</h2>
+                    <p class="section-subtitle">Stay informed with the latest developments in our programs</p>
+                </div>
                 
                 <div class="row">
                     {% for article in featured_news %}
@@ -805,7 +639,7 @@
                                 {% endif %}
                                 <div class="card-body d-flex flex-column">
                                     <div class="mb-2">
-                                        <span class="badge" style="background-color: var(--primary-accent);">{{ article.get_category_display }}</span>
+                                        <span class="badge" style="background-color: var(--ana-green-mid);">{{ article.get_category_display }}</span>
                                         <small class="text-muted ms-2">{{ article.published_date|date:"M d, Y" }}</small>
                                     </div>
                                     <h5 class="card-title">{{ article.title }}</h5>
@@ -832,12 +666,13 @@
 
     <!-- Social Feed -->
     {% if social_posts %}
-    <section class="section-padding bg-light-green">
+    <section class="section-padding">
         <div class="container">
-            <h2 class="section-title" data-aos="fade-up">Follow Our Work</h2>
-            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
-                The latest from our social channels
-            </p>
+            <div class="section-head" data-aos="fade-up">
+                <span class="section-badge">Social</span>
+                <h2 class="section-title">Follow Our Work</h2>
+                <p class="section-subtitle">The latest from our social channels</p>
+            </div>
 
             {% if social_links %}
             <div class="d-flex flex-wrap justify-content-center gap-2 mb-4" data-aos="fade-up" data-aos-delay="150">
@@ -890,52 +725,36 @@
     {% endif %}
 
     <!-- Call to Action -->
-    {% if cta %}
-        <section class="section-padding text-white" style="{{ cta.background_style }}">
-            <div class="container text-center">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">{{ cta.title }}</h2>
-                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                            {{ cta.description }}
-                        </p>
-                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                            <a href="{{ cta.button_1_url }}" class="btn btn-light btn-lg px-5 py-3">
+    {# A CTA saved with the original default background uses the site's gold band; a custom background is kept. #}
+    <section class="cta-band"{% if cta and cta.background_style and 'primary-accent' not in cta.background_style %} style="{{ cta.background_style }}"{% endif %}>
+        <div class="container text-center">
+            <div class="row justify-content-center">
+                <div class="col-lg-8" data-aos="fade-up">
+                    {% if cta %}
+                        <h2 class="mb-3">{{ cta.title }}</h2>
+                        <p class="mb-4">{{ cta.description }}</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3">
+                            <a href="{{ cta.button_1_url }}" class="btn btn-light btn-lg">
                                 {% if cta.button_1_icon %}<i class="{{ cta.button_1_icon }} me-2"></i>{% endif %}{{ cta.button_1_text }}
                             </a>
                             {% if cta.button_2_text %}
-                                <a href="{{ cta.button_2_url }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                                <a href="{{ cta.button_2_url }}" class="btn btn-outline-light btn-lg">
                                     {% if cta.button_2_icon %}<i class="{{ cta.button_2_icon }} me-2"></i>{% endif %}{{ cta.button_2_text }}
                                 </a>
                             {% endif %}
                         </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    {% else %}
-        <!-- Default CTA if no CMS content exists -->
-        <section class="section-padding text-white" style="background: linear-gradient(135deg, var(--primary-accent), var(--dark-accent));">
-            <div class="container text-center">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Join the AKILIMO Movement</h2>
-                        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                            Access evidence-based, site-specific recommendations validated by 5,000+ farmers. Start optimizing your productivity and profits today.
-                        </p>
-                        <div class="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                            <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg px-5 py-3">
-                                <i class="bi bi-person-plus me-2"></i>Join ANA
-                            </a>
-                            <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg px-5 py-3">
-                                <i class="bi bi-envelope me-2"></i>Contact Us
-                            </a>
+                    {% else %}
+                        <h2 class="mb-3">Join the AKILIMO Movement</h2>
+                        <p class="mb-4">Access evidence-based, site-specific recommendations validated by 5,000+ farmers. Start optimizing your productivity and profits today.</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3">
+                            <a href="{% url 'website:register_redirect' %}" class="btn btn-light btn-lg"><i class="bi bi-building-add me-2"></i>Join ANA</a>
+                            <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg"><i class="bi bi-envelope me-2"></i>Contact Us</a>
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
-        </section>
-    {% endif %}
+        </div>
+    </section>
 {% endblock %}
 
 {% block extra_js %}
@@ -955,29 +774,17 @@
             })
             .then(data => {
                 if (data.success && data.statistics) {
-                    const statsContainer = document.querySelector('.section-padding .row.text-center');
+                    const statsContainer = document.getElementById('homeStats');
                     if (!statsContainer) return;
 
-                    // Clear existing statistics
-                    statsContainer.innerHTML = '';
-
-                    // Add new statistics with animation
-                    data.statistics.forEach((stat, index) => {
-                        const delay = (index + 1) * 100;
-                        const statCard = `
-                            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="${delay}">
-                                <div class="stat-card">
-                                    <div class="mb-3">
-                                        <i class="${stat.icon} display-4" style="color: var(--primary-accent);"></i>
-                                    </div>
-                                    <div class="stat-number">${stat.value}</div>
-                                    <div class="stat-label">${stat.label}</div>
-                                    ${stat.description ? `<small class="text-muted">${stat.description}</small>` : ''}
-                                </div>
-                            </div>
-                        `;
-                        statsContainer.insertAdjacentHTML('beforeend', statCard);
-                    });
+                    const escape = (value) => String(value ?? '').replace(/[&<>"']/g,
+                        (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+                    statsContainer.innerHTML = data.statistics.map((stat) => `
+                        <div class="col-6 col-lg-3 stat-item">
+                            <div class="val">${escape(stat.value)}</div>
+                            <div class="lbl">${escape(stat.label)}</div>
+                            ${stat.description ? `<div class="desc">${escape(stat.description)}</div>` : ''}
+                        </div>`).join('');
 
                     // Refresh AOS animations if available
                     if (typeof AOS !== 'undefined') {
