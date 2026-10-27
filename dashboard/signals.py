@@ -80,6 +80,10 @@ def update_membership_on_payment_success(sender, instance, created, **kwargs):
         # Save membership changes
         membership.save()
 
+        # The rest of the payer's organization shares this membership.
+        from .membership_service import sync_organization_membership
+        sync_organization_membership(membership)
+
         logger.info(f"Membership {membership.id} successfully updated from payment {instance.payment_id}")
 
     except Membership.DoesNotExist:

@@ -6,6 +6,17 @@ from django.dispatch import receiver
 import uuid
 from datetime import timedelta
 
+# Membership categories an organization can be placed in. Each category has its
+# own registration fee and annual dues in Membership Pricing.
+MEMBERSHIP_CATEGORY_CHOICES = [
+    ('msme', 'MSME'),
+    ('sme', 'SME'),
+    ('corporate', 'Corporate Organization'),
+]
+
+# An organization's membership covers at most this many people, its admin included.
+MAX_ORGANIZATION_MEMBERS = 3
+
 class APIConfiguration(models.Model):
     """Store API configuration and tokens"""
     name = models.CharField(max_length=100, unique=True, default="EiA MELIA API")
@@ -112,6 +123,13 @@ class PartnerOrganization(models.Model):
 
     # Organization metadata
     organization_type = models.CharField(max_length=100, blank=True, help_text="NGO, Government, Private, etc.")
+    membership_category = models.CharField(
+        max_length=20,
+        choices=MEMBERSHIP_CATEGORY_CHOICES,
+        blank=True,
+        help_text="Sets the registration fee and annual dues this organization pays. "
+                  "Organizations without a category are legacy records billed per person."
+    )
     established_date = models.DateField(null=True, blank=True)
 
     # Program participation
@@ -178,6 +196,19 @@ class PartnerOrganization(models.Model):
     def total_events(self):
         """Get total number of events organized by this partner"""
         return AkilimoParticipant.objects.filter(partner__icontains=self.name).values('event_date', 'event_venue').distinct().count()
+
+    @property
+    def has_membership_category(self):
+        """Organizations with a category are billed as one organization membership."""
+        return bool(self.membership_category)
+
+    def member_profiles(self):
+        """Profiles of the active people who belong to this organization."""
+        return self.userprofile_set.filter(user__is_active=True).select_related('user')
+
+    @property
+    def seats_left(self):
+        return max(MAX_ORGANIZATION_MEMBERS - self.member_profiles().count(), 0)
 
 class PartnerService(models.Model):
     """A service or offering listed on a partner's public page."""
@@ -596,9 +627,9 @@ class ParticipantRecord(models.Model):
 
 class MembershipPricing(models.Model):
     """Membership pricing configuration"""
-    MEMBERSHIP_TYPES = [
-        ('individual', 'Individual Membership'),
-        ('organization', 'Partner Organization Membership'),
+    MEMBERSHIP_TYPES = MEMBERSHIP_CATEGORY_CHOICES + [
+        ('individual', 'Individual Membership (legacy)'),
+        ('organization', 'Partner Organization Membership (legacy)'),
     ]
 
     PAYMENT_TYPE_CHOICES = [

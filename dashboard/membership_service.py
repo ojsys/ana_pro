@@ -162,4 +162,101 @@ def ensure_membership_for_user(user, membership_type=None):
             **({'membership_type': membership_type} if membership_type else {}),
         }
     )
+    if membership_type and membership.membership_type != membership_type:
+        membership.membership_type = membership_type
+        membership.save()
+    return membership
+
+
+# ─── Organization memberships ────────────────────────────────────────────────
+#
+# Membership is sold to organizations. The person who signs an organization up is
+# its admin (UserProfile.is_partner_admin): they pay for the organization and can
+# add up to MAX_ORGANIZATION_MEMBERS - 1 colleagues. Every member keeps their own
+# Membership row (for their certificate and ID card), and payment state is copied
+# from the payer to the rest of the organization.
+
+# Payment-state fields shared by everyone in an organization.
+SHARED_MEMBERSHIP_FIELDS = [
+    'status', 'registration_paid', 'registration_payment_date',
+    'is_free_membership', 'free_membership_granted_at',
+    'subscription_year', 'annual_dues_paid_for_year',
+    'subscription_start_date', 'subscription_end_date',
+    'last_annual_dues_payment_date',
+]
+
+
+def get_billing_organization(user):
+    """
+    The organization ``user`` is billed through, or None.
+
+    Only organizations with a membership category are billed as an organization;
+    users of uncategorized (legacy) organizations keep paying as individuals.
+    """
+    profile = getattr(user, 'profile', None)
+    org = getattr(profile, 'partner_organization', None)
+    if org and org.has_membership_category:
+        return org
+    return None
+
+
+def get_pricing_type(user):
+    """The MembershipPricing.membership_type that applies to ``user``."""
+    org = get_billing_organization(user)
+    return org.membership_category if org else 'individual'
+
+
+def can_pay_for_membership(user):
+    """Only an organization's admin pays for it; legacy individuals pay for themselves."""
+    if get_billing_organization(user) is None:
+        return True
+    return user.profile.is_partner_admin
+
+
+def get_organization_admins(org):
+    return [p.user for p in org.member_profiles() if p.is_partner_admin]
+
+
+def sync_organization_membership(source_membership):
+    """
+    Copy ``source_membership``'s payment state to everyone else in its organization.
+
+    Access suspension is per person and is not copied.
+    """
+    from .models import Membership
+
+    org = get_billing_organization(source_membership.member)
+    if org is None:
+        return
+
+    for profile in org.member_profiles().exclude(user=source_membership.member):
+        membership, _ = Membership.objects.get_or_create(member=profile.user)
+        for field in SHARED_MEMBERSHIP_FIELDS:
+            setattr(membership, field, getattr(source_membership, field))
+        membership.membership_type = 'organization'
+        membership.save()
+
+
+def copy_organization_membership_to(user):
+    """Give a newly added member the membership their organization already holds."""
+    from .models import Membership
+
+    org = get_billing_organization(user)
+    if org is None:
+        return None
+
+    source = (
+        Membership.objects
+        .filter(member__profile__partner_organization=org, member__profile__is_partner_admin=True)
+        .exclude(member=user)
+        .first()
+    )
+    membership, _ = Membership.objects.get_or_create(
+        member=user, defaults={'membership_type': 'organization', 'status': 'pending'},
+    )
+    if source:
+        for field in SHARED_MEMBERSHIP_FIELDS:
+            setattr(membership, field, getattr(source, field))
+    membership.membership_type = 'organization'
+    membership.save()
     return membership

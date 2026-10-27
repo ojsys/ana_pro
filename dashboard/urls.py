@@ -11,6 +11,10 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/setup/', views.profile_setup, name='profile_setup'),
+    path('set-password/<uidb64>/<token>/', views.SetPasswordView.as_view(), name='set_password'),
+
+    # Organization membership
+    path('organization/members/', views.organization_members, name='organization_members'),
     
     # Main dashboard views
     path('', views.DashboardHomeView.as_view(), name='home'),

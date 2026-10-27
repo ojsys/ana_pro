@@ -583,6 +583,14 @@
                         Profile
                     </a>
                 </div>
+                {% if user.profile.partner_organization.membership_category %}
+                <div class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'organization_members' %}active{% endif %}" href="{% url 'dashboard:organization_members' %}">
+                        <span class="material-icons">group</span>
+                        Organization Members
+                    </a>
+                </div>
+                {% endif %}
                 <div class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'membership_subscription' %}active{% endif %}" href="{% url 'dashboard:membership_subscription' %}">
                         <span class="material-icons">card_membership</span>

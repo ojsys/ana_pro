@@ -10,7 +10,7 @@ from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
     DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing,
     PartnerService, PartnerGalleryImage,
-    ANANigeriaPartner
+    ANANigeriaPartner, MAX_ORGANIZATION_MEMBERS
 )
 from .resources import (
     APIConfigurationResource, PartnerOrganizationResource, UserProfileResource,
@@ -18,6 +18,7 @@ from .resources import (
     DashboardMetricsResource, MembershipResource, PaymentResource,
     MembershipPricingResource, UserResource
 )
+from .membership_service import sync_organization_membership
 
 
 # Customize Admin Site
@@ -173,21 +174,45 @@ class PartnerGalleryImageInline(admin.TabularInline):
     fields = ['image', 'caption', 'location', 'taken_on', 'order', 'is_active']
 
 
+class OrganizationMemberInline(admin.TabularInline):
+    model = UserProfile
+    fk_name = 'partner_organization'
+    fields = ['user', 'position', 'phone_number', 'is_partner_admin']
+    readonly_fields = ['user', 'position', 'phone_number']
+    extra = 0
+    can_delete = False
+    verbose_name = 'Member'
+    verbose_name_plural = f'Members (up to {MAX_ORGANIZATION_MEMBERS})'
+
+    def has_add_permission(self, request, obj=None):
+        # Members are added by the organization's admin, or by linking a user's profile.
+        return False
+
+
 @admin.register(PartnerOrganization)
 class PartnerOrganizationAdmin(ImportExportModelAdmin):
     resource_class = PartnerOrganizationResource
-    list_display = ['name', 'code', 'status_display', 'organization_type', 'city', 'state', 'requested_by', 'is_featured', 'feature_order', 'is_active', 'total_farmers', 'created_at']
-    list_filter = ['status', 'organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
+    list_display = ['name', 'code', 'status_display', 'membership_category', 'member_count', 'organization_type', 'city', 'state', 'requested_by', 'is_featured', 'feature_order', 'is_active', 'total_farmers', 'created_at']
+    list_filter = ['status', 'membership_category', 'organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
     search_fields = ['name', 'code', 'contact_person', 'email', 'city']
     readonly_fields = ['created_at', 'updated_at', 'joined_program_date', 'requested_by', 'approved_by', 'approved_at']
-    list_editable = ['is_featured', 'feature_order']
+    list_editable = ['membership_category', 'is_featured', 'feature_order']
     actions = ['approve_organizations', 'reject_organizations']
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [PartnerServiceInline, PartnerGalleryImageInline]
+    inlines = [OrganizationMemberInline, PartnerServiceInline, PartnerGalleryImageInline]
 
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'code', 'slug', 'description', 'organization_type', 'is_active')
+        }),
+        ('Membership', {
+            'fields': ('membership_category',),
+            'description': (
+                'The category sets the registration fee and annual dues this organization pays '
+                '(edit the amounts in <strong>Membership Pricing</strong>). A change applies to '
+                'the next payment. An organization membership covers up to '
+                f'{MAX_ORGANIZATION_MEMBERS} people; its partner admin adds the others.'
+            )
         }),
         ('Public Partner Page', {
             'fields': ('has_public_page', 'about', 'mission', 'areas_of_work', 'cover_image',
@@ -230,6 +255,10 @@ class PartnerOrganizationAdmin(ImportExportModelAdmin):
     def total_farmers(self, obj):
         return obj.total_farmers
     total_farmers.short_description = 'Total Farmers'
+
+    @admin.display(description='Members')
+    def member_count(self, obj):
+        return f'{obj.member_profiles().count()}/{MAX_ORGANIZATION_MEMBERS}'
 
     @admin.action(description='Approve selected organizations')
     def approve_organizations(self, request, queryset):
@@ -709,6 +738,7 @@ class MembershipAdmin(ImportExportModelAdmin):
             membership.subscription_end_date = date(current_year, 12, 31)
             membership.access_suspended = False
             membership.save()
+            sync_organization_membership(membership)
             count += 1
 
         messages.success(request, f'Activated subscription for {count} membership(s) for year {current_year}.')
@@ -750,6 +780,7 @@ class MembershipAdmin(ImportExportModelAdmin):
             membership.status = 'active'
             membership.access_suspended = False
             membership.save()
+            sync_organization_membership(membership)
             count += 1
 
         messages.success(
@@ -776,6 +807,7 @@ class MembershipAdmin(ImportExportModelAdmin):
             membership.status = 'active'
             membership.access_suspended = False
             membership.save()
+            sync_organization_membership(membership)
             count += 1
 
         messages.success(
@@ -800,7 +832,7 @@ class MembershipAdmin(ImportExportModelAdmin):
 
         count = 0
         for membership in queryset.select_related('member'):
-            grant_free_membership(membership.member)
+            sync_organization_membership(grant_free_membership(membership.member))
             count += 1
 
         messages.success(
@@ -816,7 +848,7 @@ class MembershipAdmin(ImportExportModelAdmin):
 
         count = 0
         for membership in queryset.filter(is_free_membership=True):
-            revoke_free_membership(membership)
+            sync_organization_membership(revoke_free_membership(membership))
             count += 1
 
         skipped = queryset.count() - count
@@ -825,6 +857,11 @@ class MembershipAdmin(ImportExportModelAdmin):
             f'Revoked free membership for {count} member(s).'
             + (f' {skipped} paying member(s) were left unchanged.' if skipped else '')
         )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        # Everyone in an organization shares its membership.
+        sync_organization_membership(obj)
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('member')

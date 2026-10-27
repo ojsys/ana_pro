@@ -3,8 +3,10 @@ from django.http import JsonResponse
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView, LogoutView, PasswordResetConfirmView
 from django.contrib.auth import login
+from django.contrib.auth.models import User
+from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib import messages
@@ -28,9 +30,8 @@ from conference.models import Conference, Registration as ConferenceRegistration
 
 logger = logging.getLogger(__name__)
 
-# Only individual membership is offered on the website for now. Organization
-# pricing and memberships stay in the database but are not shown or charged.
-MEMBERSHIP_SIGNUP_TYPE = 'individual'
+# Membership is sold to organizations: whoever signs one up is its admin, pays
+# for it and adds the other members. See membership_service for the details.
 
 @method_decorator(require_active_subscription, name='dispatch')
 class DashboardHomeView(TemplateView):
@@ -651,14 +652,20 @@ class RegisterView(FormView):
         return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
-        """Create user, log them in, and set up their membership"""
-        user = form.save()
+        """Create the organization's admin account, log them in, and set up the membership"""
+        from django.core.exceptions import ValidationError
+        try:
+            user = form.save()
+        except ValidationError as e:
+            # Someone else signed the same organization up a moment earlier.
+            form.add_error(None, e)
+            return self.form_invalid(form)
         # Specify the backend when logging in with multiple backends configured
         login(self.request, user, backend='django.contrib.auth.backends.ModelBackend')
 
         from .membership_service import ensure_membership_for_user, is_free_registration_mode
 
-        ensure_membership_for_user(user)
+        ensure_membership_for_user(user, membership_type='organization')
 
         if is_free_registration_mode():
             messages.success(
@@ -669,8 +676,9 @@ class RegisterView(FormView):
         else:
             messages.success(
                 self.request,
-                f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your account has been created. '
-                f'Pay your membership fees below to unlock the dashboard.'
+                f'Welcome to AKILIMO Nigeria, {user.get_full_name()}! Your organization account has been '
+                f'created. Pay your membership fees below to unlock the dashboard, then add your team '
+                f'from the Organization Members page.'
             )
             return redirect('dashboard:payment_selection')
         return super().form_valid(form)
@@ -681,12 +689,28 @@ class RegisterView(FormView):
         from .membership_service import is_free_registration_mode
         context['free_registration'] = is_free_registration_mode()
         if not context['free_registration']:
-            prices = dict(MembershipPricing.objects.filter(
-                membership_type=MEMBERSHIP_SIGNUP_TYPE, is_active=True,
-            ).values_list('payment_type', 'price'))
-            context['registration_fee'] = prices.get('registration')
-            context['annual_dues_fee'] = prices.get('annual_dues')
+            context['category_fees'] = _category_fees()
+        from .models import MAX_ORGANIZATION_MEMBERS
+        context['max_members'] = MAX_ORGANIZATION_MEMBERS
         return context
+
+
+def _category_fees():
+    """Registration fee and annual dues for each organization category, for display."""
+    from .models import MEMBERSHIP_CATEGORY_CHOICES
+    prices = {
+        (p.membership_type, p.payment_type): p.price
+        for p in MembershipPricing.objects.filter(is_active=True)
+    }
+    return [
+        {
+            'code': code,
+            'label': label,
+            'registration': prices.get((code, 'registration')),
+            'annual_dues': prices.get((code, 'annual_dues')),
+        }
+        for code, label in MEMBERSHIP_CATEGORY_CHOICES
+    ]
 
 
 @login_required
@@ -1202,7 +1226,10 @@ def initiate_payment(request):
         from decimal import Decimal
         import uuid
         from datetime import date
-        from .membership_service import is_free_registration_mode, grant_free_membership
+        from .membership_service import (
+            is_free_registration_mode, grant_free_membership, get_billing_organization,
+            get_pricing_type, can_pay_for_membership,
+        )
 
         # Free registration mode: never charge - grant the membership instead
         if is_free_registration_mode():
@@ -1221,12 +1248,19 @@ def initiate_payment(request):
         if payment_purpose not in ('registration', 'annual_dues'):
             return JsonResponse({'error': 'Invalid payment type.'}, status=400)
 
-        membership_type = MEMBERSHIP_SIGNUP_TYPE
+        if not can_pay_for_membership(request.user):
+            return JsonResponse({
+                'error': "Your organization's admin pays the membership fees for your organization."
+            }, status=403)
+
+        organization = get_billing_organization(request.user)
+        membership_type = 'organization' if organization else 'individual'
+        pricing_type = get_pricing_type(request.user)
         pricing = MembershipPricing.objects.filter(
-            membership_type=membership_type, payment_type=payment_purpose, is_active=True,
+            membership_type=pricing_type, payment_type=payment_purpose, is_active=True,
         ).first()
         if not pricing or pricing.price <= 0:
-            logger.error(f"No active {membership_type} {payment_purpose} price configured")
+            logger.error(f"No active {pricing_type} {payment_purpose} price configured")
             return JsonResponse({
                 'error': 'Membership fees have not been set up yet. Please contact the administrator.'
             }, status=400)
@@ -1256,7 +1290,7 @@ def initiate_payment(request):
 
         # Generate unique payment reference
         purpose_code = 'REG' if payment_purpose == 'registration' else 'DUES'
-        payment_reference = f"ANA-{purpose_code}-{membership_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
+        payment_reference = f"ANA-{purpose_code}-{pricing_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
 
         # Get Paystack public key from settings
         paystack_public_key = getattr(settings, 'PAYSTACK_PUBLIC_KEY', 'pk_test_96b9995fbf552beec8da11acbb821aa5c1d06341')
@@ -1272,7 +1306,11 @@ def initiate_payment(request):
             paystack_reference=payment_reference,
             payment_purpose=payment_purpose,
             subscription_year=subscription_year if payment_purpose == 'annual_dues' else None,
-            description=f'{payment_purpose.replace("_", " ").title()} - {membership_type.title()} Membership'
+            description=(
+                f'{payment_purpose.replace("_", " ").title()} - {organization.name} ({pricing.get_membership_type_display()})'
+                if organization else
+                f'{payment_purpose.replace("_", " ").title()} - {membership_type.title()} Membership'
+            )[:255]
         )
 
         # Initialize Paystack transaction for checkout redirect
@@ -1285,7 +1323,9 @@ def initiate_payment(request):
             'payment_id': str(payment.payment_id),
             'payment_purpose': payment_purpose,
             'subscription_year': subscription_year,
-            'membership_type': membership_type
+            'membership_type': membership_type,
+            'pricing_type': pricing_type,
+            'organization': organization.name if organization else None,
         }
 
         paystack_response = paystack.initialize_transaction(
@@ -1400,8 +1440,11 @@ def payment_selection(request):
     Shows appropriate pricing and allows user to choose payment type.
     """
     from datetime import date
-    from .models import Membership, MembershipPricing
-    from .membership_service import is_free_registration_mode, grant_free_membership
+    from .models import Membership, MembershipPricing, MAX_ORGANIZATION_MEMBERS
+    from .membership_service import (
+        is_free_registration_mode, grant_free_membership, get_billing_organization,
+        get_pricing_type, can_pay_for_membership, get_organization_admins,
+    )
 
     # Free registration mode: nothing to pay for - grant/refresh the free membership
     if is_free_registration_mode():
@@ -1410,6 +1453,9 @@ def payment_selection(request):
             'membership': membership,
             'current_year': date.today().year,
         })
+
+    organization = get_billing_organization(request.user)
+    pricing_type = get_pricing_type(request.user)
 
     # Get or create membership for current user
     membership, created = Membership.objects.get_or_create(
@@ -1432,19 +1478,23 @@ def payment_selection(request):
 
     # Get pricing information
     registration_pricing = MembershipPricing.objects.filter(
-        membership_type=MEMBERSHIP_SIGNUP_TYPE,
+        membership_type=pricing_type,
         payment_type='registration',
         is_active=True
     )
 
     annual_dues_pricing = MembershipPricing.objects.filter(
-        membership_type=MEMBERSHIP_SIGNUP_TYPE,
+        membership_type=pricing_type,
         payment_type='annual_dues',
         is_active=True
     ).first()
 
     context = {
         'membership': membership,
+        'organization': organization,
+        'can_pay': can_pay_for_membership(request.user),
+        'organization_admins': get_organization_admins(organization) if organization else [],
+        'max_members': MAX_ORGANIZATION_MEMBERS,
         'show_registration': show_registration,
         'show_annual_dues': show_annual_dues,
         'registration_pricing': registration_pricing,
@@ -1464,7 +1514,10 @@ def renewal(request):
     """
     from datetime import date
     from .models import Membership, MembershipPricing
-    from .membership_service import is_free_registration_mode, grant_free_membership
+    from .membership_service import (
+        is_free_registration_mode, grant_free_membership, get_billing_organization,
+        get_pricing_type, can_pay_for_membership, get_organization_admins,
+    )
 
     # Free registration mode: renewals are automatic and free
     if is_free_registration_mode():
@@ -1498,10 +1551,11 @@ def renewal(request):
 
     # Get annual dues pricing
     annual_dues_pricing = MembershipPricing.objects.filter(
-        membership_type=MEMBERSHIP_SIGNUP_TYPE,
+        membership_type=get_pricing_type(request.user),
         payment_type='annual_dues',
         is_active=True
     ).first()
+    organization = get_billing_organization(request.user)
 
     # Get subscription status
     subscription_expired = not membership.has_active_subscription
@@ -1517,6 +1571,9 @@ def renewal(request):
         'subscription_expired': subscription_expired,
         'days_until_expiry': days_until_expiry,
         'annual_dues_pricing': annual_dues_pricing,
+        'organization': organization,
+        'can_pay': can_pay_for_membership(request.user),
+        'organization_admins': get_organization_admins(organization) if organization else [],
     }
 
     return render(request, 'dashboard/renewal.html', context)
@@ -2099,3 +2156,119 @@ def verify_membership(request, qr_code):
         }
 
     return render(request, 'dashboard/verify_membership.html', context)
+
+
+# ─── Organization members ────────────────────────────────────────────────────
+
+def _set_password_link(request, user):
+    """A one-time link the new member opens to choose their password."""
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    return request.build_absolute_uri(reverse('dashboard:set_password', kwargs={
+        'uidb64': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': default_token_generator.make_token(user),
+    }))
+
+
+@login_required
+def organization_members(request):
+    """
+    The organization's admin adds and removes the people its membership covers.
+    Other members can see who is on the membership.
+    """
+    from .forms import OrganizationMemberForm
+    from .membership_service import get_billing_organization, copy_organization_membership_to
+    from .models import MAX_ORGANIZATION_MEMBERS
+
+    organization = get_billing_organization(request.user)
+    if organization is None:
+        messages.info(request, 'Your account is not part of an organization membership.')
+        return redirect('dashboard:home')
+
+    is_admin = request.user.profile.is_partner_admin
+    form = OrganizationMemberForm()
+    new_member_link = None
+
+    if request.method == 'POST':
+        if not is_admin:
+            messages.error(request, "Only your organization's admin can change its members.")
+            return redirect('dashboard:organization_members')
+
+        action = request.POST.get('action')
+        if action == 'add':
+            form = OrganizationMemberForm(request.POST)
+            if organization.seats_left <= 0:
+                messages.error(
+                    request,
+                    f'Your organization membership already covers {MAX_ORGANIZATION_MEMBERS} people. '
+                    f'Remove someone to add a new member.'
+                )
+            elif form.is_valid():
+                with transaction.atomic():
+                    # Re-check under a lock so two quick submissions can't exceed the limit.
+                    PartnerOrganization.objects.select_for_update().get(pk=organization.pk)
+                    if organization.seats_left <= 0:
+                        messages.error(request, 'Your organization membership is full.')
+                        return redirect('dashboard:organization_members')
+                    member = form.save(organization)
+                    copy_organization_membership_to(member)
+                logger.info(f"{request.user.username} added {member.email} to {organization.name}")
+                messages.success(
+                    request,
+                    f'{member.get_full_name()} has been added. Send them the link below so they can '
+                    f'set their password and sign in.'
+                )
+                new_member_link = {'user': member, 'link': _set_password_link(request, member)}
+                form = OrganizationMemberForm()
+
+        elif action in ('remove', 'link'):
+            member = get_object_or_404(
+                User, pk=request.POST.get('user_id'), is_active=True,
+                profile__partner_organization=organization,
+            )
+            if member == request.user:
+                messages.error(request, "You can't remove yourself. Contact ANA to hand the organization over.")
+            elif action == 'remove':
+                # The account only existed for this organization, so it is closed
+                # rather than left holding the organization's membership.
+                member.is_active = False
+                member.save(update_fields=['is_active'])
+                profile = member.profile
+                profile.partner_organization = None
+                profile.is_partner_admin = False
+                profile.save()
+                logger.info(f"{request.user.username} removed {member.email} from {organization.name}")
+                messages.success(request, f'{member.get_full_name()} has been removed from your organization.')
+                return redirect('dashboard:organization_members')
+            else:
+                new_member_link = {'user': member, 'link': _set_password_link(request, member)}
+
+    members = organization.member_profiles().order_by('-is_partner_admin', 'user__first_name')
+    return render(request, 'dashboard/organization_members.html', {
+        'organization': organization,
+        'members': members,
+        'is_admin': is_admin,
+        'form': form,
+        'seats_left': organization.seats_left,
+        'max_members': MAX_ORGANIZATION_MEMBERS,
+        'new_member_link': new_member_link,
+    })
+
+
+class SetPasswordView(PasswordResetConfirmView):
+    """Where a member added by their organization's admin chooses a password."""
+    template_name = 'auth/set_password.html'
+    success_url = reverse_lazy('dashboard:login')
+    post_reset_login = False
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        for field in form.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
+        return form
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Your password has been set. You can now sign in with your email address.')
+        return super().form_valid(form)

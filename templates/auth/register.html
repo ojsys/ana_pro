@@ -7,10 +7,10 @@
 <div class="auth-card wide">
     <div class="auth-header">
         <div class="auth-logo">
-            <i class="bi bi-person-plus"></i>
+            <i class="bi bi-building-add"></i>
         </div>
-        <h2 class="auth-title">Join AKILIMO Nigeria</h2>
-        <p class="auth-subtitle">Create your partner account to access dashboard analytics and participate in cassava production programs</p>
+        <h2 class="auth-title">Register Your Organization</h2>
+        <p class="auth-subtitle">Membership of AKILIMO Nigeria Association is for organizations. Sign your organization up here &mdash; you'll be its admin and can add up to {{ max_members|add:"-1" }} colleagues after signing up.</p>
     </div>
 
     {% if free_registration %}
@@ -21,14 +21,29 @@
             Sign up and your membership is active immediately &mdash; no registration fee, no annual dues.
         </div>
     </div>
-    {% elif registration_fee %}
-    <div class="alert alert-info d-flex align-items-center" role="alert">
-        <span class="material-icons me-2">payments</span>
-        <div>
-            <strong>Individual membership:</strong>
-            ₦{{ registration_fee|floatformat:0|intcomma }} registration fee{% if annual_dues_fee %} + ₦{{ annual_dues_fee|floatformat:0|intcomma }} annual dues{% endif %}.
-            You'll pay securely online after creating your account.
+    {% elif category_fees %}
+    <div class="alert alert-info" role="alert">
+        <div class="d-flex align-items-center mb-2">
+            <span class="material-icons me-2">payments</span>
+            <strong>Membership fees per organization</strong>
         </div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-2">
+                <thead>
+                    <tr><th>Category</th><th class="text-end">Registration fee</th><th class="text-end">Annual dues</th></tr>
+                </thead>
+                <tbody>
+                    {% for fee in category_fees %}
+                    <tr>
+                        <td>{{ fee.label }}</td>
+                        <td class="text-end">{% if fee.registration %}₦{{ fee.registration|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
+                        <td class="text-end">{% if fee.annual_dues %}₦{{ fee.annual_dues|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <small>One payment covers up to {{ max_members }} people in your organization. You'll pay securely online after creating your account.</small>
     </div>
     {% endif %}
 
@@ -133,7 +148,7 @@
         <div class="form-group mb-3">
             <label for="{{ form.partner_organization.id_for_label }}" class="form-label">
                 <i class="bi bi-building"></i>
-                Partner Organization
+                Organization
             </label>
             {{ form.partner_organization }}
             {% if form.partner_organization.errors %}
@@ -143,7 +158,7 @@
             {% endif %}
             <small class="form-text">
                 <i class="bi bi-info-circle"></i>
-                This cannot be changed after registration. Contact admin if you need to modify it.
+                If your organization is already signed up, ask its admin to add you instead.
             </small>
         </div>
 
@@ -164,6 +179,23 @@
                     {{ form.other_organization.help_text }}
                 </small>
             {% endif %}
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="{{ form.membership_category.id_for_label }}" class="form-label">
+                <i class="bi bi-diagram-3"></i>
+                Organization Category
+            </label>
+            {{ form.membership_category }}
+            {% if form.membership_category.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.membership_category.errors.0 }}
+                </div>
+            {% endif %}
+            <small class="form-text">
+                <i class="bi bi-info-circle"></i>
+                {{ form.membership_category.help_text }}
+            </small>
         </div>
 
         <div class="row">
@@ -199,8 +231,8 @@
 
         <button type="submit" class="btn btn-primary btn-auth w-100 mb-3" id="registerButton">
             <span class="button-text">
-                <i class="bi bi-person-plus"></i>
-                Create Account
+                <i class="bi bi-building-add"></i>
+                Register Organization
             </span>
             <span class="button-spinner" style="display: none;">
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>

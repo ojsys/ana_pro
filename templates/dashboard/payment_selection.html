@@ -33,6 +33,28 @@
 </div>
 {% endif %}
 
+{% if organization %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert {% if can_pay %}alert-light border{% else %}alert-warning{% endif %}" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="material-icons me-3" style="font-size: 2rem;">business</span>
+                <div>
+                    <h5 class="alert-heading mb-1">{{ organization.name }} &middot; {{ organization.get_membership_category_display }}</h5>
+                    {% if can_pay %}
+                    <p class="mb-0">These fees cover your whole organization &mdash; you and the members you add on the
+                        <a href="{% url 'dashboard:organization_members' %}">Organization Members</a> page.</p>
+                    {% else %}
+                    <p class="mb-0">Your organization's admin{% if organization_admins %} ({% for admin in organization_admins %}{{ admin.get_full_name|default:admin.email }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+                        pays the membership fees. Your access unlocks as soon as they do.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Payment Options -->
 <div class="row g-4 mt-5 mb-5 justify-content-center">
     {% if show_registration %}
@@ -42,13 +64,13 @@
             <span class="material-icons me-2">person_add</span>
             New Registration Fee
         </h3>
-        <p class="text-center text-muted mb-4">One-time payment to register as an ANA member</p>
+        <p class="text-center text-muted mb-4">One-time payment to register {% if organization %}your organization{% else %}as an ANA member{% endif %}</p>
     </div>
 
     {% for pricing in registration_pricing %}
     <div class="col-md-4">
         <div class="pricing-card {% if pricing.membership_type == 'individual' %}{% if membership.membership_type == 'individual' %}active{% endif %}{% else %}premium{% endif %}">
-            {% if pricing.membership_type == 'organization' %}
+            {% if pricing.membership_type != 'individual' %}
             <div class="pricing-badge">For Organizations</div>
             {% endif %}
             <div class="pricing-header">
@@ -56,7 +78,7 @@
                     <span class="material-icons">{% if pricing.membership_type == 'individual' %}person{% else %}business{% endif %}</span>
                 </div>
                 <h3>{{ pricing.get_membership_type_display }}</h3>
-                <p class="text-muted">{% if pricing.membership_type == 'individual' %}Perfect for individual farmers and professionals{% else %}For partner organizations and cooperatives{% endif %}</p>
+                <p class="text-muted">{% if pricing.membership_type == 'individual' %}Perfect for individual farmers and professionals{% else %}Covers up to {{ max_members }} people in your organization{% endif %}</p>
             </div>
             <div class="pricing-price">
                 <span class="currency">₦</span>
@@ -72,17 +94,19 @@
                 <li><span class="material-icons">check</span>Membership registration</li>
                 <li><span class="material-icons">check</span>Certificate issuance</li>
                 <li><span class="material-icons">check</span>ID card eligibility</li>
-                {% if pricing.membership_type == 'organization' %}
+                {% if pricing.membership_type != 'individual' %}
                 <li><span class="material-icons">check</span>Organization profile</li>
                 <li><span class="material-icons">check</span>Multiple member access</li>
                 {% endif %}
             </ul>
+            {% if can_pay %}
             <button class="btn btn-primary btn-subscribe"
                     data-payment-purpose="registration"
                     data-membership="{{  pricing.membership_type }}"
                     data-amount="{{ pricing.price|unlocalize }}">
                 Pay Registration Fee - ₦{{ pricing.price|floatformat:0|intcomma }}
             </button>
+            {% endif %}
         </div>
     </div>
     {% empty %}
@@ -120,7 +144,7 @@
                     <span class="material-icons">card_membership</span>
                 </div>
                 <h3>Annual Dues - {{ current_year|unlocalize }}</h3>
-                <p class="text-muted">Flat rate for all members</p>
+                <p class="text-muted">{% if organization %}{{ organization.get_membership_category_display }} rate, covers your whole organization{% else %}Flat rate for all members{% endif %}</p>
             </div>
             <div class="pricing-price">
                 <span class="currency">₦</span>
@@ -142,6 +166,7 @@
                 <li><span class="material-icons">check</span>Email support</li>
                 <li><span class="material-icons">check</span>Access to events</li>
             </ul>
+            {% if can_pay or already_paid_current_year %}
             <button class="btn btn-success btn-subscribe"
                     data-payment-purpose="annual_dues"
                     data-membership="{{ membership.membership_type }}"
@@ -154,6 +179,7 @@
                 Pay Annual Dues - ₦{{ annual_dues_pricing.price|floatformat:0|intcomma }}
                 {% endif %}
             </button>
+            {% endif %}
         </div>
     </div>
     {% endif %}
