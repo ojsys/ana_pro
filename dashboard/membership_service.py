@@ -224,7 +224,7 @@ def get_membership_fee(user, payment_type):
         membership_type = org.membership_category
         return MembershipFee(
             price=membership_type.fee_for(payment_type),
-            label=membership_type.name,
+            label=str(membership_type),
             code=membership_type.code,
             description=membership_type.description,
         )

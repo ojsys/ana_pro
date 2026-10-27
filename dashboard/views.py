@@ -696,17 +696,18 @@ class RegisterView(FormView):
 
 
 def _category_fees():
-    """Registration fee and annual dues for each membership type open to sign-up."""
+    """Registration fee and annual dues for each category open to sign-up, in sector order."""
     from .models import MembershipType
     return [
         {
             'code': t.code,
-            'label': t.name,
+            'sector': t.sector.name,
+            'label': f"{t.name} (please specify)" if t.requires_details else t.name,
             'description': t.description,
             'registration': t.registration_fee,
             'annual_dues': t.annual_dues,
         }
-        for t in MembershipType.objects.filter(is_active=True)
+        for t in MembershipType.objects.filter(is_active=True, sector__is_active=True).select_related('sector')
     ]
 
 

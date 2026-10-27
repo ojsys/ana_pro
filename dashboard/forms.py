@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
-from .models import UserProfile, PartnerOrganization, MembershipType
+from .models import UserProfile, PartnerOrganization, MembershipType, Sector
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -72,14 +72,28 @@ class CustomUserCreationForm(UserCreationForm):
         }),
         help_text="Please specify your organization if it's not listed above"
     )
-    membership_category = forms.ModelChoiceField(
-        queryset=MembershipType.objects.filter(is_active=True),
+    sector = forms.ModelChoiceField(
+        queryset=Sector.objects.none(),
         required=True,
-        label='Membership Type',
-        empty_label='Select your membership type',
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        help_text='Your membership type sets your registration fee and annual dues. '
+        label='Sector',
+        empty_label='Select your sector',
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_sector'}),
+    )
+    membership_category = forms.ModelChoiceField(
+        queryset=MembershipType.objects.none(),
+        required=True,
+        label='Category',
+        empty_label='Select your category',
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_membership_category'}),
+        help_text='Your category sets your registration fee and annual dues. '
                   'ANA may review and update it.'
+    )
+    sector_details = forms.CharField(
+        max_length=200,
+        required=False,
+        label='Please specify',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_sector_details',
+                                      'placeholder': 'Describe your organization'}),
     )
 
     class Meta:
@@ -91,7 +105,7 @@ class CustomUserCreationForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         # Add Bootstrap classes to all fields
         for field_name, field in self.fields.items():
-            if field_name not in ['partner_organization', 'membership_category', 'phone_number', 'position']:
+            if field_name not in ['partner_organization', 'sector', 'membership_category', 'phone_number', 'position']:
                 field.widget.attrs.update({'class': 'form-control'})
 
         # Custom placeholders
@@ -134,6 +148,29 @@ class CustomUserCreationForm(UserCreationForm):
 
         self.fields['partner_organization'].choices = partner_choices
 
+        # Sectors and their categories, as set up in the admin. Categories are
+        # grouped by sector so the list still makes sense without JavaScript.
+        types = list(
+            MembershipType.objects.filter(is_active=True, sector__is_active=True).select_related('sector')
+        )
+        self.fields['sector'].queryset = Sector.objects.filter(
+            is_active=True, membership_types__is_active=True,
+        ).distinct()
+        self.fields['membership_category'].queryset = MembershipType.objects.filter(
+            pk__in=[t.pk for t in types]
+        )
+        groups = {}
+        for t in types:
+            label = f"{t.name} (please specify)" if t.requires_details else t.name
+            groups.setdefault(t.sector, []).append((t.pk, label))
+        self.fields['membership_category'].choices = [('', 'Select your category')] + [
+            (sector.name, options) for sector, options in groups.items()
+        ]
+        # Read by the sign-up page to filter categories by sector and show "Please specify".
+        self.category_options = {
+            str(t.pk): {'sector': str(t.sector_id), 'details': t.requires_details} for t in types
+        }
+
     def clean_email(self):
         """Ensure email uniqueness"""
         email = self.cleaned_data.get('email')
@@ -157,6 +194,17 @@ class CustomUserCreationForm(UserCreationForm):
             raise forms.ValidationError(
                 "Please either select an organization from the list OR specify 'Other', not both."
             )
+
+        sector = cleaned_data.get('sector')
+        membership_type = cleaned_data.get('membership_category')
+        if sector and membership_type and membership_type.sector_id != sector.pk:
+            self.add_error('membership_category', f"Choose a category listed under {sector.name}.")
+        if membership_type and membership_type.requires_details:
+            cleaned_data['sector_details'] = (cleaned_data.get('sector_details') or '').strip()
+            if not cleaned_data['sector_details']:
+                self.add_error('sector_details', 'Please specify your organization type.')
+        else:
+            cleaned_data['sector_details'] = ''
 
         if partner_organization:
             org = self._resolve_existing_organization(partner_organization, other_organization)
@@ -226,7 +274,8 @@ class CustomUserCreationForm(UserCreationForm):
             # A category already set by ANA is kept.
             if not org.membership_category:
                 org.membership_category = self.cleaned_data['membership_category']
-                org.save(update_fields=['membership_category', 'updated_at'])
+                org.sector_details = self.cleaned_data['sector_details']
+                org.save(update_fields=['membership_category', 'sector_details', 'updated_at'])
 
             profile.partner_organization = org
             profile.partner_name = org.name

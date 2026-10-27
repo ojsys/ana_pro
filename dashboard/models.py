@@ -9,12 +9,41 @@ from datetime import timedelta
 # An organization's membership covers at most this many people, its admin included.
 MAX_ORGANIZATION_MEMBERS = 3
 
-class MembershipType(models.Model):
+class Sector(models.Model):
     """
-    A kind of organization membership (e.g. MSME, SME, Corporate Organization),
-    managed in the admin. Each type sets the fees its organizations pay.
+    A group of membership types an organization picks from at sign-up
+    (e.g. Public Sector, Private Sector, NGOs), managed in the admin.
     """
     name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, help_text="Shown under the sector choice at sign-up.")
+    is_active = models.BooleanField(default=True, help_text="Inactive sectors aren't offered at sign-up.")
+    display_order = models.PositiveIntegerField(default=0, help_text="Lower numbers are listed first.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        verbose_name = "Sector"
+        verbose_name_plural = "Sectors"
+
+    def __str__(self):
+        return self.name
+
+
+class MembershipType(models.Model):
+    """
+    An option within a sector (e.g. Private Sector -> Medium Scale), managed in
+    the admin. Each type sets the fees its organizations pay.
+    """
+    sector = models.ForeignKey(
+        Sector, on_delete=models.PROTECT, related_name='membership_types',
+        help_text="The sector this option is listed under at sign-up."
+    )
+    name = models.CharField(max_length=100)
+    requires_details = models.BooleanField(
+        default=False,
+        help_text="Ask the organization to specify (for an 'Other' option)."
+    )
     code = models.SlugField(
         max_length=30, unique=True,
         help_text="Short identifier used in payment references, e.g. 'sme'. Filled in from the name if left blank."
@@ -31,17 +60,18 @@ class MembershipType(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['display_order', 'name']
+        ordering = ['sector__display_order', 'display_order', 'name']
+        unique_together = ['sector', 'name']
         verbose_name = "Membership Type"
         verbose_name_plural = "Membership Types"
 
     def __str__(self):
-        return self.name
+        return f"{self.sector.name} — {self.name}"
 
     def save(self, *args, **kwargs):
         if not self.code:
             from django.utils.text import slugify
-            base = slugify(self.name)[:26] or 'type'
+            base = slugify(self.name)[:26] or slugify(self.sector.name)[:26] or 'type'
             code, n = base, 2
             while MembershipType.objects.filter(code=code).exclude(pk=self.pk).exists():
                 code = f"{base}-{n}"
@@ -169,6 +199,10 @@ class PartnerOrganization(models.Model):
         verbose_name='Membership type',
         help_text="Sets the registration fee and annual dues this organization pays. "
                   "Organizations without a type are legacy records billed per person."
+    )
+    sector_details = models.CharField(
+        max_length=200, blank=True,
+        help_text="What the organization entered when its membership type asks to specify (e.g. 'Other')."
     )
     established_date = models.DateField(null=True, blank=True)
 

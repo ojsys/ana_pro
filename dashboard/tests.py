@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import MembershipType, PartnerOrganization, Payment
+from .models import MembershipType, PartnerOrganization, Payment, Sector
 
 
 def set_paid_mode():
@@ -35,12 +35,14 @@ class OrganizationSignupTests(TestCase):
 
     def setUp(self):
         set_paid_mode()
+        self.private = Sector.objects.get(name='Private Sector')
         self.sme, _ = MembershipType.objects.update_or_create(
-            code='sme', defaults={'name': 'SME', 'registration_fee': Decimal('30000'),
+            code='sme', defaults={'sector': self.private, 'name': 'Medium Scale', 'registration_fee': Decimal('30000'),
                                   'annual_dues': Decimal('15000'), 'is_active': True})
 
     def signup(self, **overrides):
-        data = {**SIGNUP, 'membership_category': self.sme.pk, **overrides}
+        category = overrides.pop('membership_category', self.sme)
+        data = {**SIGNUP, 'sector': category.sector_id, 'membership_category': category.pk, **overrides}
         return self.client.post(reverse('dashboard:register'), data)
 
     def admin_user(self):
@@ -152,7 +154,7 @@ class OrganizationSignupTests(TestCase):
     def test_type_changed_in_admin_changes_the_price(self, initialize):
         initialize.return_value = {'status': True, 'data': {'authorization_url': 'https://pay.example'}}
         corporate = MembershipType.objects.create(
-            name='Corporate', registration_fee=Decimal('100000'), annual_dues=Decimal('50000'))
+            sector=self.private, name='Corporate', registration_fee=Decimal('100000'), annual_dues=Decimal('50000'))
         self.signup()
         PartnerOrganization.objects.filter(name='Cassava Growers Ltd').update(membership_category=corporate)
 
@@ -165,7 +167,7 @@ class OrganizationSignupTests(TestCase):
     def test_new_type_added_in_admin_is_offered_and_charged(self, initialize):
         initialize.return_value = {'status': True, 'data': {'authorization_url': 'https://pay.example'}}
         cooperative = MembershipType.objects.create(
-            name='Cooperative', description='Farmer cooperatives',
+            sector=self.private, name='Cooperative', description='Farmer cooperatives',
             registration_fee=Decimal('12000'), annual_dues=Decimal('6000'))
         self.assertEqual(cooperative.code, 'cooperative')
 
@@ -173,7 +175,7 @@ class OrganizationSignupTests(TestCase):
         self.assertContains(page, 'Cooperative')
         self.assertContains(page, 'Farmer cooperatives')
 
-        self.signup(membership_category=cooperative.pk)
+        self.signup(membership_category=cooperative)
         self.client.post(reverse('dashboard:initiate_payment'),
                          json.dumps({'payment_purpose': 'registration'}),
                          content_type='application/json')
@@ -182,10 +184,10 @@ class OrganizationSignupTests(TestCase):
         self.assertIn('COOPERATIVE', payment.paystack_reference)
 
     def test_inactive_type_is_not_offered_at_signup(self):
-        MembershipType.objects.create(name='Retired', registration_fee=1, annual_dues=1, is_active=False)
+        MembershipType.objects.create(sector=self.private, name='Retired', registration_fee=1, annual_dues=1, is_active=False)
         self.assertNotContains(self.client.get(reverse('dashboard:register')), 'Retired')
         retired = MembershipType.objects.get(name='Retired')
-        response = self.signup(membership_category=retired.pk)
+        response = self.signup(membership_category=retired)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(User.objects.filter(email='ada@example.com').exists())
 
@@ -194,3 +196,30 @@ class OrganizationSignupTests(TestCase):
         self.signup()
         with self.assertRaises(ProtectedError):
             self.sme.delete()
+
+    def test_signup_offers_the_sectors_and_their_options(self):
+        page = self.client.get(reverse('dashboard:register')).content.decode()
+        for text in ['Public Sector', 'Private Sector', 'NGOs', 'Large Scale', 'Medium Scale', 'Small Scale',
+                     'Research Institutes', 'FMARD', 'State Ministries of Agric (ADPs)',
+                     'Federal &amp; State Universities', 'Other (please specify)']:
+            self.assertIn(text, page)
+
+    def test_category_must_belong_to_the_chosen_sector(self):
+        public = Sector.objects.get(name='Public Sector')
+        response = self.signup(sector=public.pk)
+        self.assertContains(response, 'Choose a category listed under Public Sector')
+        self.assertFalse(User.objects.filter(email='ada@example.com').exists())
+
+    def test_other_option_requires_and_saves_details(self):
+        other = MembershipType.objects.get(code='public-other')
+        response = self.signup(membership_category=other)
+        self.assertContains(response, 'Please specify your organization type')
+
+        self.signup(membership_category=other, sector_details='Federal agency')
+        org = PartnerOrganization.objects.get(name='Cassava Growers Ltd')
+        self.assertEqual(org.membership_category, other)
+        self.assertEqual(org.sector_details, 'Federal agency')
+
+    def test_details_are_dropped_for_options_that_do_not_ask(self):
+        self.signup(sector_details='ignored')
+        self.assertEqual(PartnerOrganization.objects.get(name='Cassava Growers Ltd').sector_details, '')

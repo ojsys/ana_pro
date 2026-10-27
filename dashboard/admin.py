@@ -10,7 +10,7 @@ from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
     DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing,
     PartnerService, PartnerGalleryImage,
-    ANANigeriaPartner, MembershipType, MAX_ORGANIZATION_MEMBERS
+    ANANigeriaPartner, MembershipType, Sector, MAX_ORGANIZATION_MEMBERS
 )
 from .resources import (
     APIConfigurationResource, PartnerOrganizationResource, UserProfileResource,
@@ -35,6 +35,7 @@ class AkilimoAdminSite(admin.AdminSite):
 
         # Define custom ordering for models within the Dashboard app
         model_order = {
+            'Sectors': -1,
             'Membership Types': 0,
             'Membership Pricing': 1,  # Put pricing first for easy access
             'Memberships': 2,
@@ -190,17 +191,43 @@ class OrganizationMemberInline(admin.TabularInline):
         return False
 
 
+class SectorMembershipTypeInline(admin.TabularInline):
+    model = MembershipType
+    fields = ['name', 'requires_details', 'registration_fee', 'annual_dues', 'is_active', 'display_order']
+    extra = 1
+    verbose_name = 'Option'
+    verbose_name_plural = 'Options (each with its own fees)'
+    show_change_link = True
+
+
+@admin.register(Sector)
+class SectorAdmin(admin.ModelAdmin):
+    list_display = ['name', 'option_list', 'is_active', 'display_order']
+    list_editable = ['is_active', 'display_order']
+    search_fields = ['name']
+    readonly_fields = ['created_at', 'updated_at']
+    fields = ['name', 'description', 'is_active', 'display_order', 'created_at', 'updated_at']
+    inlines = [SectorMembershipTypeInline]
+
+    @admin.display(description='Options')
+    def option_list(self, obj):
+        return ', '.join(t.name for t in obj.membership_types.all()) or '—'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('membership_types')
+
+
 @admin.register(MembershipType)
 class MembershipTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'registration_fee', 'annual_dues', 'organization_count', 'is_active', 'display_order']
+    list_display = ['name', 'sector', 'code', 'registration_fee', 'annual_dues', 'organization_count', 'is_active', 'display_order']
     list_editable = ['registration_fee', 'annual_dues', 'is_active', 'display_order']
-    list_filter = ['is_active']
-    search_fields = ['name', 'code', 'description']
+    list_filter = ['sector', 'is_active']
+    search_fields = ['name', 'code', 'description', 'sector__name']
     prepopulated_fields = {'code': ('name',)}
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         (None, {
-            'fields': ('name', 'code', 'description', 'is_active', 'display_order'),
+            'fields': ('sector', 'name', 'code', 'requires_details', 'description', 'is_active', 'display_order'),
         }),
         ('Fees (Naira)', {
             'fields': ('registration_fee', 'annual_dues'),
@@ -218,7 +245,7 @@ class MembershipTypeAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         from django.db.models import Count
-        return super().get_queryset(request).annotate(org_count=Count('organizations'))
+        return super().get_queryset(request).select_related('sector').annotate(org_count=Count('organizations'))
 
     @admin.display(description='Organizations', ordering='org_count')
     def organization_count(self, obj):
@@ -229,10 +256,11 @@ class MembershipTypeAdmin(admin.ModelAdmin):
 class PartnerOrganizationAdmin(ImportExportModelAdmin):
     resource_class = PartnerOrganizationResource
     list_display = ['name', 'code', 'status_display', 'membership_category', 'member_count', 'organization_type', 'city', 'state', 'requested_by', 'is_featured', 'feature_order', 'is_active', 'total_farmers', 'created_at']
-    list_filter = ['status', 'membership_category', 'organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
+    list_filter = ['status', 'membership_category__sector', 'membership_category', 'organization_type', 'state', 'country', 'is_featured', 'is_active', 'created_at']
     search_fields = ['name', 'code', 'contact_person', 'email', 'city']
     readonly_fields = ['created_at', 'updated_at', 'joined_program_date', 'requested_by', 'approved_by', 'approved_at']
     list_editable = ['membership_category', 'is_featured', 'feature_order']
+    list_select_related = ['membership_category__sector', 'requested_by']
     actions = ['approve_organizations', 'reject_organizations']
     prepopulated_fields = {'slug': ('name',)}
     inlines = [OrganizationMemberInline, PartnerServiceInline, PartnerGalleryImageInline]
@@ -242,7 +270,7 @@ class PartnerOrganizationAdmin(ImportExportModelAdmin):
             'fields': ('name', 'code', 'slug', 'description', 'organization_type', 'is_active')
         }),
         ('Membership', {
-            'fields': ('membership_category',),
+            'fields': ('membership_category', 'sector_details'),
             'description': (
                 'The membership type sets the registration fee and annual dues this organization pays '
                 '(add types and edit their fees in <strong>Membership Types</strong>). A change applies to '
@@ -291,6 +319,12 @@ class PartnerOrganizationAdmin(ImportExportModelAdmin):
     def total_farmers(self, obj):
         return obj.total_farmers
     total_farmers.short_description = 'Total Farmers'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Membership types are labelled with their sector.
+        if db_field.name == 'membership_category':
+            kwargs['queryset'] = MembershipType.objects.select_related('sector')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     @admin.display(description='Members')
     def member_count(self, obj):

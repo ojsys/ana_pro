@@ -40,7 +40,7 @@
             <div class="d-flex align-items-center">
                 <span class="material-icons me-3" style="font-size: 2rem;">business</span>
                 <div>
-                    <h5 class="alert-heading mb-1">{{ organization.name }} &middot; {{ organization.membership_category.name }}</h5>
+                    <h5 class="alert-heading mb-1">{{ organization.name }} &middot; {{ organization.membership_category }}</h5>
                     {% if can_pay %}
                     <p class="mb-0">These fees cover your whole organization &mdash; you and the members you add on the
                         <a href="{% url 'dashboard:organization_members' %}">Organization Members</a> page.</p>
@@ -144,7 +144,7 @@
                     <span class="material-icons">card_membership</span>
                 </div>
                 <h3>Annual Dues - {{ current_year|unlocalize }}</h3>
-                <p class="text-muted">{% if organization %}{{ organization.membership_category.name }} rate, covers your whole organization{% else %}Flat rate for all members{% endif %}</p>
+                <p class="text-muted">{% if organization %}{{ organization.membership_category }} rate, covers your whole organization{% else %}Flat rate for all members{% endif %}</p>
             </div>
             <div class="pricing-price">
                 <span class="currency">₦</span>

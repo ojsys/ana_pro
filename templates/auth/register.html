@@ -15,7 +15,7 @@
 
     {% if free_registration %}
     <div class="alert alert-success d-flex align-items-center" role="alert">
-        <span class="material-icons me-2">card_giftcard</span>
+        <i class="bi bi-gift me-2"></i>
         <div>
             <strong>Membership is free right now.</strong>
             Sign up and your membership is active immediately &mdash; no registration fee, no annual dues.
@@ -24,21 +24,25 @@
     {% elif category_fees %}
     <div class="alert alert-info" role="alert">
         <div class="d-flex align-items-center mb-2">
-            <span class="material-icons me-2">payments</span>
+            <i class="bi bi-cash-coin me-2"></i>
             <strong>Membership fees per organization</strong>
         </div>
         <div class="table-responsive">
             <table class="table table-sm mb-2">
                 <thead>
-                    <tr><th>Membership type</th><th class="text-end">Registration fee</th><th class="text-end">Annual dues</th></tr>
+                    <tr><th>Category</th><th class="text-end">Registration fee</th><th class="text-end">Annual dues</th></tr>
                 </thead>
                 <tbody>
-                    {% for fee in category_fees %}
+                    {% regroup category_fees by sector as sector_fees %}
+                    {% for group in sector_fees %}
+                    <tr><th colspan="3" class="pt-3">{{ group.grouper }}</th></tr>
+                    {% for fee in group.list %}
                     <tr>
                         <td>{{ fee.label }}{% if fee.description %}<div class="small text-muted">{{ fee.description }}</div>{% endif %}</td>
                         <td class="text-end">{% if fee.registration %}₦{{ fee.registration|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
                         <td class="text-end">{% if fee.annual_dues %}₦{{ fee.annual_dues|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
                     </tr>
+                    {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -181,22 +185,54 @@
             {% endif %}
         </div>
 
-        <div class="form-group mb-3">
-            <label for="{{ form.membership_category.id_for_label }}" class="form-label">
-                <i class="bi bi-diagram-3"></i>
-                Membership Type
+        <div class="row">
+            <div class="col-12">
+                <div class="form-group mb-3">
+                    <label for="{{ form.sector.id_for_label }}" class="form-label">
+                        <i class="bi bi-diagram-3"></i>
+                        Sector
+                    </label>
+                    {{ form.sector }}
+                    {% if form.sector.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.sector.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group mb-3">
+                    <label for="{{ form.membership_category.id_for_label }}" class="form-label">
+                        <i class="bi bi-tags"></i>
+                        Category
+                    </label>
+                    {{ form.membership_category }}
+                    {% if form.membership_category.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.membership_category.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mb-3" id="sector-details-group">
+            <label for="{{ form.sector_details.id_for_label }}" class="form-label">
+                <i class="bi bi-pencil"></i>
+                Please specify
             </label>
-            {{ form.membership_category }}
-            {% if form.membership_category.errors %}
+            {{ form.sector_details }}
+            {% if form.sector_details.errors %}
                 <div class="invalid-feedback d-block">
-                    {{ form.membership_category.errors.0 }}
+                    {{ form.sector_details.errors.0 }}
                 </div>
             {% endif %}
-            <small class="form-text">
-                <i class="bi bi-info-circle"></i>
-                {{ form.membership_category.help_text }}
-            </small>
         </div>
+
+        <small class="form-text d-block mb-3">
+            <i class="bi bi-info-circle"></i>
+            {{ form.membership_category.help_text }}
+        </small>
 
         <div class="row">
             <div class="col-md-6">
@@ -241,7 +277,50 @@
         </button>
     </form>
 
+    {{ form.category_options|json_script:"category-options" }}
     <script>
+        // Show only the categories under the chosen sector, and "Please specify"
+        // for a category that asks for it. Without JavaScript the grouped list still works.
+        (function () {
+            const options = JSON.parse(document.getElementById('category-options').textContent);
+            const sector = document.getElementById('id_sector');
+            const category = document.getElementById('id_membership_category');
+            const detailsGroup = document.getElementById('sector-details-group');
+            const details = document.getElementById('id_sector_details');
+            const groups = Array.from(category.querySelectorAll('optgroup')).map(g => g.cloneNode(true));
+            const placeholder = category.querySelector('option[value=""]').cloneNode(true);
+
+            function toggleDetails() {
+                const needsDetails = !!(options[category.value] && options[category.value].details);
+                detailsGroup.style.display = needsDetails ? '' : 'none';
+                details.required = needsDetails;
+            }
+
+            function showCategories() {
+                const chosen = category.value;
+                category.innerHTML = '';
+                category.appendChild(placeholder.cloneNode(true));
+                const matching = [];
+                groups.forEach(group => group.querySelectorAll('option').forEach(option => {
+                    if (options[option.value] && options[option.value].sector === sector.value) {
+                        matching.push(option.cloneNode(true));
+                    }
+                }));
+                matching.forEach(option => category.appendChild(option));
+                category.disabled = !sector.value;
+                if (matching.some(option => option.value === chosen)) {
+                    category.value = chosen;
+                } else if (matching.length === 1) {
+                    category.value = matching[0].value;
+                }
+                toggleDetails();
+            }
+
+            sector.addEventListener('change', showCategories);
+            category.addEventListener('change', toggleDetails);
+            showCategories();
+        })();
+
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             const button = document.getElementById('registerButton');
             const buttonText = button.querySelector('.button-text');
