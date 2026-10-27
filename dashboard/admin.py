@@ -10,7 +10,7 @@ from .models import (
     APIConfiguration, ParticipantRecord, AkilimoParticipant, DashboardMetrics,
     DataSyncLog, PartnerOrganization, UserProfile, Membership, Payment, MembershipPricing,
     PartnerService, PartnerGalleryImage,
-    ANANigeriaPartner, MAX_ORGANIZATION_MEMBERS
+    ANANigeriaPartner, MembershipType, MAX_ORGANIZATION_MEMBERS
 )
 from .resources import (
     APIConfigurationResource, PartnerOrganizationResource, UserProfileResource,
@@ -35,6 +35,7 @@ class AkilimoAdminSite(admin.AdminSite):
 
         # Define custom ordering for models within the Dashboard app
         model_order = {
+            'Membership Types': 0,
             'Membership Pricing': 1,  # Put pricing first for easy access
             'Memberships': 2,
             'Payments': 3,
@@ -189,6 +190,41 @@ class OrganizationMemberInline(admin.TabularInline):
         return False
 
 
+@admin.register(MembershipType)
+class MembershipTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'registration_fee', 'annual_dues', 'organization_count', 'is_active', 'display_order']
+    list_editable = ['registration_fee', 'annual_dues', 'is_active', 'display_order']
+    list_filter = ['is_active']
+    search_fields = ['name', 'code', 'description']
+    prepopulated_fields = {'code': ('name',)}
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'code', 'description', 'is_active', 'display_order'),
+        }),
+        ('Fees (Naira)', {
+            'fields': ('registration_fee', 'annual_dues'),
+            'description': (
+                'What every organization of this type pays. The whole organization, up to '
+                f'{MAX_ORGANIZATION_MEMBERS} people, is covered by one payment. A change applies '
+                'to the next payment.'
+            ),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def get_queryset(self, request):
+        from django.db.models import Count
+        return super().get_queryset(request).annotate(org_count=Count('organizations'))
+
+    @admin.display(description='Organizations', ordering='org_count')
+    def organization_count(self, obj):
+        return obj.org_count
+
+
 @admin.register(PartnerOrganization)
 class PartnerOrganizationAdmin(ImportExportModelAdmin):
     resource_class = PartnerOrganizationResource
@@ -208,8 +244,8 @@ class PartnerOrganizationAdmin(ImportExportModelAdmin):
         ('Membership', {
             'fields': ('membership_category',),
             'description': (
-                'The category sets the registration fee and annual dues this organization pays '
-                '(edit the amounts in <strong>Membership Pricing</strong>). A change applies to '
+                'The membership type sets the registration fee and annual dues this organization pays '
+                '(add types and edit their fees in <strong>Membership Types</strong>). A change applies to '
                 'the next payment. An organization membership covers up to '
                 f'{MAX_ORGANIZATION_MEMBERS} people; its partner admin adds the others.'
             )
@@ -955,7 +991,10 @@ class MembershipPricingAdmin(ImportExportModelAdmin):
     fieldsets = (
         ('Pricing Configuration', {
             'fields': ('payment_type', 'membership_type', 'price', 'description', 'is_active'),
-            'description': 'Configure membership pricing. Prices are in Nigerian Naira (₦).'
+            'description': (
+                'Per-person rates for legacy individual members renewing their membership. '
+                'Organization fees are set on each <strong>Membership Type</strong>. Prices are in Nigerian Naira (₦).'
+            )
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

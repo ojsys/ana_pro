@@ -9,7 +9,7 @@
         Organization Members
     </h1>
     <p class="page-subtitle">
-        {{ organization.name }} &middot; {{ organization.get_membership_category_display }} membership
+        {{ organization.name }} &middot; {{ organization.membership_category.name }} membership
         &middot; {{ members|length }} of {{ max_members }} members
     </p>
 </div>

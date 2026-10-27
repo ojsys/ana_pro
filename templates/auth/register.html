@@ -30,12 +30,12 @@
         <div class="table-responsive">
             <table class="table table-sm mb-2">
                 <thead>
-                    <tr><th>Category</th><th class="text-end">Registration fee</th><th class="text-end">Annual dues</th></tr>
+                    <tr><th>Membership type</th><th class="text-end">Registration fee</th><th class="text-end">Annual dues</th></tr>
                 </thead>
                 <tbody>
                     {% for fee in category_fees %}
                     <tr>
-                        <td>{{ fee.label }}</td>
+                        <td>{{ fee.label }}{% if fee.description %}<div class="small text-muted">{{ fee.description }}</div>{% endif %}</td>
                         <td class="text-end">{% if fee.registration %}₦{{ fee.registration|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
                         <td class="text-end">{% if fee.annual_dues %}₦{{ fee.annual_dues|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
                     </tr>
@@ -184,7 +184,7 @@
         <div class="form-group mb-3">
             <label for="{{ form.membership_category.id_for_label }}" class="form-label">
                 <i class="bi bi-diagram-3"></i>
-                Organization Category
+                Membership Type
             </label>
             {{ form.membership_category }}
             {% if form.membership_category.errors %}

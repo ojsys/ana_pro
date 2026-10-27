@@ -12,6 +12,7 @@ told apart from paying members, reported on, and revoked when the site switches 
 to paid mode.
 """
 import logging
+from dataclasses import dataclass
 from datetime import date
 
 from django.utils import timezone
@@ -200,10 +201,45 @@ def get_billing_organization(user):
     return None
 
 
-def get_pricing_type(user):
-    """The MembershipPricing.membership_type that applies to ``user``."""
+@dataclass
+class MembershipFee:
+    """What ``user`` pays for one kind of payment, wherever the price is configured."""
+    price: object
+    label: str
+    code: str
+    description: str = ''
+
+
+def get_membership_fee(user, payment_type):
+    """
+    The fee ``user`` pays for ``payment_type`` ('registration' or 'annual_dues'), or None.
+
+    Organizations pay what their Membership Type sets. Legacy individual members
+    pay the active individual rate in Membership Pricing.
+    """
+    from .models import MembershipPricing
+
     org = get_billing_organization(user)
-    return org.membership_category if org else 'individual'
+    if org:
+        membership_type = org.membership_category
+        return MembershipFee(
+            price=membership_type.fee_for(payment_type),
+            label=membership_type.name,
+            code=membership_type.code,
+            description=membership_type.description,
+        )
+
+    pricing = MembershipPricing.objects.filter(
+        membership_type='individual', payment_type=payment_type, is_active=True,
+    ).first()
+    if pricing is None:
+        return None
+    return MembershipFee(
+        price=pricing.price,
+        label=pricing.get_membership_type_display(),
+        code='individual',
+        description=pricing.description,
+    )
 
 
 def can_pay_for_membership(user):

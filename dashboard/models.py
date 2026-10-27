@@ -6,16 +6,53 @@ from django.dispatch import receiver
 import uuid
 from datetime import timedelta
 
-# Membership categories an organization can be placed in. Each category has its
-# own registration fee and annual dues in Membership Pricing.
-MEMBERSHIP_CATEGORY_CHOICES = [
-    ('msme', 'MSME'),
-    ('sme', 'SME'),
-    ('corporate', 'Corporate Organization'),
-]
-
 # An organization's membership covers at most this many people, its admin included.
 MAX_ORGANIZATION_MEMBERS = 3
+
+class MembershipType(models.Model):
+    """
+    A kind of organization membership (e.g. MSME, SME, Corporate Organization),
+    managed in the admin. Each type sets the fees its organizations pay.
+    """
+    name = models.CharField(max_length=100, unique=True)
+    code = models.SlugField(
+        max_length=30, unique=True,
+        help_text="Short identifier used in payment references, e.g. 'sme'. Filled in from the name if left blank."
+    )
+    description = models.TextField(blank=True, help_text="Shown to organizations choosing a membership type at sign-up.")
+    registration_fee = models.DecimalField(max_digits=12, decimal_places=2, help_text="One-time registration fee in Naira")
+    annual_dues = models.DecimalField(max_digits=12, decimal_places=2, help_text="Yearly dues (Jan 1 - Dec 31) in Naira")
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive types can't be chosen at sign-up. Organizations already on one keep it."
+    )
+    display_order = models.PositiveIntegerField(default=0, help_text="Lower numbers are listed first.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        verbose_name = "Membership Type"
+        verbose_name_plural = "Membership Types"
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            from django.utils.text import slugify
+            base = slugify(self.name)[:26] or 'type'
+            code, n = base, 2
+            while MembershipType.objects.filter(code=code).exclude(pk=self.pk).exists():
+                code = f"{base}-{n}"
+                n += 1
+            self.code = code
+        super().save(*args, **kwargs)
+
+    def fee_for(self, payment_type):
+        """The fee for 'registration' or 'annual_dues'."""
+        return self.registration_fee if payment_type == 'registration' else self.annual_dues
+
 
 class APIConfiguration(models.Model):
     """Store API configuration and tokens"""
@@ -123,12 +160,15 @@ class PartnerOrganization(models.Model):
 
     # Organization metadata
     organization_type = models.CharField(max_length=100, blank=True, help_text="NGO, Government, Private, etc.")
-    membership_category = models.CharField(
-        max_length=20,
-        choices=MEMBERSHIP_CATEGORY_CHOICES,
+    membership_category = models.ForeignKey(
+        MembershipType,
+        on_delete=models.PROTECT,
+        null=True,
         blank=True,
+        related_name='organizations',
+        verbose_name='Membership type',
         help_text="Sets the registration fee and annual dues this organization pays. "
-                  "Organizations without a category are legacy records billed per person."
+                  "Organizations without a type are legacy records billed per person."
     )
     established_date = models.DateField(null=True, blank=True)
 
@@ -200,7 +240,7 @@ class PartnerOrganization(models.Model):
     @property
     def has_membership_category(self):
         """Organizations with a category are billed as one organization membership."""
-        return bool(self.membership_category)
+        return self.membership_category_id is not None
 
     def member_profiles(self):
         """Profiles of the active people who belong to this organization."""
@@ -627,7 +667,9 @@ class ParticipantRecord(models.Model):
 
 class MembershipPricing(models.Model):
     """Membership pricing configuration"""
-    MEMBERSHIP_TYPES = MEMBERSHIP_CATEGORY_CHOICES + [
+    # Organization fees live on MembershipType; these rows are the per-person rates
+    # that legacy individual members still renew at.
+    MEMBERSHIP_TYPES = [
         ('individual', 'Individual Membership (legacy)'),
         ('organization', 'Partner Organization Membership (legacy)'),
     ]

@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import MembershipPricing, PartnerOrganization, Payment
+from .models import MembershipType, PartnerOrganization, Payment
 
 
 def set_paid_mode():
@@ -26,7 +26,6 @@ SIGNUP = {
     'position': 'Director',
     'partner_organization': 'other',
     'other_organization': 'Cassava Growers Ltd',
-    'membership_category': 'sme',
     'password1': 'a-Strong-pass-123',
     'password2': 'a-Strong-pass-123',
 }
@@ -36,15 +35,13 @@ class OrganizationSignupTests(TestCase):
 
     def setUp(self):
         set_paid_mode()
-        MembershipPricing.objects.update_or_create(
-            membership_type='sme', payment_type='registration',
-            defaults={'price': Decimal('30000'), 'is_active': True})
-        MembershipPricing.objects.update_or_create(
-            membership_type='sme', payment_type='annual_dues',
-            defaults={'price': Decimal('15000'), 'is_active': True})
+        self.sme, _ = MembershipType.objects.update_or_create(
+            code='sme', defaults={'name': 'SME', 'registration_fee': Decimal('30000'),
+                                  'annual_dues': Decimal('15000'), 'is_active': True})
 
     def signup(self, **overrides):
-        return self.client.post(reverse('dashboard:register'), {**SIGNUP, **overrides})
+        data = {**SIGNUP, 'membership_category': self.sme.pk, **overrides}
+        return self.client.post(reverse('dashboard:register'), data)
 
     def admin_user(self):
         return User.objects.get(email='ada@example.com')
@@ -60,7 +57,7 @@ class OrganizationSignupTests(TestCase):
         self.assertRedirects(response, reverse('dashboard:payment_selection'))
 
         org = PartnerOrganization.objects.get(name='Cassava Growers Ltd')
-        self.assertEqual(org.membership_category, 'sme')
+        self.assertEqual(org.membership_category, self.sme)
         profile = self.admin_user().profile
         self.assertEqual(profile.partner_organization, org)
         self.assertTrue(profile.is_partner_admin)
@@ -152,15 +149,48 @@ class OrganizationSignupTests(TestCase):
         self.assertTrue(User.objects.get(email='m2@example.com').membership.has_platform_access)
 
     @mock.patch('dashboard.paystack_service.PaystackService.initialize_transaction')
-    def test_category_changed_in_admin_changes_the_price(self, initialize):
+    def test_type_changed_in_admin_changes_the_price(self, initialize):
         initialize.return_value = {'status': True, 'data': {'authorization_url': 'https://pay.example'}}
-        MembershipPricing.objects.update_or_create(
-            membership_type='corporate', payment_type='registration',
-            defaults={'price': Decimal('100000'), 'is_active': True})
+        corporate = MembershipType.objects.create(
+            name='Corporate', registration_fee=Decimal('100000'), annual_dues=Decimal('50000'))
         self.signup()
-        PartnerOrganization.objects.filter(name='Cassava Growers Ltd').update(membership_category='corporate')
+        PartnerOrganization.objects.filter(name='Cassava Growers Ltd').update(membership_category=corporate)
 
         self.client.post(reverse('dashboard:initiate_payment'),
                          json.dumps({'payment_purpose': 'registration'}),
                          content_type='application/json')
         self.assertEqual(Payment.objects.get().amount, Decimal('100000'))
+
+    @mock.patch('dashboard.paystack_service.PaystackService.initialize_transaction')
+    def test_new_type_added_in_admin_is_offered_and_charged(self, initialize):
+        initialize.return_value = {'status': True, 'data': {'authorization_url': 'https://pay.example'}}
+        cooperative = MembershipType.objects.create(
+            name='Cooperative', description='Farmer cooperatives',
+            registration_fee=Decimal('12000'), annual_dues=Decimal('6000'))
+        self.assertEqual(cooperative.code, 'cooperative')
+
+        page = self.client.get(reverse('dashboard:register'))
+        self.assertContains(page, 'Cooperative')
+        self.assertContains(page, 'Farmer cooperatives')
+
+        self.signup(membership_category=cooperative.pk)
+        self.client.post(reverse('dashboard:initiate_payment'),
+                         json.dumps({'payment_purpose': 'registration'}),
+                         content_type='application/json')
+        payment = Payment.objects.get()
+        self.assertEqual(payment.amount, Decimal('12000'))
+        self.assertIn('COOPERATIVE', payment.paystack_reference)
+
+    def test_inactive_type_is_not_offered_at_signup(self):
+        MembershipType.objects.create(name='Retired', registration_fee=1, annual_dues=1, is_active=False)
+        self.assertNotContains(self.client.get(reverse('dashboard:register')), 'Retired')
+        retired = MembershipType.objects.get(name='Retired')
+        response = self.signup(membership_category=retired.pk)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(email='ada@example.com').exists())
+
+    def test_type_in_use_cannot_be_deleted(self):
+        from django.db.models import ProtectedError
+        self.signup()
+        with self.assertRaises(ProtectedError):
+            self.sme.delete()

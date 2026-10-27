@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
-from .models import UserProfile, PartnerOrganization, MEMBERSHIP_CATEGORY_CHOICES
+from .models import UserProfile, PartnerOrganization, MembershipType
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -72,12 +72,13 @@ class CustomUserCreationForm(UserCreationForm):
         }),
         help_text="Please specify your organization if it's not listed above"
     )
-    membership_category = forms.ChoiceField(
+    membership_category = forms.ModelChoiceField(
+        queryset=MembershipType.objects.filter(is_active=True),
         required=True,
-        label='Organization Category',
-        choices=[('', 'Select your organization category')] + MEMBERSHIP_CATEGORY_CHOICES,
+        label='Membership Type',
+        empty_label='Select your membership type',
         widget=forms.Select(attrs={'class': 'form-select'}),
-        help_text='Your category sets your registration fee and annual dues. '
+        help_text='Your membership type sets your registration fee and annual dues. '
                   'ANA may review and update it.'
     )
 
@@ -357,7 +358,7 @@ class UserProfileForm(forms.ModelForm):
             del self.fields['partner_organization_select']
         else:
             self.fields['partner_organization_select'].queryset = PartnerOrganization.objects.filter(
-                is_active=True, membership_category='',
+                is_active=True, membership_category__isnull=True,
             )
     
     def save(self, commit=True):

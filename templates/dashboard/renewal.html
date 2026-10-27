@@ -111,7 +111,7 @@
                     <span class="material-icons">card_membership</span>
                 </div>
                 <h3>Annual Membership Dues</h3>
-                <p class="text-muted">{% if organization %}{{ organization.get_membership_category_display }} rate, covers your whole organization{% else %}Flat rate for all members{% endif %}</p>
+                <p class="text-muted">{% if organization %}{{ organization.membership_category.name }} rate, covers your whole organization{% else %}Flat rate for all members{% endif %}</p>
             </div>
             <div class="renewal-price">
                 <span class="currency">₦</span>

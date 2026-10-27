@@ -696,20 +696,17 @@ class RegisterView(FormView):
 
 
 def _category_fees():
-    """Registration fee and annual dues for each organization category, for display."""
-    from .models import MEMBERSHIP_CATEGORY_CHOICES
-    prices = {
-        (p.membership_type, p.payment_type): p.price
-        for p in MembershipPricing.objects.filter(is_active=True)
-    }
+    """Registration fee and annual dues for each membership type open to sign-up."""
+    from .models import MembershipType
     return [
         {
-            'code': code,
-            'label': label,
-            'registration': prices.get((code, 'registration')),
-            'annual_dues': prices.get((code, 'annual_dues')),
+            'code': t.code,
+            'label': t.name,
+            'description': t.description,
+            'registration': t.registration_fee,
+            'annual_dues': t.annual_dues,
         }
-        for code, label in MEMBERSHIP_CATEGORY_CHOICES
+        for t in MembershipType.objects.filter(is_active=True)
     ]
 
 
@@ -1228,7 +1225,7 @@ def initiate_payment(request):
         from datetime import date
         from .membership_service import (
             is_free_registration_mode, grant_free_membership, get_billing_organization,
-            get_pricing_type, can_pay_for_membership,
+            get_membership_fee, can_pay_for_membership,
         )
 
         # Free registration mode: never charge - grant the membership instead
@@ -1255,16 +1252,14 @@ def initiate_payment(request):
 
         organization = get_billing_organization(request.user)
         membership_type = 'organization' if organization else 'individual'
-        pricing_type = get_pricing_type(request.user)
-        pricing = MembershipPricing.objects.filter(
-            membership_type=pricing_type, payment_type=payment_purpose, is_active=True,
-        ).first()
-        if not pricing or pricing.price <= 0:
-            logger.error(f"No active {pricing_type} {payment_purpose} price configured")
+        fee = get_membership_fee(request.user, payment_purpose)
+        if not fee or not fee.price or fee.price <= 0:
+            logger.error(f"No {payment_purpose} fee configured for {request.user.username} "
+                         f"({fee.code if fee else 'individual'})")
             return JsonResponse({
                 'error': 'Membership fees have not been set up yet. Please contact the administrator.'
             }, status=400)
-        amount = pricing.price
+        amount = fee.price
         subscription_year = date.today().year if payment_purpose == 'annual_dues' else None
 
         # Get or create membership for current user
@@ -1290,7 +1285,7 @@ def initiate_payment(request):
 
         # Generate unique payment reference
         purpose_code = 'REG' if payment_purpose == 'registration' else 'DUES'
-        payment_reference = f"ANA-{purpose_code}-{pricing_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
+        payment_reference = f"ANA-{purpose_code}-{fee.code.upper()}-{uuid.uuid4().hex[:8].upper()}"
 
         # Get Paystack public key from settings
         paystack_public_key = getattr(settings, 'PAYSTACK_PUBLIC_KEY', 'pk_test_96b9995fbf552beec8da11acbb821aa5c1d06341')
@@ -1307,7 +1302,7 @@ def initiate_payment(request):
             payment_purpose=payment_purpose,
             subscription_year=subscription_year if payment_purpose == 'annual_dues' else None,
             description=(
-                f'{payment_purpose.replace("_", " ").title()} - {organization.name} ({pricing.get_membership_type_display()})'
+                f'{payment_purpose.replace("_", " ").title()} - {organization.name} ({fee.label})'
                 if organization else
                 f'{payment_purpose.replace("_", " ").title()} - {membership_type.title()} Membership'
             )[:255]
@@ -1324,7 +1319,7 @@ def initiate_payment(request):
             'payment_purpose': payment_purpose,
             'subscription_year': subscription_year,
             'membership_type': membership_type,
-            'pricing_type': pricing_type,
+            'pricing_type': fee.code,
             'organization': organization.name if organization else None,
         }
 
@@ -1443,7 +1438,7 @@ def payment_selection(request):
     from .models import Membership, MembershipPricing, MAX_ORGANIZATION_MEMBERS
     from .membership_service import (
         is_free_registration_mode, grant_free_membership, get_billing_organization,
-        get_pricing_type, can_pay_for_membership, get_organization_admins,
+        get_membership_fee, can_pay_for_membership, get_organization_admins,
     )
 
     # Free registration mode: nothing to pay for - grant/refresh the free membership
@@ -1455,7 +1450,6 @@ def payment_selection(request):
         })
 
     organization = get_billing_organization(request.user)
-    pricing_type = get_pricing_type(request.user)
 
     # Get or create membership for current user
     membership, created = Membership.objects.get_or_create(
@@ -1477,17 +1471,12 @@ def payment_selection(request):
     )
 
     # Get pricing information
-    registration_pricing = MembershipPricing.objects.filter(
-        membership_type=pricing_type,
-        payment_type='registration',
-        is_active=True
-    )
-
-    annual_dues_pricing = MembershipPricing.objects.filter(
-        membership_type=pricing_type,
-        payment_type='annual_dues',
-        is_active=True
-    ).first()
+    # A fee of zero means it hasn't been set yet, so nothing is offered for it.
+    registration_fee = get_membership_fee(request.user, 'registration')
+    registration_pricing = [registration_fee] if registration_fee and registration_fee.price else []
+    annual_dues_pricing = get_membership_fee(request.user, 'annual_dues')
+    if annual_dues_pricing and not annual_dues_pricing.price:
+        annual_dues_pricing = None
 
     context = {
         'membership': membership,
@@ -1516,7 +1505,7 @@ def renewal(request):
     from .models import Membership, MembershipPricing
     from .membership_service import (
         is_free_registration_mode, grant_free_membership, get_billing_organization,
-        get_pricing_type, can_pay_for_membership, get_organization_admins,
+        get_membership_fee, can_pay_for_membership, get_organization_admins,
     )
 
     # Free registration mode: renewals are automatic and free
@@ -1550,11 +1539,9 @@ def renewal(request):
     )
 
     # Get annual dues pricing
-    annual_dues_pricing = MembershipPricing.objects.filter(
-        membership_type=get_pricing_type(request.user),
-        payment_type='annual_dues',
-        is_active=True
-    ).first()
+    annual_dues_pricing = get_membership_fee(request.user, 'annual_dues')
+    if annual_dues_pricing and not annual_dues_pricing.price:
+        annual_dues_pricing = None
     organization = get_billing_organization(request.user)
 
     # Get subscription status
