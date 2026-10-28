@@ -171,9 +171,7 @@ class OrganizationSignupTests(TestCase):
             registration_fee=Decimal('12000'), annual_dues=Decimal('6000'))
         self.assertEqual(cooperative.code, 'cooperative')
 
-        page = self.client.get(reverse('dashboard:register'))
-        self.assertContains(page, 'Cooperative')
-        self.assertContains(page, 'Farmer cooperatives')
+        self.assertContains(self.client.get(reverse('dashboard:register')), 'Cooperative')
 
         self.signup(membership_category=cooperative)
         self.client.post(reverse('dashboard:initiate_payment'),
@@ -219,6 +217,11 @@ class OrganizationSignupTests(TestCase):
         org = PartnerOrganization.objects.get(name='Cassava Growers Ltd')
         self.assertEqual(org.membership_category, other)
         self.assertEqual(org.sector_details, 'Federal agency')
+
+    def test_signup_page_shows_no_prices(self):
+        page = self.client.get(reverse('dashboard:register'))
+        self.assertNotContains(page, '₦')
+        self.assertNotContains(page, 'Registration fee')
 
     def test_details_are_dropped_for_options_that_do_not_ask(self):
         self.signup(sector_details='ignored')

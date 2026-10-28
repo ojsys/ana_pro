@@ -686,29 +686,9 @@ class RegisterView(FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['partner_organizations'] = PartnerOrganization.objects.filter(is_active=True)
-        from .membership_service import is_free_registration_mode
-        context['free_registration'] = is_free_registration_mode()
-        if not context['free_registration']:
-            context['category_fees'] = _category_fees()
         from .models import MAX_ORGANIZATION_MEMBERS
         context['max_members'] = MAX_ORGANIZATION_MEMBERS
         return context
-
-
-def _category_fees():
-    """Registration fee and annual dues for each category open to sign-up, in sector order."""
-    from .models import MembershipType
-    return [
-        {
-            'code': t.code,
-            'sector': t.sector.name,
-            'label': f"{t.name} (please specify)" if t.requires_details else t.name,
-            'description': t.description,
-            'registration': t.registration_fee,
-            'annual_dues': t.annual_dues,
-        }
-        for t in MembershipType.objects.filter(is_active=True, sector__is_active=True).select_related('sector')
-    ]
 
 
 @login_required

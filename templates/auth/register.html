@@ -1,5 +1,4 @@
 {% extends 'auth/auth_base.html' %}
-{% load humanize %}
 
 {% block title %}Register - AKILIMO Nigeria Association{% endblock %}
 
@@ -12,44 +11,6 @@
         <h2 class="auth-title">Register Your Organization</h2>
         <p class="auth-subtitle">Membership of AKILIMO Nigeria Association is for organizations. Sign your organization up here &mdash; you'll be its admin and can add up to {{ max_members|add:"-1" }} colleagues after signing up.</p>
     </div>
-
-    {% if free_registration %}
-    <div class="alert alert-success d-flex align-items-center" role="alert">
-        <i class="bi bi-gift me-2"></i>
-        <div>
-            <strong>Membership is free right now.</strong>
-            Sign up and your membership is active immediately &mdash; no registration fee, no annual dues.
-        </div>
-    </div>
-    {% elif category_fees %}
-    <div class="alert alert-info" role="alert">
-        <div class="d-flex align-items-center mb-2">
-            <i class="bi bi-cash-coin me-2"></i>
-            <strong>Membership fees per organization</strong>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-sm mb-2">
-                <thead>
-                    <tr><th>Category</th><th class="text-end">Registration fee</th><th class="text-end">Annual dues</th></tr>
-                </thead>
-                <tbody>
-                    {% regroup category_fees by sector as sector_fees %}
-                    {% for group in sector_fees %}
-                    <tr><th colspan="3" class="pt-3">{{ group.grouper }}</th></tr>
-                    {% for fee in group.list %}
-                    <tr>
-                        <td>{{ fee.label }}{% if fee.description %}<div class="small text-muted">{{ fee.description }}</div>{% endif %}</td>
-                        <td class="text-end">{% if fee.registration %}₦{{ fee.registration|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
-                        <td class="text-end">{% if fee.annual_dues %}₦{{ fee.annual_dues|floatformat:0|intcomma }}{% else %}&mdash;{% endif %}</td>
-                    </tr>
-                    {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <small>One payment covers up to {{ max_members }} people in your organization. You'll pay securely online after creating your account.</small>
-    </div>
-    {% endif %}
 
     <form method="post" class="auth-form" id="registerForm">
         {% csrf_token %}
