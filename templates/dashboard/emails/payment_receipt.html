@@ -1,0 +1,45 @@
+{% extends 'dashboard/emails/_layout.html' %}{% load humanize %}
+{% block title %}Payment Receipt{% endblock %}
+{% block eyebrow %}Payment Receipt{% endblock %}
+{% block body %}
+  <tr><td style="padding:28px 32px 8px;">
+    <p style="margin:0 0 12px;font-size:15px;">Dear {{ user.get_full_name|default:user.username }},</p>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#444;">
+      Thank you for your payment. This email is your official receipt.
+    </p>
+  </td></tr>
+
+  <tr><td style="padding:20px 32px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1B5E20;border-radius:12px;">
+      <tr><td style="padding:18px 24px;text-align:center;color:#ffffff;">
+        <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;opacity:0.85;">Amount Paid</div>
+        <div style="font-size:30px;font-weight:bold;margin-top:4px;">&#8358;{{ payment.amount|floatformat:2|intcomma }}</div>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:18px 32px 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Receipt number</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ receipt_number }}</td></tr>
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Paid by</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ user.get_full_name|default:user.username }}</td></tr>
+      {% if organization %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Organization</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ organization.name }}</td></tr>
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Membership category</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ membership_type }}</td></tr>
+      {% endif %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Payment for</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ payment.get_payment_purpose_display }}{% if payment.payment_purpose == 'annual_dues' and payment.subscription_year %} ({{ payment.subscription_year }}){% endif %}</td></tr>
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Payment method</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ payment.get_payment_method_display }}</td></tr>
+      {% if payment.paid_at %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Payment date</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ payment.paid_at|date:"d M Y, H:i" }}</td></tr>
+      {% endif %}
+      <tr><td style="padding:9px 0;color:#888;">Status</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;color:#1B5E20;">PAID</td></tr>
+    </table>
+  </td></tr>
+{% endblock %}

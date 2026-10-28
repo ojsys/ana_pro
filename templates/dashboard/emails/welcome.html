@@ -1,0 +1,56 @@
+{% extends 'dashboard/emails/_layout.html' %}{% load humanize %}
+{% block eyebrow %}Welcome{% endblock %}
+{% block body %}
+  <tr><td style="padding:28px 32px 8px;">
+    <p style="margin:0 0 12px;font-size:15px;">Dear {{ user.get_full_name|default:user.username }},</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#444;">
+      Thank you for signing up{% if organization %} <strong>{{ organization.name }}</strong>{% endif %} for membership of the
+      {{ site_name }}. Your account has been created and you are your organization's admin.
+    </p>
+    {% if free_registration %}
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#444;">
+      Membership is free right now, so <strong style="color:#1B5E20;">your membership is already active</strong>.
+      Sign in to your dashboard to get started.
+    </p>
+    {% else %}
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#444;">
+      <strong>One more step:</strong> go to your dashboard to pay your membership fees. Your membership
+      becomes active as soon as payment is received.
+    </p>
+    {% endif %}
+  </td></tr>
+
+  {% if registration_fee or annual_dues %}
+  <tr><td style="padding:18px 32px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+      {% if organization %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Membership category</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ organization.membership_category }}</td></tr>
+      {% endif %}
+      {% if registration_fee %}
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Registration fee (one-time)</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">&#8358;{{ registration_fee.price|floatformat:0|intcomma }}</td></tr>
+      {% endif %}
+      {% if annual_dues %}
+      <tr><td style="padding:9px 0;color:#888;">Annual dues ({{ year }})</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;">&#8358;{{ annual_dues.price|floatformat:0|intcomma }}</td></tr>
+      {% endif %}
+    </table>
+  </td></tr>
+  {% endif %}
+
+  {% if free_registration %}
+    {% include 'dashboard/emails/_button.html' with url=dashboard_url label='Go to my dashboard' %}
+  {% else %}
+    {% include 'dashboard/emails/_button.html' with url=payment_url label='Go to dashboard to pay' %}
+  {% endif %}
+
+  {% if organization %}
+  <tr><td style="padding:16px 32px 24px;">
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#666;">
+      Your membership covers up to {{ max_members }} people. Once you've paid, you can add your colleagues from
+      <strong>Organization Members</strong> in your dashboard.
+    </p>
+  </td></tr>
+  {% endif %}
+{% endblock %}

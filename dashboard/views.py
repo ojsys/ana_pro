@@ -667,6 +667,13 @@ class RegisterView(FormView):
 
         ensure_membership_for_user(user, membership_type='organization')
 
+        from .emails import send_welcome_email
+        try:
+            send_welcome_email(user)
+        except Exception:
+            # Sign-up has already succeeded; a mail problem shouldn't undo it.
+            logger.error("Welcome email not sent to %s", user.email, exc_info=True)
+
         if is_free_registration_mode():
             messages.success(
                 self.request,

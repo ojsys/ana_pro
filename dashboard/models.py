@@ -980,6 +980,10 @@ class Payment(models.Model):
     # Transaction details
     description = models.CharField(max_length=255, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    receipt_email_sent_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the payer was emailed their receipt (set once, so it is only sent once)."
+    )
 
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -993,6 +997,16 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment {self.payment_id} - {self.membership.member.get_full_name()} - ₦{self.amount} ({self.status})"
     
+    def save(self, *args, **kwargs):
+        # receipt_email_sent_at is only ever set by a queryset update (see emails.send_payment_emails).
+        # Leave it out of ordinary saves so a stale copy of the payment can't clear it.
+        if not self._state.adding and kwargs.get('update_fields') is None:
+            kwargs['update_fields'] = [
+                f.name for f in self._meta.concrete_fields
+                if not f.primary_key and f.name != 'receipt_email_sent_at'
+            ]
+        super().save(*args, **kwargs)
+
     @property
     def is_successful(self):
         """Check if payment was successful"""

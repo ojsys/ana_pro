@@ -1,0 +1,23 @@
+{% load humanize %}WELCOME TO THE {{ site_name|upper }}
+
+Dear {{ user.get_full_name|default:user.username }},
+
+Thank you for signing up{% if organization %} {{ organization.name }}{% endif %} for membership of the {{ site_name }}.
+Your account has been created and you are your organization's admin.
+{% if free_registration %}
+Membership is free right now, so your membership is already active. Sign in to your dashboard to get started:
+{{ dashboard_url }}
+{% else %}
+One more step: go to your dashboard to pay your membership fees. Your membership becomes active as soon as payment is received.
+{% if organization %}
+Membership category:          {{ organization.membership_category }}{% endif %}{% if registration_fee %}
+Registration fee (one-time):  N{{ registration_fee.price|floatformat:0|intcomma }}{% endif %}{% if annual_dues %}
+Annual dues ({{ year }}):         N{{ annual_dues.price|floatformat:0|intcomma }}{% endif %}
+
+Pay here: {{ payment_url }}
+{% endif %}{% if organization %}
+Your membership covers up to {{ max_members }} people. Once you've paid, you can add your colleagues from Organization Members in your dashboard.
+{% endif %}
+--
+{{ site_name }}
+{% if contact_email %}Questions? {{ contact_email }}{% endif %}{% if contact_phone %} | {{ contact_phone }}{% endif %}

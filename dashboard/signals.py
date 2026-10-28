@@ -84,6 +84,11 @@ def update_membership_on_payment_success(sender, instance, created, **kwargs):
         from .membership_service import sync_organization_membership
         sync_organization_membership(membership)
 
+        # Email the payer their confirmation and receipt once the payment is saved for good.
+        from django.db import transaction
+        from .emails import send_payment_emails
+        transaction.on_commit(lambda: send_payment_emails(instance.pk))
+
         logger.info(f"Membership {membership.id} successfully updated from payment {instance.payment_id}")
 
     except Membership.DoesNotExist:

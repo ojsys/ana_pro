@@ -1,0 +1,17 @@
+REGISTRATION CONFIRMED — {{ site_name }}
+
+Dear {{ user.get_full_name|default:user.username }},
+
+We have received your registration fee and {% if organization %}{{ organization.name }} is{% else %}you are{% endif %} now a registered member of the {{ site_name }}. Welcome aboard!
+
+Your receipt of payment is in a separate email.{% if not payment.membership.has_active_subscription %}
+If you haven't yet, please also pay this year's annual dues from your dashboard to unlock full access.{% endif %}
+{% if organization %}
+Organization:         {{ organization.name }}
+Membership category:  {{ membership_type }}{% if organization.sector_details %} ({{ organization.sector_details }}){% endif %}
+{% endif %}
+Your dashboard: {{ dashboard_url }}
+
+--
+{{ site_name }}
+{% if contact_email %}Questions? {{ contact_email }}{% endif %}{% if contact_phone %} | {{ contact_phone }}{% endif %}

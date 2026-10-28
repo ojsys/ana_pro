@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
@@ -541,6 +541,20 @@ class PaymentInline(admin.TabularInline):
     def has_add_permission(self, request, obj=None):
         return False
 
+    @admin.action(description="Resend confirmation and receipt email")
+    def resend_receipt_email(self, request, queryset):
+        from .emails import send_payment_emails
+        payments = queryset.filter(status='successful')
+        skipped = queryset.count() - payments.count()
+        payments.update(receipt_email_sent_at=None)
+        sent = sum(1 for payment in payments if send_payment_emails(payment.pk))
+        self.message_user(request, f"Sent {sent} receipt email(s).")
+        if sent < payments.count():
+            self.message_user(request, f"{payments.count() - sent} could not be sent; check the email settings and logs.",
+                              level=messages.WARNING)
+        if skipped:
+            self.message_user(request, f"Skipped {skipped} payment(s) that aren't successful.", level=messages.WARNING)
+
     def payment_id_short(self, obj):
         """Display shortened payment ID with link"""
         if obj.pk:
@@ -946,8 +960,9 @@ class PaymentAdmin(ImportExportModelAdmin):
     ]
     list_filter = ['payment_purpose', 'payment_method', 'status', 'currency', 'subscription_year', 'paid_at', 'created_at']
     search_fields = ['payment_id', 'paystack_reference', 'membership__member__username', 'membership__member__email']
-    readonly_fields = ['payment_id', 'created_at', 'updated_at', 'paid_at']
+    readonly_fields = ['payment_id', 'created_at', 'updated_at', 'paid_at', 'receipt_email_sent_at']
     date_hierarchy = 'created_at'
+    actions = ['resend_receipt_email']
 
     fieldsets = (
         ('Payment Information', {
@@ -958,7 +973,7 @@ class PaymentAdmin(ImportExportModelAdmin):
             'fields': ('paystack_reference', 'paystack_access_code', 'gateway_response')
         }),
         ('Transaction Details', {
-            'fields': ('description', 'paid_at')
+            'fields': ('description', 'paid_at', 'receipt_email_sent_at')
         }),
         ('Metadata', {
             'fields': ('payment_id', 'created_at', 'updated_at'),

@@ -226,3 +226,98 @@ class OrganizationSignupTests(TestCase):
     def test_details_are_dropped_for_options_that_do_not_ask(self):
         self.signup(sector_details='ignored')
         self.assertEqual(PartnerOrganization.objects.get(name='Cassava Growers Ltd').sector_details, '')
+
+
+class MembershipEmailTests(TestCase):
+
+    def setUp(self):
+        set_paid_mode()
+        self.sme = MembershipType.objects.get(code='sme')
+        self.sme.registration_fee = Decimal('30000')
+        self.sme.annual_dues = Decimal('15000')
+        self.sme.save()
+
+    def signup(self):
+        return self.client.post(reverse('dashboard:register'), {
+            **SIGNUP, 'sector': self.sme.sector_id, 'membership_category': self.sme.pk,
+        })
+
+    def pay(self, purpose, **extra):
+        membership = User.objects.get(email='ada@example.com').membership
+        payment = Payment.objects.create(membership=membership, amount=Decimal('30000'),
+                                         payment_purpose=purpose, paystack_reference='ANA-REG-SME-1', **extra)
+        with self.captureOnCommitCallbacks(execute=True):
+            payment.status = 'successful'
+            payment.save()
+        return payment
+
+    def test_signup_sends_welcome_email_pointing_to_payment(self):
+        from django.core import mail
+        self.signup()
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ['ada@example.com'])
+        self.assertIn('Welcome', email.subject)
+        self.assertIn(reverse('dashboard:payment_selection'), email.body)
+        self.assertIn('Cassava Growers Ltd', email.body)
+        self.assertIn('N30,000', email.body)
+
+    def test_free_mode_welcome_email_has_no_payment_prompt(self):
+        from django.core import mail
+        from website.models import SiteSettings
+        SiteSettings.objects.update(registration_mode='free')
+        self.signup()
+        self.assertIn('already active', mail.outbox[0].body)
+        self.assertNotIn(reverse('dashboard:payment_selection'), mail.outbox[0].body)
+
+    def test_registration_payment_sends_confirmation_and_receipt_once(self):
+        from django.core import mail
+        self.signup()
+        mail.outbox.clear()
+        payment = self.pay('registration')
+
+        self.assertEqual([m.subject.split()[0] for m in mail.outbox], ['Your', 'Payment'])
+        self.assertIn('confirmed', mail.outbox[0].subject)
+        receipt = mail.outbox[1]
+        self.assertEqual(receipt.to, ['ada@example.com'])
+        self.assertIn('ANA-REG-SME-1', receipt.body)
+        self.assertIn('N30,000.00', receipt.body)
+        self.assertEqual(len(receipt.alternatives), 1)
+
+        # Saving the payment again (e.g. the webhook after the callback) sends nothing more.
+        with self.captureOnCommitCallbacks(execute=True):
+            payment.save()
+        from .emails import send_payment_emails
+        self.assertFalse(send_payment_emails(payment.pk))
+        self.assertEqual(len(mail.outbox), 2)
+        payment.refresh_from_db()
+        self.assertIsNotNone(payment.receipt_email_sent_at)
+
+    def test_annual_dues_payment_sends_receipt_only(self):
+        from django.core import mail
+        self.signup()
+        mail.outbox.clear()
+        self.pay('annual_dues', subscription_year=date.today().year)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Annual Membership Dues', mail.outbox[0].subject)
+        self.assertIn(f'({date.today().year})', mail.outbox[0].body)
+
+    def test_failed_send_can_be_retried(self):
+        from django.core import mail
+        self.signup()
+        mail.outbox.clear()
+        with mock.patch('django.core.mail.EmailMultiAlternatives.send', side_effect=OSError('smtp down')):
+            payment = self.pay('annual_dues', subscription_year=date.today().year)
+        payment.refresh_from_db()
+        self.assertIsNone(payment.receipt_email_sent_at)
+        # Membership was still updated.
+        self.assertEqual(payment.membership.member.membership.annual_dues_paid_for_year, date.today().year)
+
+        from .emails import send_payment_emails
+        self.assertTrue(send_payment_emails(payment.pk))
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_signup_succeeds_even_if_welcome_email_fails(self):
+        with mock.patch('django.core.mail.EmailMultiAlternatives.send', side_effect=OSError('smtp down')):
+            response = self.signup()
+        self.assertRedirects(response, reverse('dashboard:payment_selection'))

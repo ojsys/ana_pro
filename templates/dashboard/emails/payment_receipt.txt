@@ -1,0 +1,19 @@
+{% load humanize %}PAYMENT RECEIPT — {{ site_name }}
+
+Dear {{ user.get_full_name|default:user.username }},
+
+Thank you for your payment. This email is your official receipt.
+
+Amount paid:          N{{ payment.amount|floatformat:2|intcomma }}
+Receipt number:       {{ receipt_number }}
+Paid by:              {{ user.get_full_name|default:user.username }}{% if organization %}
+Organization:         {{ organization.name }}
+Membership category:  {{ membership_type }}{% endif %}
+Payment for:          {{ payment.get_payment_purpose_display }}{% if payment.payment_purpose == 'annual_dues' and payment.subscription_year %} ({{ payment.subscription_year }}){% endif %}
+Payment method:       {{ payment.get_payment_method_display }}{% if payment.paid_at %}
+Payment date:         {{ payment.paid_at|date:"d M Y, H:i" }}{% endif %}
+Status:               PAID
+
+--
+{{ site_name }}
+{% if contact_email %}Questions? {{ contact_email }}{% endif %}{% if contact_phone %} | {{ contact_phone }}{% endif %}

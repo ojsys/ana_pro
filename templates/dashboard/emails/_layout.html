@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}{{ site_name }}{% endblock %}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f4;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f4;padding:24px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+
+  <tr><td style="background:linear-gradient(135deg,#0D1B0F,#1B4020 60%,#2E7D32);padding:28px 32px;color:#ffffff;">
+    <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.85;">{% block eyebrow %}{% endblock %}</div>
+    <div style="font-size:22px;font-weight:bold;margin-top:6px;">{% block heading %}{{ site_name }}{% endblock %}</div>
+  </td></tr>
+
+  {% block body %}{% endblock %}
+
+  <tr><td style="background:#0D1B0F;padding:22px 32px;color:#9bbf9f;font-size:12px;line-height:1.6;">
+    {{ site_name }}<br>
+    {% if contact_email %}Questions? <a href="mailto:{{ contact_email }}" style="color:#9bbf9f;">{{ contact_email }}</a>{% endif %}
+    {% if contact_phone %} &nbsp;|&nbsp; {{ contact_phone }}{% endif %}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>

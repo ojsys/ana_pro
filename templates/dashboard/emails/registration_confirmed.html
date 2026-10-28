@@ -1,0 +1,36 @@
+{% extends 'dashboard/emails/_layout.html' %}
+{% block eyebrow %}Registration Confirmed{% endblock %}
+{% block body %}
+  <tr><td style="padding:28px 32px 8px;">
+    <p style="margin:0 0 12px;font-size:15px;">Dear {{ user.get_full_name|default:user.username }},</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#444;">
+      We have received your registration fee and {% if organization %}<strong>{{ organization.name }}</strong> is{% else %}you are{% endif %}
+      now a <strong style="color:#1B5E20;">registered member</strong> of the {{ site_name }}. Welcome aboard!
+    </p>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#444;">
+      Your receipt of payment is in a separate email.
+      {% if not payment.membership.has_active_subscription %}If you haven't yet, please also pay this year's annual dues from your dashboard to unlock full access.{% endif %}
+    </p>
+  </td></tr>
+
+  {% if organization %}
+  <tr><td style="padding:18px 32px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+      <tr><td style="padding:9px 0;color:#888;border-bottom:1px solid #eee;">Organization</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eee;">{{ organization.name }}</td></tr>
+      <tr><td style="padding:9px 0;color:#888;">Membership category</td>
+          <td style="padding:9px 0;text-align:right;font-weight:bold;">{{ membership_type }}{% if organization.sector_details %} ({{ organization.sector_details }}){% endif %}</td></tr>
+    </table>
+  </td></tr>
+  {% endif %}
+
+  {% include 'dashboard/emails/_button.html' with url=dashboard_url label='Go to my dashboard' %}
+
+  {% if organization %}
+  <tr><td style="padding:16px 32px 24px;">
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#666;">
+      You can add your colleagues to your organization's membership from <strong>Organization Members</strong> in your dashboard.
+    </p>
+  </td></tr>
+  {% endif %}
+{% endblock %}
