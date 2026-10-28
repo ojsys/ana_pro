@@ -474,7 +474,10 @@ class UserAdmin(ImportExportModelAdmin, BaseUserAdmin):
     inlines = (UserProfileInline,)
 
     # Ensure list_display includes all necessary fields
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined', 'last_login')
+    list_filter = BaseUserAdmin.list_filter + ('date_joined', 'last_login')
+    # Newest sign-ups first.
+    ordering = ('-date_joined',)
 
     def get_inline_instances(self, request, obj=None):
         if not obj:
