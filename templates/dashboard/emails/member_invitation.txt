@@ -1,0 +1,17 @@
+YOU'VE BEEN ADDED TO {{ organization.name|upper }}'S MEMBERSHIP
+
+Dear {{ user.get_full_name|default:user.username }},
+
+{{ invited_by.get_full_name|default:invited_by.username }} has added you to {{ organization.name }}'s membership of the {{ site_name }}.
+Your account is ready - you just need to choose a password:
+
+{{ set_password_url }}
+
+Once your password is set, sign in with your email address, {{ user.email }}.
+
+This link can be used once and expires in {{ link_valid_days }} day{{ link_valid_days|pluralize }}. If it has expired, ask {{ invited_by.get_full_name|default:"your organization's admin" }} to send you a new one.
+If you weren't expecting this email, you can ignore it.
+
+--
+{{ site_name }}
+{% if contact_email %}Questions? {{ contact_email }}{% endif %}{% if contact_phone %} | {{ contact_phone }}{% endif %}

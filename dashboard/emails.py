@@ -147,3 +147,23 @@ def send_payment_emails(payment_id):
         logger.error("Payment %s: confirmation emails not sent", payment.payment_id, exc_info=True)
         return False
     return True
+
+
+def send_member_invitation(member, invited_by, set_password_link):
+    """Email a member added by their organization's admin the link to set their password."""
+    from .membership_service import get_billing_organization
+
+    organization = get_billing_organization(member)
+    return _send(
+        subject=f"You've been added to {organization.name}'s AKILIMO Nigeria Association membership",
+        template_base='dashboard/emails/member_invitation',
+        context={
+            'user': member,
+            'invited_by': invited_by,
+            'organization': organization,
+            'set_password_url': set_password_link,
+            'link_valid_days': settings.PASSWORD_RESET_TIMEOUT // (24 * 60 * 60),
+        },
+        to_email=member.email,
+        label='member-invitation',
+    )

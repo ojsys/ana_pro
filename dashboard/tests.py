@@ -78,7 +78,7 @@ class OrganizationSignupTests(TestCase):
         self.signup()
         self.add_member('m1@example.com')
         response = self.add_member('m2@example.com')
-        self.assertContains(response, 'set their password')
+        self.assertContains(response, "We've emailed this link to m2@example.com")
         self.add_member('m3@example.com')
 
         org = PartnerOrganization.objects.get(name='Cassava Growers Ltd')
@@ -321,3 +321,54 @@ class MembershipEmailTests(TestCase):
         with mock.patch('django.core.mail.EmailMultiAlternatives.send', side_effect=OSError('smtp down')):
             response = self.signup()
         self.assertRedirects(response, reverse('dashboard:payment_selection'))
+
+
+class MemberInvitationEmailTests(TestCase):
+
+    def setUp(self):
+        set_paid_mode()
+        sme = MembershipType.objects.get(code='sme')
+        self.client.post(reverse('dashboard:register'), {
+            **SIGNUP, 'sector': sme.sector_id, 'membership_category': sme.pk,
+        })
+
+    def add_member(self):
+        return self.client.post(reverse('dashboard:organization_members'), {
+            'action': 'add', 'first_name': 'Bola', 'last_name': 'Ade',
+            'email': 'bola@example.com', 'phone_number': '0801', 'position': 'Officer',
+        })
+
+    def test_added_member_is_emailed_a_working_set_password_link(self):
+        from django.core import mail
+        mail.outbox.clear()
+        response = self.add_member()
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ['bola@example.com'])
+        self.assertIn('Cassava Growers Ltd', email.subject)
+        self.assertIn('Ada Obi has added you', email.body)
+        link = response.context['new_member_link']['link']
+        self.assertIn(link, email.body)
+
+        self.client.logout()
+        set_page = self.client.get(link.split('testserver', 1)[1], follow=True)
+        self.client.post(set_page.redirect_chain[-1][0], {
+            'new_password1': 'Another-pass-456', 'new_password2': 'Another-pass-456',
+        })
+        self.assertTrue(User.objects.get(email='bola@example.com').check_password('Another-pass-456'))
+
+    def test_resend_emails_a_new_link(self):
+        from django.core import mail
+        self.add_member()
+        mail.outbox.clear()
+        member = User.objects.get(email='bola@example.com')
+        self.client.post(reverse('dashboard:organization_members'), {'action': 'link', 'user_id': member.pk})
+        self.assertEqual([m.to for m in mail.outbox], [['bola@example.com']])
+
+    def test_link_is_shown_to_admin_if_email_fails(self):
+        with mock.patch('django.core.mail.EmailMultiAlternatives.send', side_effect=OSError('smtp down')):
+            response = self.add_member()
+        self.assertTrue(User.objects.filter(email='bola@example.com').exists())
+        self.assertFalse(response.context['new_member_link']['emailed'])
+        self.assertContains(response, "couldn't email bola@example.com")
+        self.assertContains(response, response.context['new_member_link']['link'])

@@ -15,14 +15,19 @@
 </div>
 
 {% if new_member_link %}
-<div class="alert alert-success mb-4" role="alert">
+<div class="alert {% if new_member_link.emailed %}alert-success{% else %}alert-warning{% endif %} mb-4" role="alert">
     <h5 class="alert-heading mb-2">
         <span class="material-icons me-1" style="vertical-align: middle;">link</span>
         Sign-in link for {{ new_member_link.user.get_full_name }}
     </h5>
     <p class="mb-2">
-        Send this link to {{ new_member_link.user.email }}. It lets them set their password once,
-        and expires in a few days &mdash; you can make a new one from the list below.
+        {% if new_member_link.emailed %}
+        We've emailed this link to {{ new_member_link.user.email }} so they can set their password and sign in.
+        If it doesn't arrive (ask them to check their spam folder), copy it and send it to them yourself.
+        {% else %}
+        We couldn't email {{ new_member_link.user.email }} just now, so please copy this link and send it to them yourself.
+        {% endif %}
+        It works once and expires in a few days &mdash; you can send a new one from the list below.
     </p>
     <div class="input-group">
         <input type="text" class="form-control" id="memberLink" value="{{ new_member_link.link }}" readonly>
@@ -74,7 +79,7 @@
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="link">
                                         <input type="hidden" name="user_id" value="{{ profile.user.pk }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">New link</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Resend link</button>
                                     </form>
                                     {% endif %}
                                     <form method="post" class="d-inline remove-member-form" data-name="{{ profile.user.get_full_name }}">

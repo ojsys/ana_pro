@@ -2147,6 +2147,20 @@ def _set_password_link(request, user):
     }))
 
 
+def _send_set_password_link(request, member):
+    """Email ``member`` their set-password link; the link is also shown to the admin as a fallback."""
+    from .emails import send_member_invitation
+
+    link = _set_password_link(request, member)
+    try:
+        send_member_invitation(member, request.user, link)
+        emailed = True
+    except Exception:
+        logger.error("Set-password email not sent to %s", member.email, exc_info=True)
+        emailed = False
+    return {'user': member, 'link': link, 'emailed': emailed}
+
+
 @login_required
 def organization_members(request):
     """
@@ -2190,12 +2204,8 @@ def organization_members(request):
                     member = form.save(organization)
                     copy_organization_membership_to(member)
                 logger.info(f"{request.user.username} added {member.email} to {organization.name}")
-                messages.success(
-                    request,
-                    f'{member.get_full_name()} has been added. Send them the link below so they can '
-                    f'set their password and sign in.'
-                )
-                new_member_link = {'user': member, 'link': _set_password_link(request, member)}
+                new_member_link = _send_set_password_link(request, member)
+                messages.success(request, f'{member.get_full_name()} has been added.')
                 form = OrganizationMemberForm()
 
         elif action in ('remove', 'link'):
@@ -2218,7 +2228,7 @@ def organization_members(request):
                 messages.success(request, f'{member.get_full_name()} has been removed from your organization.')
                 return redirect('dashboard:organization_members')
             else:
-                new_member_link = {'user': member, 'link': _set_password_link(request, member)}
+                new_member_link = _send_set_password_link(request, member)
 
     members = organization.member_profiles().order_by('-is_partner_admin', 'user__first_name')
     return render(request, 'dashboard/organization_members.html', {

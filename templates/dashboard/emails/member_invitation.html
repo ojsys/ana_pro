@@ -1,0 +1,24 @@
+{% extends 'dashboard/emails/_layout.html' %}
+{% block eyebrow %}You're Invited{% endblock %}
+{% block body %}
+  <tr><td style="padding:28px 32px 8px;">
+    <p style="margin:0 0 12px;font-size:15px;">Dear {{ user.get_full_name|default:user.username }},</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#444;">
+      {{ invited_by.get_full_name|default:invited_by.username }} has added you to <strong>{{ organization.name }}</strong>'s
+      membership of the {{ site_name }}. Your account is ready &mdash; you just need to choose a password.
+    </p>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#444;">
+      Once your password is set, sign in with your email address, <strong>{{ user.email }}</strong>.
+    </p>
+  </td></tr>
+
+  {% include 'dashboard/emails/_button.html' with url=set_password_url label='Set my password' %}
+
+  <tr><td style="padding:16px 32px 24px;">
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#666;">
+      This link can be used once and expires in {{ link_valid_days }} day{{ link_valid_days|pluralize }}. If it has
+      expired, ask {{ invited_by.get_full_name|default:"your organization's admin" }} to send you a new one.
+      If you weren't expecting this email, you can ignore it.
+    </p>
+  </td></tr>
+{% endblock %}
